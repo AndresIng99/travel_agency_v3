@@ -1,0 +1,33 @@
+# Base de datos - CONFIGURACIÓN PARA PRODUCCIÓN
+DB_HOST=localhost
+DB_NAME=travelag_travel_agency
+DB_USER=travelag_admin
+DB_PASS=qZVmQxZPE532qu39gGoH7F1DqrbUlW
+DB_CHARSET=utf8mb4
+
+# Aplicación - CONFIGURACIÓN PARA HOSTING
+APP_NAME=Travel Agency
+APP_URL=https://www.travelagentsoft.com
+APP_ENV=production
+APP_DEBUG=true
+
+# Google Translate (opcional)
+GOOGLE_TRANSLATE_API_KEY=
+
+# Mapbox (opcional)
+MAPBOX_ACCESS_TOKEN=pk.eyJ1IjoidHJhdmVsYWdlbmN5IiwiYSI6ImNscXh4eHh4eDAyMnoycG56eGd1ZnRyd3gifQ.XXXXXXXXXXXXXXXXXXXXXXXX
+
+# Seguridad
+SESSION_LIFETIME=3600
+CSRF_TOKEN_NAME=_token
+
+# Configuración de uploads
+UPLOAD_MAX_SIZE=10485760
+UPLOAD_PATH=/assets/uploads/
+
+# Configuración de email (opcional)
+MAIL_HOST=
+MAIL_PORT=587
+MAIL_USERNAME=
+MAIL_PASSWORD=
+MAIL_ENCRYPTION=tls
