@@ -25,7 +25,6 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Biblioteca - <?= htmlspecialchars($companyName) ?></title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <!-- Incluir estilos de componentes -->
     <?= UIComponents::getComponentStyles() ?>
@@ -852,37 +851,7 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
     font-style: italic;
 }
 
-/* Contenedor del mapa - Más elegante */
-.map-container {
-    height: 350px;
-    border-radius: 16px;
-    overflow: hidden;
-    margin-bottom: 30px;
-    border: 3px solid #e2e8f0;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-    position: relative;
-}
 
-.map-container::before {
-    content: '🗺️ Selecciona una ubicación en el mapa';
-    position: absolute;
-    top: 15px;
-    left: 20px;
-    background: rgba(255, 255, 255, 0.95);
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #4a5568;
-    z-index: 1000;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-#map {
-    width: 100%;
-    height: 100%;
-    border-radius: 13px;
-}
 
 /* Acciones del formulario - Botones mejorados */
 .form-actions {
@@ -1691,88 +1660,6 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
-.images-preview-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-top: 20px;
-}
-
-.image-preview-item {
-    position: relative;
-    border: 2px solid #e2e8f0;
-    border-radius: 12px;
-    overflow: hidden;
-    background: white;
-    transition: all 0.3s ease;
-}
-
-.image-preview-item:hover {
-    border-color: var(--primary-color, #667eea);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.image-preview-item img {
-    width: 100%;
-    height: 150px;
-    object-fit: cover;
-}
-
-.image-preview-info {
-    padding: 12px;
-    border-top: 1px solid #e2e8f0;
-}
-
-.image-preview-name {
-    font-size: 13px;
-    font-weight: 600;
-    color: #2d3748;
-    margin-bottom: 4px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.image-preview-size {
-    font-size: 11px;
-    color: #718096;
-}
-
-.image-remove-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: rgba(229, 62, 62, 0.9);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 28px;
-    height: 28px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    transition: all 0.3s ease;
-}
-
-.image-remove-btn:hover {
-    background: #e53e3e;
-    transform: scale(1.1);
-}
-
-.image-slot-indicator {
-    position: absolute;
-    bottom: 8px;
-    right: 8px;
-    background: rgba(102, 126, 234, 0.9);
-    color: white;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 10px;
-    font-weight: 600;
-}
 /* Estilos para imágenes existentes */
 .existing-image {
     border-color: #10b981 !important;
@@ -1951,27 +1838,7 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
     margin-top: 20px;
 }
 
-/* Card de preview individual */
-.image-preview-card {
-    position: relative;
-    border-radius: 12px;
-    overflow: hidden;
-    background: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-}
 
-.image-preview-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-}
-
-.image-preview-card img {
-    width: 100%;
-    height: 140px;
-    object-fit: cover;
-    display: block;
-}
 
 .image-preview-badge {
     position: absolute;
@@ -1990,6 +1857,62 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
     background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
 }
 
+
+
+
+/* ========== ESTILOS PARA IMÁGENES EXISTENTES ========== */
+
+/* Contenedor de previews */
+.images-preview-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+    padding: 10px;
+    min-height: 60px;
+}
+
+/* Card individual de imagen */
+.image-preview-card {
+    position: relative;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.image-preview-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    border-color: #667eea;
+}
+
+/* Imagen del card */
+.image-preview-card img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    display: block;
+}
+
+/* Badge verde "Guardada" */
+.existing-image-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    z-index: 2;
+}
+
+/* Botón rojo de eliminar */
 .image-preview-remove {
     position: absolute;
     top: 8px;
@@ -1998,25 +1921,29 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
     color: white;
     border: none;
     border-radius: 50%;
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 16px;
+    font-weight: bold;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    z-index: 3;
 }
 
 .image-preview-remove:hover {
-    background: rgba(220, 38, 38, 0.95);
-    transform: scale(1.1);
+    background: rgba(220, 38, 38, 1);
+    transform: scale(1.15);
 }
 
+/* Info del card (nombre y tamaño) */
 .image-preview-info {
-    padding: 10px;
+    padding: 12px;
     background: #f7fafc;
+    border-top: 1px solid #e2e8f0;
 }
 
 .image-preview-name {
@@ -2026,7 +1953,7 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin-bottom: 3px;
+    margin-bottom: 4px;
 }
 
 .image-preview-size {
@@ -2034,10 +1961,7 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
     color: #718096;
 }
 
-/* Indicador de imagen existente */
-.existing-image-badge {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-}
+
 
 /* Carrusel en tarjetas del listado */
 .card-image-container {
@@ -2193,14 +2117,6 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
                 <!-- Campos específicos se cargan dinámicamente -->
                 <div id="specificFields"></div>
 
-                <!-- Mapa para ubicación -->
-                <div class="form-group" id="mapSection">
-                    <label>Seleccionar Ubicación en el Mapa</label>
-                    <div class="map-container">
-                        <div id="map"></div>
-                    </div>
-                </div>
-
                 <!-- Botones de acción -->
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" onclick="closeModal()">Cancelar</button>
@@ -2212,15 +2128,12 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
 
 
     <!-- Scripts -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // Configuración global - SIN API KEYS
         const APP_URL = '<?= APP_URL ?>';
         const DEFAULT_LANGUAGE = '<?= $defaultLanguage ?>';
 
         let currentTab = 'dias';
-        let map = null;
-        let currentMarker = null;
         let sidebarOpen = false;
         let resources = {
             dias: [],
@@ -2606,7 +2519,6 @@ function setupLocationAutocompleteForElement(input, latInput, lngInput, preview)
     console.log('🔧 Configurando autocompletado para:', input.id || input.name || 'input sin id');
     
     let timeout;
-    let suggestionsList = null;
     
     input.addEventListener('input', function() {
         clearTimeout(timeout);
@@ -2909,282 +2821,9 @@ function limpiarUbicacionesSecundarias() {
     console.log('✅ Ubicaciones secundarias limpiadas. Contador reseteado a 0');
 }
 
-        // Inicializar mapa con OpenStreetMap (GRATIS)
-function initializeMap() {
-    const mapContainer = document.getElementById('map');
-    
-    try {
-        // Limpiar contenedor
-        mapContainer.innerHTML = '';
-        
-        // Crear mapa con OpenStreetMap
-        map = L.map('map').setView([4.7110, -74.0721], 10); // Bogotá por defecto
 
-        // Agregar capa gratuita de OpenStreetMap
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 18,
-            minZoom: 2
-        }).addTo(map);
 
-        // Control de zoom
-        L.control.zoom({
-            position: 'topright'
-        }).addTo(map);
-
-        // 🎯 GRUPO DE MARCADORES PARA ORGANIZAR MEJOR
-        window.markersGroup = L.layerGroup().addTo(map);
-
-        // Click en el mapa para seleccionar ubicación PRINCIPAL
-        map.on('click', function(e) {
-            const coords = e.latlng;
-            updatePrimaryLocation(coords.lat, coords.lng);
-        });
-
-       
-        // Evento cuando el mapa se carga
-        map.whenReady(function() {
-            console.log('✅ Mapa con ubicaciones múltiples cargado');
-            
-            // Mensaje de bienvenida
-            setTimeout(() => {
-                if (window.markersGroup.getLayers().length === 0) {
-                    L.popup()
-                        .setLatLng([4.7110, -74.0721])
-                        .setContent(`
-                            <div style="text-align: center;">
-                                <strong>🗺️ Mapa Interactivo</strong><br>
-                                <small>Haz clic para ubicación principal<br>
-                                Las secundarias se mostrarán automáticamente</small>
-                            </div>
-                        `)
-                        .openOn(map);
-                }
-            }, 1000);
-        });
-
-        // Redimensionar mapa cuando se abre el modal
-        setTimeout(() => {
-            map.invalidateSize();
-        }, 100);
-
-    } catch (error) {
-        console.error('Error cargando mapa:', error);
-        initializeMapFallback();
-    }
-}
-
-        // Función de respaldo si falla el mapa
-        function initializeMapFallback() {
-            const mapContainer = document.getElementById('map');
-            mapContainer.innerHTML = `
-                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center; border-radius: 10px; padding: 20px;">
-                    <div style="font-size: 48px; margin-bottom: 20px;">📍</div>
-                    <h3 style="margin-bottom: 15px;">Seleccionar Ubicación</h3>
-                    <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 20px; width: 100%; max-width: 300px;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-                            <input type="number" id="manual-lat" placeholder="Latitud" step="any" style="padding: 10px; border: none; border-radius: 5px; text-align: center;">
-                            <input type="number" id="manual-lng" placeholder="Longitud" step="any" style="padding: 10px; border: none; border-radius: 5px; text-align: center;">
-                        </div>
-                        <button onclick="useCurrentLocation()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 25px; cursor: pointer; margin-right: 10px;">📱 Mi Ubicación</button>
-                        <button onclick="searchLocationPrompt()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 25px; cursor: pointer;">🔍 Buscar</button>
-                    </div>
-                </div>
-            `;
-            
-            setTimeout(() => {
-                const latInput = document.getElementById('manual-lat');
-                const lngInput = document.getElementById('manual-lng');
-                
-                if (latInput && lngInput) {
-                    latInput.addEventListener('change', updateLocationFromCoords);
-                    lngInput.addEventListener('change', updateLocationFromCoords);
-                }
-            }, 100);
-        }
-
-        // ============================================= 
-        // GEOCODIFICACIÓN GRATUITA CON NOMINATIM
-        // ============================================= 
-
-        function reverseGeocodeOSM(lat, lng) {
-            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=es`;
-            
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data && data.display_name) {
-                        const ubicacionField = document.getElementById('ubicacion');
-                        if (ubicacionField) {
-                            ubicacionField.value = data.display_name;
-                        }
-                        
-                        // Guardar coordenadas en campos ocultos
-                        updateCoordinateFields(lat, lng);
-                        
-                        console.log('📍 Ubicación encontrada:', data.display_name);
-                    } else {
-                        // Si no hay resultado, usar coordenadas
-                        const ubicacionField = document.getElementById('ubicacion');
-                        if (ubicacionField) {
-                            ubicacionField.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-                        }
-                        updateCoordinateFields(lat, lng);
-                    }
-                })
-                .catch(error => {
-                    console.warn('Geocodificación no disponible:', error);
-                    const ubicacionField = document.getElementById('ubicacion');
-                    if (ubicacionField) {
-                        ubicacionField.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-                    }
-                    updateCoordinateFields(lat, lng);
-                });
-        }
-
-       // ============================================= 
-        // FUNCIONES AUXILIARES
-        // ============================================= 
-
-        function updateCoordinateFields(lat, lng) {
-            // Buscar campos de latitud y longitud en el formulario
-            const latField = document.getElementById('latitud') || document.querySelector('input[name="latitud"]');
-            const lngField = document.getElementById('longitud') || document.querySelector('input[name="longitud"]');
-            
-            if (latField) latField.value = lat;
-            if (lngField) lngField.value = lng;
-
-            // Para transportes, también actualizar campos específicos si es el campo activo
-            const currentInput = document.activeElement;
-            if (currentInput && currentInput.name === 'lugar_salida') {
-                const latSalidaField = document.getElementById('lat_salida');
-                const lngSalidaField = document.getElementById('lng_salida');
-                if (latSalidaField) latSalidaField.value = lat;
-                if (lngSalidaField) lngSalidaField.value = lng;
-            } else if (currentInput && currentInput.name === 'lugar_llegada') {
-                const latLlegadaField = document.getElementById('lat_llegada');
-                const lngLlegadaField = document.getElementById('lng_llegada');
-                if (latLlegadaField) latLlegadaField.value = lat;
-                if (lngLlegadaField) lngLlegadaField.value = lng;
-            }
-        }
-
-        function updateLocationFromCoords() {
-            const latInput = document.getElementById('manual-lat');
-            const lngInput = document.getElementById('manual-lng');
-            
-            if (latInput && lngInput) {
-                const lat = parseFloat(latInput.value);
-                const lng = parseFloat(lngInput.value);
-                
-                if (!isNaN(lat) && !isNaN(lng)) {
-                    reverseGeocodeOSM(lat, lng);
-                }
-            }
-        }
-
-        function searchLocationOSM(query) {
-            if (!query || query.length < 3) return;
-            
-            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&accept-language=es`;
-            
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data && data.length > 0) {
-                        const result = data[0];
-                        const lat = parseFloat(result.lat);
-                        const lng = parseFloat(result.lon);
-                        
-                        if (map) {
-                            // Centrar mapa en el resultado
-                            map.setView([lat, lng], 15);
-                            
-                            // Agregar/mover marcador
-                            if (currentMarker) {
-                                map.removeLayer(currentMarker);
-                            }
-                            
-                            currentMarker = L.marker([lat, lng], {
-                                draggable: true
-                            }).addTo(map);
-                            
-                            currentMarker.bindPopup(`
-                                <div style="text-align: center;">
-                                    <strong>🔍 ${result.display_name}</strong><br>
-                                    <small>Lat: ${lat.toFixed(6)}<br>
-                                    Lng: ${lng.toFixed(6)}</small>
-                                </div>
-                            `).openPopup();
-                        }
-                        
-                        // Actualizar campos
-                        const ubicacionField = document.getElementById('ubicacion');
-                        if (ubicacionField) {
-                            ubicacionField.value = result.display_name;
-                        }
-                        
-                        updateCoordinateFields(lat, lng);
-                        console.log('🔍 Búsqueda exitosa:', result.display_name);
-                    } else {
-                        alert('No se encontraron resultados para: ' + query);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error en búsqueda:', error);
-                    alert('Error en la búsqueda. Verifica tu conexión a internet.');
-                });
-        }
-
-        function useCurrentLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    
-                    if (map) {
-                        map.setView([lat, lng], 15);
-                        
-                        if (currentMarker) {
-                            map.removeLayer(currentMarker);
-                        }
-                        
-                        currentMarker = L.marker([lat, lng], {
-                            draggable: true
-                        }).addTo(map);
-                        
-                        currentMarker.bindPopup(`
-                            <div style="text-align: center;">
-                                <strong>📱 Tu Ubicación Actual</strong><br>
-                                <small>Lat: ${lat.toFixed(6)}<br>
-                                Lng: ${lng.toFixed(6)}</small>
-                            </div>
-                        `).openPopup();
-                    } else {
-                        // Para modo fallback
-                        const latInput = document.getElementById('manual-lat');
-                        const lngInput = document.getElementById('manual-lng');
-                        if (latInput && lngInput) {
-                            latInput.value = lat.toFixed(6);
-                            lngInput.value = lng.toFixed(6);
-                        }
-                    }
-                    
-                    reverseGeocodeOSM(lat, lng);
-                }, function(error) {
-                    alert('No se pudo obtener la ubicación: ' + error.message);
-                });
-            } else {
-                alert('La geolocalización no es compatible con este navegador');
-            }
-        }
-
-        function searchLocationPrompt() {
-            const query = prompt('Ingresa el nombre del lugar que quieres buscar:\n(Ejemplo: "Torre Eiffel, París" o "Medellín, Colombia")');
-            if (query && query.trim()) {
-                searchLocationOSM(query.trim());
-            }
-        }
+      
 
         // Configuración de tabs
         function initializeTabs() {
@@ -3521,10 +3160,7 @@ window.goToSlide = function(carouselId, index) {
             // Mostrar modal
             modal.classList.add('show');
 
-            // 1. Primero el mapa
-            setTimeout(() => {
-                initializeMap();
-            }, 200);
+            
 
             // 2. Luego imágenes
             setTimeout(() => {
@@ -3579,13 +3215,7 @@ function closeModal() {
     // Limpiar ubicaciones secundarias
     limpiarUbicacionesSecundarias();
     
-    // Destruir mapa
-    if (map) {
-        map.remove();
-        map = null;
-        currentMarker = null;
-    }
-    
+  
     // Limpiar cualquier indicador de imagen existente (para alojamientos)
     document.querySelectorAll('.existing-image-indicator').forEach(el => el.remove());
     
@@ -4805,11 +4435,188 @@ function showSearchError(message) {
             }
         }
 
-        // Cargar datos de recurso para editar - MEJORADO
 
-// ========================================
-// FUNCIÓN loadResourceData() COMPLETA Y CORREGIDA
-// ========================================
+
+
+/**
+ * FUNCIONES PARA CARGAR IMAGENES EXISTENTES
+ * Agregar DESPUES de corregir los errores de sintaxis
+ */
+
+window.loadExistingImages = function(resource) {
+    console.log('Loading existing images:', resource);
+    
+    const container = document.getElementById('imagePreviewsGrid');
+    if (!container) {
+        console.error('Container imagePreviewsGrid not found');
+        return;
+    }
+    
+    console.log('Container found, cleaning...');
+    container.innerHTML = '';
+    
+    if (window.imageManager) {
+        window.imageManager.existing = [];
+        window.imageManager.files = [];
+    }
+    
+    const imagesToLoad = [];
+    
+    if (resource.imagen1 && resource.imagen1.trim()) {
+        console.log('Image 1 found:', resource.imagen1.substring(0, 50) + '...');
+        imagesToLoad.push({
+            url: resource.imagen1.trim(),
+            field: 'imagen1',
+            name: 'Imagen 1'
+        });
+    }
+    
+    if (resource.imagen2 && resource.imagen2.trim() && resource.imagen2 !== resource.imagen1) {
+        console.log('Image 2 found:', resource.imagen2.substring(0, 50) + '...');
+        imagesToLoad.push({
+            url: resource.imagen2.trim(),
+            field: 'imagen2',
+            name: 'Imagen 2'
+        });
+    }
+    
+    if (resource.imagen3 && resource.imagen3.trim() && 
+        resource.imagen3 !== resource.imagen1 && 
+        resource.imagen3 !== resource.imagen2) {
+        console.log('Image 3 found:', resource.imagen3.substring(0, 50) + '...');
+        imagesToLoad.push({
+            url: resource.imagen3.trim(),
+            field: 'imagen3',
+            name: 'Imagen 3'
+        });
+    }
+    
+    if (resource.imagen && resource.imagen.trim() && !resource.imagen1) {
+        console.log('Accommodation image found');
+        imagesToLoad.push({
+            url: resource.imagen.trim(),
+            field: 'imagen',
+            name: 'Imagen del alojamiento'
+        });
+    }
+    
+    console.log('Total images to load:', imagesToLoad.length);
+    
+    if (imagesToLoad.length === 0) {
+        console.warn('No images to load');
+        return;
+    }
+    
+    imagesToLoad.forEach((img, index) => {
+        console.log('Creating card', index + 1, 'for:', img.name);
+        
+        if (window.createImageCardForEdit) {
+            const card = window.createImageCardForEdit(img, index);
+            container.appendChild(card);
+            console.log('Card', index + 1, 'added to container');
+        } else {
+            console.error('Function createImageCardForEdit does not exist');
+            return;
+        }
+        
+        if (window.imageManager) {
+            window.imageManager.existing.push(img);
+        }
+    });
+    
+    console.log('All images loaded successfully');
+};
+
+window.createImageCardForEdit = function(imageData, index) {
+    console.log('Building card for:', imageData.name);
+    
+    const card = document.createElement('div');
+    card.className = 'image-preview-card';
+    card.setAttribute('data-field', imageData.field);
+    card.setAttribute('data-index', index);
+    
+    card.innerHTML = `
+        <img src="${imageData.url}" 
+             alt="${imageData.name}" 
+             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2220%22%3ENo image%3C/text%3E%3C/svg%3E';">
+        
+        <div class="existing-image-badge">
+            &#10003; Guardada
+        </div>
+        
+        <button type="button" 
+                class="image-preview-remove" 
+                onclick="window.removeExistingImageFromEdit('${imageData.field}', ${index})"
+                title="Eliminar imagen">
+            &times;
+        </button>
+        
+        <div class="image-preview-info">
+            <div class="image-preview-name">${imageData.name}</div>
+            <div class="image-preview-size">Imagen existente</div>
+        </div>
+    `;
+    
+    console.log('Card built for:', imageData.name);
+    return card;
+};
+
+window.removeExistingImageFromEdit = function(fieldName, index) {
+    console.log('Attempting to delete image:', fieldName);
+    
+    if (!confirm('Delete this image?')) {
+        console.log('Deletion cancelled');
+        return;
+    }
+    
+    const container = document.getElementById('imagePreviewsGrid');
+    const card = container ? container.querySelector(`[data-field="${fieldName}"]`) : null;
+    
+    if (!card) {
+        console.error('Card not found with field=', fieldName);
+        return;
+    }
+    
+    console.log('Card found, applying exit animation...');
+    
+    card.style.transition = 'all 0.3s ease';
+    card.style.opacity = '0';
+    card.style.transform = 'scale(0.8)';
+    
+    setTimeout(() => {
+        card.remove();
+        console.log('Card removed from DOM');
+    }, 300);
+    
+    const deleteInput = document.createElement('input');
+    deleteInput.type = 'hidden';
+    deleteInput.name = `delete_${fieldName}`;
+    deleteInput.value = '1';
+    
+    const form = document.getElementById('resourceForm');
+    if (form) {
+        form.appendChild(deleteInput);
+        console.log('Marked for deletion on server:', `delete_${fieldName}`);
+    }
+    
+    if (window.imageManager && window.imageManager.existing) {
+        window.imageManager.existing.splice(index, 1);
+        console.log('Manager updated, remaining images:', window.imageManager.existing.length);
+    }
+    
+    console.log('Deletion completed for:', fieldName);
+};
+
+console.log('Image loading functions registered successfully');
+
+
+
+/**
+ * FUNCIÓN OPTIMIZADA loadResourceData
+ * Versión corregida que carga correctamente todas las imágenes
+ */
+
+
 
 async function loadResourceData(id) {
     console.log('📥 Cargando datos del recurso:', id);
@@ -4831,24 +4638,28 @@ async function loadResourceData(id) {
         console.log('📋 Datos recibidos:', resource);
         
         // ========================================
-        // LLENAR CAMPOS COMUNES
+        // LLENAR CAMPO COMÚN: IDIOMA
         // ========================================
         if (resource.idioma) {
             const idiomaSelect = document.getElementById('idioma');
-            if (idiomaSelect) idiomaSelect.value = resource.idioma;
+            if (idiomaSelect) {
+                idiomaSelect.value = resource.idioma;
+                console.log('✅ Idioma cargado:', resource.idioma);
+            }
         }
         
         // ========================================
-        // LLENAR CAMPOS SEGÚN TIPO
+        // LLENAR CAMPOS SEGÚN TIPO DE RECURSO
         // ========================================
         switch(currentTab) {
+            
             // ========================================
             // CASO: DÍAS
             // ========================================
             case 'dias':
                 console.log('🗓️ Cargando datos de DÍA');
                 
-                // Título
+                // 1. CAMPOS BÁSICOS
                 if (resource.titulo) {
                     const tituloInput = document.getElementById('titulo');
                     if (tituloInput) {
@@ -4857,7 +4668,6 @@ async function loadResourceData(id) {
                     }
                 }
                 
-                // Descripción
                 if (resource.descripcion) {
                     const descripcionInput = document.getElementById('descripcion');
                     if (descripcionInput) {
@@ -4866,70 +4676,67 @@ async function loadResourceData(id) {
                     }
                 }
                 
-                // ⭐ NUEVO CÓDIGO
-                if (resource.ubicacion) {
-                    setTimeout(() => {
-                        const inputUbicacion = document.getElementById('ubicacion-principal');
-                        if (inputUbicacion) {
-                            inputUbicacion.value = resource.ubicacion;
-                            
-                            if (resource.latitud) {
-                                const latitudField = document.getElementById('latitud');
-                                const latitudPrincipalField = document.getElementById('latitud-principal');
-                                if (latitudField) latitudField.value = resource.latitud;
-                                if (latitudPrincipalField) latitudPrincipalField.value = resource.latitud;
-                            }
-                            if (resource.longitud) {
-                                const longitudField = document.getElementById('longitud');
-                                const longitudPrincipalField = document.getElementById('longitud-principal');
-                                if (longitudField) longitudField.value = resource.longitud;
-                                if (longitudPrincipalField) longitudPrincipalField.value = resource.longitud;
-                            }
-                            
-                            const ubicacionField = document.getElementById('ubicacion');
-                            if (ubicacionField) ubicacionField.value = resource.ubicacion;
-                            
-                            if (widgetUbicacionPrincipal && typeof widgetUbicacionPrincipal.setData === 'function') {
-                                widgetUbicacionPrincipal.setData({
-                                    display_name: resource.ubicacion,
-                                    lat: resource.latitud,
-                                    lon: resource.longitud
-                                });
-                            }
-                            
-                            console.log('✅ Ubicación principal cargada:', resource.ubicacion);
-                        }
-                    }, 500);
-                }
-                
-                // Coordenadas
+                // 2. COORDENADAS PRINCIPALES
                 if (resource.latitud) {
                     const latInput = document.getElementById('latitud');
+                    const latPrincipalInput = document.getElementById('latitud-principal');
                     if (latInput) latInput.value = resource.latitud;
+                    if (latPrincipalInput) latPrincipalInput.value = resource.latitud;
                 }
                 
                 if (resource.longitud) {
                     const lngInput = document.getElementById('longitud');
+                    const lngPrincipalInput = document.getElementById('longitud-principal');
                     if (lngInput) lngInput.value = resource.longitud;
+                    if (lngPrincipalInput) lngPrincipalInput.value = resource.longitud;
                 }
                 
-                // ========================================
-                // CARGAR IMÁGENES EXISTENTES
-                // ========================================
+                // 3. UBICACIÓN PRINCIPAL (con delay para widget)
+                if (resource.ubicacion) {
+                    setTimeout(() => {
+                        const inputUbicacion = document.getElementById('ubicacion-principal');
+                        const ubicacionField = document.getElementById('ubicacion');
+                        
+                        if (inputUbicacion) {
+                            inputUbicacion.value = resource.ubicacion;
+                        }
+                        
+                        if (ubicacionField) {
+                            ubicacionField.value = resource.ubicacion;
+                        }
+                        
+                        // Widget de ubicación principal si existe
+                        if (window.widgetUbicacionPrincipal && typeof window.widgetUbicacionPrincipal.setData === 'function') {
+                            window.widgetUbicacionPrincipal.setData({
+                                display_name: resource.ubicacion,
+                                lat: resource.latitud,
+                                lon: resource.longitud
+                            });
+                        }
+                        
+                        console.log('✅ Ubicación principal cargada:', resource.ubicacion);
+                    }, 500);
+                }
+                
+                // 4. IMÁGENES EXISTENTES
                 setTimeout(() => {
-                    console.log('🖼️ Iniciando carga de imágenes existentes...');
+                    console.log('🖼️ Cargando imágenes del día...');
+                    console.log('Imágenes disponibles:', {
+                        imagen1: resource.imagen1 ? 'SÍ' : 'NO',
+                        imagen2: resource.imagen2 ? 'SÍ' : 'NO',
+                        imagen3: resource.imagen3 ? 'SÍ' : 'NO'
+                    });
+                    
                     if (window.loadExistingImages) {
                         window.loadExistingImages(resource);
                     } else {
-                        console.warn('⚠️ Función loadExistingImages no disponible');
+                        console.error('❌ Función loadExistingImages NO está disponible');
                     }
                 }, 400);
                 
-                // ========================================
-                // CARGAR UBICACIONES SECUNDARIAS
-                // ========================================
+                // 5. UBICACIONES SECUNDARIAS
                 if (resource.ubicaciones_secundarias && resource.ubicaciones_secundarias.length > 0) {
-                    console.log('📍 Cargando ubicaciones secundarias:', resource.ubicaciones_secundarias.length, 'ubicaciones');
+                    console.log('📍 Cargando ubicaciones secundarias:', resource.ubicaciones_secundarias.length);
                     
                     setTimeout(() => {
                         const container = document.getElementById('ubicaciones-secundarias-container');
@@ -4941,42 +4748,30 @@ async function loadResourceData(id) {
                         
                         console.log('✅ Container encontrado, procesando ubicaciones...');
                         
-                        // Procesar cada ubicación
                         resource.ubicaciones_secundarias.forEach((ubic, idx) => {
-                            console.log(`➕ Procesando ubicación ${idx + 1}/${resource.ubicaciones_secundarias.length}:`, ubic.ubicacion);
+                            console.log(`➕ Procesando ubicación ${idx + 1}:`, ubic.ubicacion);
                             
-                            // Llamar función para agregar ubicación
                             if (typeof agregarUbicacionSecundaria === 'function') {
                                 agregarUbicacionSecundaria();
                                 
-                                // Esperar a que se agregue al DOM
                                 setTimeout(() => {
-                                    // Obtener todos los items
                                     const items = container.querySelectorAll('.ubicacion-item');
                                     const lastItem = items[items.length - 1];
                                     
                                     if (lastItem) {
-                                        // Encontrar inputs dentro del item
                                         const input = lastItem.querySelector('input[name="ubicaciones_secundarias[]"]');
                                         const latInput = lastItem.querySelector('input[name="ubicaciones_secundarias_lat[]"]');
                                         const lngInput = lastItem.querySelector('input[name="ubicaciones_secundarias_lng[]"]');
                                         const preview = lastItem.querySelector('[id^="preview-ubicacion-"]');
                                         
-                                        // Asignar valores
                                         if (input) {
                                             input.value = ubic.ubicacion;
                                             console.log(`✅ Input ${idx + 1} rellenado:`, ubic.ubicacion);
                                         }
                                         
-                                        if (latInput && ubic.latitud) {
-                                            latInput.value = ubic.latitud;
-                                        }
+                                        if (latInput && ubic.latitud) latInput.value = ubic.latitud;
+                                        if (lngInput && ubic.longitud) lngInput.value = ubic.longitud;
                                         
-                                        if (lngInput && ubic.longitud) {
-                                            lngInput.value = ubic.longitud;
-                                        }
-                                        
-                                        // Mostrar preview
                                         if (preview && ubic.ubicacion) {
                                             preview.innerHTML = `
                                                 <div style="
@@ -5000,45 +4795,37 @@ async function loadResourceData(id) {
                                             preview.style.display = 'block';
                                             console.log(`✅ Preview ${idx + 1} mostrado`);
                                         }
-                                    } else {
-                                        console.warn(`⚠️ No se encontró el item ${idx + 1}`);
                                     }
-                                }, 150 * (idx + 1)); // Delay progresivo para cada ubicación
-                                
+                                }, 150 * (idx + 1));
                             } else {
                                 console.error('❌ Función agregarUbicacionSecundaria no existe');
                             }
                         });
                         
                         console.log(`✅ ${resource.ubicaciones_secundarias.length} ubicaciones secundarias procesadas`);
-                        
-                    }, 1000); // Timeout de 1 segundo para asegurar que el DOM esté listo
+                    }, 1000);
                 } else {
-                    console.log('ℹ️ No hay ubicaciones secundarias para este día');
+                    console.log('ℹ️ No hay ubicaciones secundarias');
                 }
                 
-                // ========================================
-                // ACTUALIZAR CONTADORES DE CARACTERES
-                // ========================================
+                // 6. ACTUALIZAR CONTADORES DE CARACTERES
                 setTimeout(() => {
-                    // Contador de título
                     const tituloInput = document.getElementById('titulo');
                     const tituloCounter = document.getElementById('titulo-counter');
                     if (tituloInput && tituloCounter) {
                         const length = tituloInput.value.length;
                         tituloCounter.textContent = `${length}/250`;
-                        console.log(`✅ Contador título actualizado: ${length}/250`);
+                        console.log(`✅ Contador título: ${length}/250`);
                     }
                     
-                    // Contador de descripción
                     const descripcionInput = document.getElementById('descripcion');
                     const descripcionCounter = document.getElementById('descripcion-counter');
                     if (descripcionInput && descripcionCounter) {
                         const length = descripcionInput.value.length;
                         descripcionCounter.textContent = `${length}/1500`;
-                        console.log(`✅ Contador descripción actualizado: ${length}/1500`);
+                        console.log(`✅ Contador descripción: ${length}/1500`);
                     }
-                }, 300);
+                }, 600);
                 
                 break;
                 
@@ -5046,24 +4833,34 @@ async function loadResourceData(id) {
             // CASO: ALOJAMIENTOS
             // ========================================
             case 'alojamientos':
-                console.log('🏨 Cargando datos de ALOJAMIENTO');
+                console.log('Loading ACCOMMODATION data');
                 
-                // Campos específicos
+                // 1. BASIC FIELDS
                 if (resource.nombre) {
                     const nombreInput = document.getElementById('nombre');
-                    if (nombreInput) nombreInput.value = resource.nombre;
+                    if (nombreInput) {
+                        nombreInput.value = resource.nombre;
+                        console.log('Name loaded:', resource.nombre);
+                    }
                 }
                 
                 if (resource.descripcion) {
                     const descripcionInput = document.getElementById('descripcion');
-                    if (descripcionInput) descripcionInput.value = resource.descripcion;
+                    if (descripcionInput) {
+                        descripcionInput.value = resource.descripcion;
+                        console.log('Description loaded');
+                    }
                 }
                 
                 if (resource.ubicacion) {
                     const ubicacionInput = document.getElementById('ubicacion');
-                    if (ubicacionInput) ubicacionInput.value = resource.ubicacion;
+                    if (ubicacionInput) {
+                        ubicacionInput.value = resource.ubicacion;
+                        console.log('Location loaded:', resource.ubicacion);
+                    }
                 }
                 
+                // 2. COORDINATES
                 if (resource.latitud) {
                     const latInput = document.getElementById('latitud');
                     if (latInput) latInput.value = resource.latitud;
@@ -5074,11 +4871,14 @@ async function loadResourceData(id) {
                     if (lngInput) lngInput.value = resource.longitud;
                 }
                 
+                // 3. ACCOMMODATION SPECIFIC FIELDS
                 if (resource.tipo) {
                     const tipoSelect = document.getElementById('tipo');
                     if (tipoSelect) {
                         tipoSelect.value = resource.tipo;
-                        // Llamar función para actualizar categoría
+                        console.log('Type loaded:', resource.tipo);
+                        
+                        // Update category field based on type
                         if (typeof updateCategoryField === 'function') {
                             updateCategoryField();
                         }
@@ -5087,15 +4887,52 @@ async function loadResourceData(id) {
                 
                 if (resource.categoria) {
                     const categoriaSelect = document.getElementById('categoria');
-                    if (categoriaSelect) categoriaSelect.value = resource.categoria;
+                    if (categoriaSelect) {
+                        categoriaSelect.value = resource.categoria;
+                        console.log('Category loaded:', resource.categoria);
+                    }
                 }
                 
                 if (resource.sitio_web) {
                     const sitioWebInput = document.getElementById('sitio_web');
-                    if (sitioWebInput) sitioWebInput.value = resource.sitio_web;
+                    if (sitioWebInput) {
+                        sitioWebInput.value = resource.sitio_web;
+                        console.log('Website loaded');
+                    }
                 }
                 
-                // Actualizar contadores
+                // 4. LOAD ACCOMMODATION IMAGE (only 1 image)
+                setTimeout(() => {
+                    console.log('Loading accommodation image...');
+                    console.log('Image available:', resource.imagen ? 'YES' : 'NO');
+                    
+                    if (resource.imagen && resource.imagen.trim()) {
+                        const container = document.getElementById('imagePreviewsGrid');
+                        if (container) {
+                            container.innerHTML = '';
+                            
+                            const imageData = {
+                                url: resource.imagen.trim(),
+                                field: 'imagen',
+                                name: 'Imagen del alojamiento'
+                            };
+                            
+                            if (window.createImageCardForEdit) {
+                                const card = window.createImageCardForEdit(imageData, 0);
+                                container.appendChild(card);
+                                console.log('Accommodation image loaded successfully');
+                            } else {
+                                console.error('Function createImageCardForEdit NOT available');
+                            }
+                        } else {
+                            console.error('Container imagePreviewsGrid NOT found');
+                        }
+                    } else {
+                        console.log('No image for this accommodation');
+                    }
+                }, 400);
+                
+                // 5. UPDATE COUNTERS
                 setTimeout(() => {
                     const nombreInput = document.getElementById('nombre');
                     const nombreCounter = document.getElementById('nombre-counter');
@@ -5108,7 +4945,7 @@ async function loadResourceData(id) {
                     if (descripcionInput && descripcionCounter) {
                         descripcionCounter.textContent = `${descripcionInput.value.length}/1500`;
                     }
-                }, 300);
+                }, 600);
                 
                 break;
                 
@@ -5116,24 +4953,34 @@ async function loadResourceData(id) {
             // CASO: ACTIVIDADES
             // ========================================
             case 'actividades':
-                console.log('🎯 Cargando datos de ACTIVIDAD');
+                console.log('Loading ACTIVITY data');
                 
-                // Campos específicos
+                // 1. BASIC FIELDS
                 if (resource.nombre) {
                     const nombreInput = document.getElementById('nombre');
-                    if (nombreInput) nombreInput.value = resource.nombre;
+                    if (nombreInput) {
+                        nombreInput.value = resource.nombre;
+                        console.log('Name loaded:', resource.nombre);
+                    }
                 }
                 
                 if (resource.descripcion) {
                     const descripcionInput = document.getElementById('descripcion');
-                    if (descripcionInput) descripcionInput.value = resource.descripcion;
+                    if (descripcionInput) {
+                        descripcionInput.value = resource.descripcion;
+                        console.log('Description loaded');
+                    }
                 }
                 
                 if (resource.ubicacion) {
                     const ubicacionInput = document.getElementById('ubicacion');
-                    if (ubicacionInput) ubicacionInput.value = resource.ubicacion;
+                    if (ubicacionInput) {
+                        ubicacionInput.value = resource.ubicacion;
+                        console.log('Location loaded:', resource.ubicacion);
+                    }
                 }
                 
+                // 2. COORDINATES
                 if (resource.latitud) {
                     const latInput = document.getElementById('latitud');
                     if (latInput) latInput.value = resource.latitud;
@@ -5144,19 +4991,23 @@ async function loadResourceData(id) {
                     if (lngInput) lngInput.value = resource.longitud;
                 }
                 
-                // ========================================
-                // CARGAR IMÁGENES EXISTENTES
-                // ========================================
+                // 3. LOAD EXISTING IMAGES (up to 3)
                 setTimeout(() => {
-                    console.log('🖼️ Iniciando carga de imágenes existentes (actividad)...');
+                    console.log('Loading activity images...');
+                    console.log('Available images:', {
+                        imagen1: resource.imagen1 ? 'YES' : 'NO',
+                        imagen2: resource.imagen2 ? 'YES' : 'NO',
+                        imagen3: resource.imagen3 ? 'YES' : 'NO'
+                    });
+                    
                     if (window.loadExistingImages) {
                         window.loadExistingImages(resource);
                     } else {
-                        console.warn('⚠️ Función loadExistingImages no disponible');
+                        console.error('Function loadExistingImages NOT available');
                     }
                 }, 400);
                 
-                // Actualizar contadores
+                // 4. UPDATE COUNTERS
                 setTimeout(() => {
                     const nombreInput = document.getElementById('nombre');
                     const nombreCounter = document.getElementById('nombre-counter');
@@ -5169,7 +5020,7 @@ async function loadResourceData(id) {
                     if (descripcionInput && descripcionCounter) {
                         descripcionCounter.textContent = `${descripcionInput.value.length}/1500`;
                     }
-                }, 300);
+                }, 600);
                 
                 break;
                 
@@ -5179,30 +5030,38 @@ async function loadResourceData(id) {
             case 'transportes':
                 console.log('🚗 Cargando datos de TRANSPORTE');
                 
-                // Campos específicos
+                // 1. CAMPOS BÁSICOS
                 if (resource.medio) {
                     const medioSelect = document.getElementById('medio');
-                    if (medioSelect) medioSelect.value = resource.medio;
+                    if (medioSelect) {
+                        medioSelect.value = resource.medio;
+                        console.log('✅ Medio cargado:', resource.medio);
+                    }
                 }
                 
                 if (resource.titulo) {
                     const tituloInput = document.getElementById('titulo');
-                    if (tituloInput) tituloInput.value = resource.titulo;
+                    if (tituloInput) {
+                        tituloInput.value = resource.titulo;
+                        console.log('✅ Título cargado:', resource.titulo);
+                    }
                 }
                 
                 if (resource.descripcion) {
                     const descripcionInput = document.getElementById('descripcion');
-                    if (descripcionInput) descripcionInput.value = resource.descripcion;
+                    if (descripcionInput) {
+                        descripcionInput.value = resource.descripcion;
+                        console.log('✅ Descripción cargada');
+                    }
                 }
                 
+                // 2. UBICACIONES Y COORDENADAS DE SALIDA
                 if (resource.lugar_salida) {
                     const salidaInput = document.getElementById('lugar_salida');
-                    if (salidaInput) salidaInput.value = resource.lugar_salida;
-                }
-                
-                if (resource.lugar_llegada) {
-                    const llegadaInput = document.getElementById('lugar_llegada');
-                    if (llegadaInput) llegadaInput.value = resource.lugar_llegada;
+                    if (salidaInput) {
+                        salidaInput.value = resource.lugar_salida;
+                        console.log('✅ Lugar salida cargado:', resource.lugar_salida);
+                    }
                 }
                 
                 if (resource.lat_salida) {
@@ -5215,6 +5074,15 @@ async function loadResourceData(id) {
                     if (lngSalidaInput) lngSalidaInput.value = resource.lng_salida;
                 }
                 
+                // 3. UBICACIONES Y COORDENADAS DE LLEGADA
+                if (resource.lugar_llegada) {
+                    const llegadaInput = document.getElementById('lugar_llegada');
+                    if (llegadaInput) {
+                        llegadaInput.value = resource.lugar_llegada;
+                        console.log('✅ Lugar llegada cargado:', resource.lugar_llegada);
+                    }
+                }
+                
                 if (resource.lat_llegada) {
                     const latLlegadaInput = document.getElementById('lat_llegada');
                     if (latLlegadaInput) latLlegadaInput.value = resource.lat_llegada;
@@ -5225,17 +5093,24 @@ async function loadResourceData(id) {
                     if (lngLlegadaInput) lngLlegadaInput.value = resource.lng_llegada;
                 }
                 
+                // 4. DURACIÓN Y DISTANCIA
                 if (resource.duracion) {
                     const duracionInput = document.getElementById('duracion');
-                    if (duracionInput) duracionInput.value = resource.duracion;
+                    if (duracionInput) {
+                        duracionInput.value = resource.duracion;
+                        console.log('✅ Duración cargada:', resource.duracion);
+                    }
                 }
                 
                 if (resource.distancia_km) {
                     const distanciaInput = document.getElementById('distancia_km');
-                    if (distanciaInput) distanciaInput.value = resource.distancia_km;
+                    if (distanciaInput) {
+                        distanciaInput.value = resource.distancia_km;
+                        console.log('✅ Distancia cargada:', resource.distancia_km);
+                    }
                 }
                 
-                // Actualizar contadores
+                // 5. ACTUALIZAR CONTADORES
                 setTimeout(() => {
                     const tituloInput = document.getElementById('titulo');
                     const tituloCounter = document.getElementById('titulo-counter');
@@ -5248,7 +5123,7 @@ async function loadResourceData(id) {
                     if (descripcionInput && descripcionCounter) {
                         descripcionCounter.textContent = `${descripcionInput.value.length}/1500`;
                     }
-                }, 300);
+                }, 600);
                 
                 break;
                 
@@ -6821,64 +6696,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 <script>
 
-// Función mejorada para actualizar mapa cuando se selecciona ubicación
-function updateMapWithSelectedLocation(location, coordinates) {
-    console.log('📍 Actualizando mapa con ubicación seleccionada:', location);
-    
-    if (!map) {
-        console.warn('⚠️ Mapa no disponible');
-        return;
-    }
-    
-    try {
-        const lat = coordinates.lat || coordinates.latitude || coordinates[0];
-        const lng = coordinates.lng || coordinates.longitude || coordinates[1];
-        
-        if (!lat || !lng) {
-            console.warn('⚠️ Coordenadas no válidas:', coordinates);
-            return;
-        }
-        
-        // Animar hacia la nueva ubicación
-        map.flyTo([lat, lng], 16, {
-            animate: true,
-            duration: 1.5
-        });
-        
-        // Remover marcador anterior
-        if (window.currentMarker) {
-            map.removeLayer(window.currentMarker);
-        }
-        
-        // Crear nuevo marcador
-        window.currentMarker = L.marker([lat, lng], {
-            draggable: true
-        }).addTo(map);
-        
-        // Popup informativo
-        window.currentMarker.bindPopup(`
-            <div style="text-align: center;">
-                <strong>📍 ${location}</strong><br>
-                <small>Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}</small>
-            </div>
-        `).openPopup();
-        
-        // Actualizar campos ocultos de coordenadas
-        updateCoordinateFields(lat, lng);
-        
-        // Event listener para arrastrar
-        window.currentMarker.on('dragend', function(e) {
-            const newCoords = e.target.getLatLng();
-            updateCoordinateFields(newCoords.lat, newCoords.lng);
-            reverseGeocodeOSM(newCoords.lat, newCoords.lng);
-        });
-        
-        console.log('✅ Mapa actualizado correctamente');
-        
-    } catch (error) {
-        console.error('❌ Error actualizando mapa:', error);
-    }
-}
+
 
 
 
@@ -8088,14 +7906,7 @@ window.removeExistingImageAtIndex = function(index) {
                     if (latField) latField.value = result.lat;
                     if (lngField) lngField.value = result.lon;
                     
-                    // Actualizar mapa
-                    if (window.map && window.L) {
-                        window.map.setView([result.lat, result.lon], 15);
-                        if (window.currentMarker) {
-                            window.map.removeLayer(window.currentMarker);
-                        }
-                        window.currentMarker = window.L.marker([result.lat, result.lon]).addTo(window.map);
-                    }
+                   
                 }
                 
                 clearSuggestions();
@@ -8557,37 +8368,108 @@ window.initImageSystem = function() {
         });
     }
     
-    /**
-     * Cargar imágenes existentes (para edición)
-     */
-    window.loadExistingImages = function(resource) {
-        console.log('📥 Cargando imágenes existentes...');
+
+
+
+
+
+
+/**
+ * 4. Función de verificación para debugging
+ */
+window.debugImageSystem = function() {
+    console.log('🔍 === DEBUG DEL SISTEMA DE IMÁGENES ===');
+    console.log('Función loadExistingImages:', typeof window.loadExistingImages);
+    console.log('Función createImageCardForEdit:', typeof window.createImageCardForEdit);
+    console.log('Función removeExistingImageFromEdit:', typeof window.removeExistingImageFromEdit);
+    console.log('Contenedor imagePreviewsGrid:', !!document.getElementById('imagePreviewsGrid'));
+    console.log('Contenedor imagesPreviewContainer:', !!document.getElementById('imagesPreviewContainer'));
+    console.log('ImageManager:', window.imageManager);
+    console.log('=====================================');
+};
+
+// Auto-verificación al cargar
+console.log('✅ Funciones de carga de imágenes registradas');
+console.log('📋 Para verificar el sistema, ejecuta: debugImageSystem()');
+
+/**
+ * Crear card visual para imagen existente
+ */
+function createImageCardForEdit(imageData, index) {
+    const card = document.createElement('div');
+    card.className = 'image-preview-card';
+    card.setAttribute('data-field', imageData.field);
+    card.setAttribute('data-index', index);
+    
+    card.innerHTML = `
+        <img src="${imageData.url}" 
+             alt="${imageData.name}" 
+             onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22><rect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/><text x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2220%22>Sin imagen</text></svg>';">
         
-        window.imageManager.existing = [];
+        <div class="existing-image-badge">
+            ✓ Guardada
+        </div>
         
-        if (resource.imagen1) {
-            window.imageManager.existing.push({ 
-                url: resource.imagen1, 
-                field: 'imagen1' 
-            });
-        }
-        if (resource.imagen2) {
-            window.imageManager.existing.push({ 
-                url: resource.imagen2, 
-                field: 'imagen2' 
-            });
-        }
-        if (resource.imagen3) {
-            window.imageManager.existing.push({ 
-                url: resource.imagen3, 
-                field: 'imagen3' 
-            });
-        }
+        <button type="button" 
+                class="image-preview-remove" 
+                onclick="removeExistingImageFromEdit('${imageData.field}', ${index})"
+                title="Eliminar imagen">
+            ×
+        </button>
         
-        renderPreviews();
+        <div class="image-preview-info">
+            <div class="image-preview-name">${imageData.name}</div>
+            <div class="image-preview-size">Imagen existente</div>
+        </div>
+    `;
+    
+    return card;
+}
+
+/**
+ * Eliminar imagen existente al editar
+ */
+function removeExistingImageFromEdit(fieldName, index) {
+    console.log(`🗑️ Eliminando: ${fieldName}`);
+    
+    // Confirmar
+    if (!confirm('¿Eliminar esta imagen?')) {
+        return;
+    }
+    
+    // Obtener card
+    const container = document.getElementById('imagePreviewsGrid');
+    const card = container.querySelector(`[data-field="${fieldName}"]`);
+    
+    if (card) {
+        // Animación
+        card.style.transition = 'all 0.3s ease';
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.8)';
         
-        console.log(`✅ ${window.imageManager.existing.length} imagen(es) cargada(s)`);
-    };
+        setTimeout(() => card.remove(), 300);
+    }
+    
+    // Marcar para eliminación en servidor
+    const deleteInput = document.createElement('input');
+    deleteInput.type = 'hidden';
+    deleteInput.name = `delete_${fieldName}`;
+    deleteInput.value = '1';
+    document.getElementById('resourceForm').appendChild(deleteInput);
+    
+    // Actualizar manager
+    if (window.imageManager && window.imageManager.existing) {
+        window.imageManager.existing.splice(index, 1);
+    }
+    
+    console.log(`✅ ${fieldName} marcada para eliminación`);
+}
+
+// Exponer globalmente
+window.removeExistingImageFromEdit = removeExistingImageFromEdit;
+
+// Exponer globalmente
+window.createImageCardForEdit = createImageCardForEdit;
     
     /**
      * Formatear tamaño
