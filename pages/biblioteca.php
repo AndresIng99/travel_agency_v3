@@ -3,7 +3,7 @@
 // ARCHIVO: pages/biblioteca.php - Biblioteca con Componentes UI Integrados
 // =====================================
 
-App::requireLogin(); 
+App::requireLogin();
 
 // Incluir ConfigManager y componentes UI
 require_once 'config/config_functions.php';
