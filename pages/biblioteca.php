@@ -3520,13 +3520,13 @@ window.goToSlide = function(carouselId, index) {
             
             // Mostrar modal
             modal.classList.add('show');
-            
-            // Inicializar mapa después de mostrar modal
+
+            // 1. Primero el mapa
             setTimeout(() => {
                 initializeMap();
             }, 200);
-            
-            // ✅ NUEVO: Inicializar sistema de imágenes para días y actividades
+
+            // 2. Luego imágenes
             setTimeout(() => {
                 if (currentTab === 'dias' || currentTab === 'actividades') {
                     console.log('🖼️ Inicializando sistema de imágenes...');
@@ -3535,10 +3535,12 @@ window.goToSlide = function(carouselId, index) {
                     }
                 }
             }, 300);
-            
-            // Si es edición, cargar datos
+
+            // 3. Finalmente datos si es edición
             if (mode === 'edit' && id) {
-                loadResourceData(id);
+                setTimeout(() => {
+                    loadResourceData(id);
+                }, 500);
             }
             
             console.log('✅ Modal abierto correctamente');
@@ -3546,6 +3548,7 @@ window.goToSlide = function(carouselId, index) {
 
 function closeModal() {
     console.log('🚪 Cerrando modal...');
+    window._charCountersConfigured = false;
     
     const modal = document.getElementById('resourceModal');
     modal.classList.remove('show');
@@ -3859,6 +3862,22 @@ function loadSpecificFields() {
             <input type="hidden" id="latitud" name="latitud">
             <input type="hidden" id="longitud" name="longitud">
         `;
+        setTimeout(() => {
+            console.log('🖼️ Verificando imágenes para cargar...');
+            
+            if (typeof loadExistingImagesInMultipleSystem === 'function') {
+                console.log('📸 Llamando a loadExistingImagesInMultipleSystem');
+                loadExistingImagesInMultipleSystem(resource);
+            } else {
+                console.error('❌ Función loadExistingImagesInMultipleSystem no disponible');
+            }
+            
+            const imageSection = document.querySelector('.image-upload-section');
+            if (imageSection) imageSection.style.display = 'block';
+            
+            const previewContainer = document.getElementById('imagesPreviewContainer');
+            if (previewContainer) previewContainer.style.display = 'grid';
+        }, 800);
         break;
             
         case 'alojamientos':
@@ -4893,13 +4912,40 @@ async function loadResourceData(id) {
                     }
                 }
                 
-                // Ubicación principal
+                // ⭐ NUEVO CÓDIGO
                 if (resource.ubicacion) {
-                    const ubicacionInput = document.getElementById('ubicacion');
-                    if (ubicacionInput) {
-                        ubicacionInput.value = resource.ubicacion;
-                        console.log('✅ Ubicación principal cargada:', resource.ubicacion);
-                    }
+                    setTimeout(() => {
+                        const inputUbicacion = document.getElementById('ubicacion-principal');
+                        if (inputUbicacion) {
+                            inputUbicacion.value = resource.ubicacion;
+                            
+                            if (resource.latitud) {
+                                const latitudField = document.getElementById('latitud');
+                                const latitudPrincipalField = document.getElementById('latitud-principal');
+                                if (latitudField) latitudField.value = resource.latitud;
+                                if (latitudPrincipalField) latitudPrincipalField.value = resource.latitud;
+                            }
+                            if (resource.longitud) {
+                                const longitudField = document.getElementById('longitud');
+                                const longitudPrincipalField = document.getElementById('longitud-principal');
+                                if (longitudField) longitudField.value = resource.longitud;
+                                if (longitudPrincipalField) longitudPrincipalField.value = resource.longitud;
+                            }
+                            
+                            const ubicacionField = document.getElementById('ubicacion');
+                            if (ubicacionField) ubicacionField.value = resource.ubicacion;
+                            
+                            if (widgetUbicacionPrincipal && typeof widgetUbicacionPrincipal.setData === 'function') {
+                                widgetUbicacionPrincipal.setData({
+                                    display_name: resource.ubicacion,
+                                    lat: resource.latitud,
+                                    lon: resource.longitud
+                                });
+                            }
+                            
+                            console.log('✅ Ubicación principal cargada:', resource.ubicacion);
+                        }
+                    }, 500);
                 }
                 
                 // Coordenadas
@@ -5269,103 +5315,92 @@ async function loadResourceData(id) {
     }
 }
 
-// Función para configurar contadores de caracteres en biblioteca
+// ========================================
+// FUNCIÓN CORREGIDA - SIN LOOP INFINITO
+// ========================================
 function setupBibliotecaCharacterCounters() {
-    console.log('Configurando contadores de caracteres...');
-    
-    let intentos = 0;
-    const maxIntentos = 10;
-    
-    function intentarConfigurar() {
-    // Para días y transportes
-    const titulo = document.getElementById('titulo');
-    const descripcion = document.getElementById('descripcion');
-    
-    // Para actividades  
-    const nombre = document.getElementById('nombre');
-        
-        console.log('Intento', intentos + 1, '- Elementos encontrados:', {
-            titulo: !!titulo,
-            descripcion: !!descripcion,
-            nombre: !!nombre
-        });
-        
-        if (titulo || descripcion || nombre) {
-            configurarContadores();
-        } else if (intentos < maxIntentos) {
-            intentos++;
-            setTimeout(intentarConfigurar, 100);
-        } else {
-            console.log('No se encontraron elementos después de', maxIntentos, 'intentos');
-        }
+    // ⭐ IMPORTANTE: Verificar si ya está configurado para evitar duplicados
+    if (window._charCountersConfigured) {
+        console.log('✅ Contadores ya configurados, saltando...');
+        return;
     }
     
-    function configurarContadores() {
-        // Configurar título (para días)
-        const titulo = document.getElementById('titulo');
-        const tituloCounter = document.getElementById('titulo-counter');
-        
-        if (titulo && tituloCounter) {
-            configurarContador(titulo, tituloCounter, 250);
-            console.log('Contador de título configurado');
-        }
-        
-        // Configurar nombre (para actividades)
-        const nombre = document.getElementById('nombre');
-        const nombreCounter = document.getElementById('nombre-counter');
-        
-        if (nombre && nombreCounter) {
-            configurarContador(nombre, nombreCounter, 250);
-            console.log('Contador de nombre configurado');
-        }
-        
-        const sitioWeb = document.getElementById('sitio_web');
-        const sitioWebCounter = document.getElementById('sitio_web-counter');
-
-        if (sitioWeb && sitioWebCounter) {
-            configurarContador(sitioWeb, sitioWebCounter, 250);
-            console.log('Contador de sitio web configurado');
-        }
-
-        // Configurar descripción (para ambos)
-        const descripcion = document.getElementById('descripcion');
-        const descripcionCounter = document.getElementById('descripcion-counter');
-        
-        if (descripcion && descripcionCounter) {
-            configurarContador(descripcion, descripcionCounter, 1500);
-            console.log('Contador de descripción configurado');
-        }
-    }
+    console.log('🔧 Configurando contadores de caracteres...');
     
-    function configurarContador(elemento, contador, maximo) {
+    // Función auxiliar para configurar un contador individual
+    function configurarContador(inputId, counterId, maxLength) {
+        const input = document.getElementById(inputId);
+        const counter = document.getElementById(counterId);
+        
+        if (!input || !counter) {
+            console.log(`ℹ️ No se encontró ${inputId} o ${counterId}, saltando...`);
+            return false;
+        }
+        
+        // Función de actualización
         function actualizarContador() {
-            const longitud = elemento.value.length;
-            contador.textContent = `${longitud}/${maximo}`;
+            const longitud = input.value.length;
+            counter.textContent = `${longitud}/${maxLength}`;
             
-            contador.classList.remove('warning', 'danger');
+            // Limpiar clases
+            counter.classList.remove('warning', 'danger');
             
-            const porcentaje = (longitud / maximo) * 100;
+            // Agregar clase según porcentaje
+            const porcentaje = (longitud / maxLength) * 100;
             if (porcentaje >= 100) {
-                contador.classList.add('danger');
+                counter.classList.add('danger');
             } else if (porcentaje >= 80) {
-                contador.classList.add('warning');
+                counter.classList.add('warning');
             }
         }
         
-        elemento.addEventListener('input', actualizarContador);
-        elemento.addEventListener('keyup', actualizarContador);
-        elemento.addEventListener('paste', () => setTimeout(actualizarContador, 10));
+        // ⭐ CRÍTICO: Solo agregar event listeners una vez
+        // Remover listeners antiguos antes de agregar nuevos
+        input.removeEventListener('input', actualizarContador);
+        input.removeEventListener('keyup', actualizarContador);
+        input.removeEventListener('change', actualizarContador);
         
+        // Agregar listeners
+        input.addEventListener('input', actualizarContador);
+        input.addEventListener('keyup', actualizarContador);
+        input.addEventListener('change', actualizarContador);
+        
+        // Inicializar
         actualizarContador();
-    }
-    if (currentTab === 'dias' || currentTab === 'actividades' || currentTab === 'transportes' || currentTab === 'alojamientos') {
-        setTimeout(() => {
-            setupBibliotecaCharacterCounters();
-            setupImageValidation(); // AGREGAR ESTA LÍNEA
-        }, 100);
+        
+        console.log(`✅ Contador configurado: ${inputId} (${maxLength} caracteres)`);
+        return true;
     }
     
-    intentarConfigurar();
+    // Configurar contadores para diferentes tipos
+    let configured = false;
+    
+    // Para DÍAS: titulo + descripcion
+    if (configurarContador('titulo', 'titulo-counter', 250)) {
+        configured = true;
+    }
+    
+    if (configurarContador('descripcion', 'descripcion-counter', 1500)) {
+        configured = true;
+    }
+    
+    // Para ACTIVIDADES: nombre + descripcion
+    if (configurarContador('nombre', 'nombre-counter', 250)) {
+        configured = true;
+    }
+    
+    // Para ALOJAMIENTOS: sitio_web
+    if (configurarContador('sitio_web', 'sitio_web-counter', 250)) {
+        configured = true;
+    }
+    
+    if (configured) {
+        // ⭐ MARCAR COMO CONFIGURADO PARA EVITAR DUPLICADOS
+        window._charCountersConfigured = true;
+        console.log('✅ Todos los contadores configurados exitosamente');
+    } else {
+        console.log('ℹ️ No se encontraron elementos para configurar contadores');
+    }
 }
 function setupImageValidation() {
     const imageInputs = document.querySelectorAll('input[type="file"][accept*="image"]');
@@ -8285,30 +8320,74 @@ function clearSecondaryLocationSuggestions(input) {
     /**
      * Inicializar sistema
      */
-    window.initImageSystem = function() {
-        console.log('🖼️ Inicializando sistema de imágenes...');
+window.initImageSystem = function() {
+    console.log('🖼️ Inicializando sistema de imágenes...');
+    
+    const dropZone = document.getElementById('multipleImageDropZone');
+    const fileInput = document.getElementById('multipleImageInput');
+    const loadButton = document.getElementById('loadImagesButton');
+    const previewContainer = document.getElementById('imagesPreviewContainer');
+    
+    if (!dropZone || !fileInput || !loadButton || !previewContainer) {
+        console.warn('⚠️ Elementos del sistema de imágenes no encontrados');
+        return;
+    }
+    
+    window.selectedImages = [];
+    
+    // ⭐ ESTO ES LO CRÍTICO - VINCULAR BOTÓN
+    loadButton.onclick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('🖱️ Click en botón cargar imágenes');
+        fileInput.click();
+    };
+    
+    // ⭐ Y ESTO TAMBIÉN - EVENTO CHANGE
+    fileInput.addEventListener('change', function(e) {
+        console.log('📁 Archivos seleccionados:', e.target.files.length);
+        const files = Array.from(e.target.files);
         
-        const dropZone = document.getElementById('imageDropZone');
-        const fileInput = document.getElementById('multiImageInput');
-        
-        if (!dropZone || !fileInput) {
-            console.log('⚠️ Elementos no encontrados');
-            return;
+        if (files.length > 0) {
+            handleImageSelection(files, previewContainer);
         }
         
-        // Reset
-        window.imageManager.files = [];
-        window.imageManager.existing = [];
+        e.target.value = '';
+    });
+    
+    dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.add('drag-over');
+    });
+    
+    dropZone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove('drag-over');
+    });
+    
+    dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove('drag-over');
         
-        // Limpiar preview
-        const previewGrid = document.getElementById('imagePreviewsGrid');
-        if (previewGrid) previewGrid.innerHTML = '';
+        const files = Array.from(e.dataTransfer.files);
+        console.log('📥 Archivos arrastrados:', files.length);
         
-        // Configurar eventos
-        setupEvents(dropZone, fileInput);
-        
-        console.log('✅ Sistema inicializado');
-    };
+        if (files.length > 0) {
+            handleImageSelection(files, previewContainer);
+        }
+    });
+    
+    dropZone.addEventListener('click', function(e) {
+        if (e.target === dropZone || e.target.closest('.drop-zone-content')) {
+            fileInput.click();
+        }
+    });
+    
+    console.log('✅ Sistema de imágenes inicializado correctamente');
+};
     
     /**
      * Configurar eventos
