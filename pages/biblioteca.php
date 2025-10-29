@@ -1907,6 +1907,213 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
 .btn-add-ubicacion:active {
     transform: scale(0.98);
 }
+
+
+/* ========================================
+   SISTEMA DE CARGA MÚLTIPLE DE IMÁGENES
+   ======================================== */
+
+.image-drop-zone {
+    border: 3px dashed #cbd5e0;
+    border-radius: 16px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-drop-zone:hover {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #e6f3ff 0%, #f0f4ff 100%);
+    transform: translateY(-2px);
+}
+
+.image-drop-zone.drag-over {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #dae7ff 0%, #e6f2ff 100%);
+    transform: scale(1.02);
+}
+
+.drop-zone-content {
+    pointer-events: none;
+}
+
+/* Grid de previews */
+#imagePreviewsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+}
+
+/* Card de preview individual */
+.image-preview-card {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.image-preview-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.image-preview-card img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    display: block;
+}
+
+.image-preview-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.image-preview-badge.secondary {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+}
+
+.image-preview-remove {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(239, 68, 68, 0.95);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.image-preview-remove:hover {
+    background: rgba(220, 38, 38, 0.95);
+    transform: scale(1.1);
+}
+
+.image-preview-info {
+    padding: 10px;
+    background: #f7fafc;
+}
+
+.image-preview-name {
+    font-size: 12px;
+    color: #2d3748;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 3px;
+}
+
+.image-preview-size {
+    font-size: 10px;
+    color: #718096;
+}
+
+/* Indicador de imagen existente */
+.existing-image-badge {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+/* Carrusel en tarjetas del listado */
+.card-image-container {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+}
+
+.card-image-carousel {
+    display: flex;
+    transition: transform 0.3s ease;
+    height: 100%;
+}
+
+.card-image-carousel img {
+    min-width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.carousel-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    z-index: 2;
+}
+
+.carousel-button:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-button.prev {
+    left: 8px;
+}
+
+.carousel-button.next {
+    right: 8px;
+}
+
+.carousel-indicators {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    z-index: 2;
+}
+
+.carousel-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.carousel-indicator.active {
+    background: white;
+    width: 24px;
+    border-radius: 4px;
+}
     </style>
     <script src="<?= APP_URL ?>/assets/js/ubicacion-search-widget.js"></script>
 </head>
@@ -3158,6 +3365,90 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+/**
+ * Crear carrusel de imágenes para tarjeta
+ */
+function createImageCarousel(item, type) {
+    const images = getItemImages(item, type);
+    
+    if (images.length === 0) {
+        return '<div style="height: 180px; background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e0 100%); display: flex; align-items: center; justify-content: center; color: #718096; font-size: 48px;">📷</div>';
+    }
+    
+    if (images.length === 1) {
+        return `<img src="${images[0]}" alt="${item.titulo || item.nombre}" style="width: 100%; height: 180px; object-fit: cover;">`;
+    }
+    
+    // Múltiples imágenes - crear carrusel
+    const carouselId = `carousel-${item.id}`;
+    
+    return `
+        <div class="card-image-carousel" id="${carouselId}">
+            ${images.map(img => `<img src="${img}" alt="${item.titulo || item.nombre}">`).join('')}
+        </div>
+        <button class="carousel-button prev" onclick="event.stopPropagation(); moveCarousel('${carouselId}', -1)">‹</button>
+        <button class="carousel-button next" onclick="event.stopPropagation(); moveCarousel('${carouselId}', 1)">›</button>
+        <div class="carousel-indicators">
+            ${images.map((_, i) => `<div class="carousel-indicator ${i === 0 ? 'active' : ''}" onclick="event.stopPropagation(); goToSlide('${carouselId}', ${i})"></div>`).join('')}
+        </div>
+    `;
+}
+
+/**
+ * Obtener todas las imágenes de un item
+ */
+function getItemImages(item, type) {
+    const images = [];
+    
+    if (type === 'dias' || type === 'actividades') {
+        if (item.imagen1) images.push(item.imagen1);
+        if (item.imagen2) images.push(item.imagen2);
+        if (item.imagen3) images.push(item.imagen3);
+    } else if (type === 'alojamientos') {
+        if (item.imagen) images.push(item.imagen);
+    }
+    
+    return images;
+}
+
+/**
+ * Mover carrusel
+ */
+window.moveCarousel = function(carouselId, direction) {
+    const carousel = document.getElementById(carouselId);
+    if (!carousel) return;
+    
+    const images = carousel.querySelectorAll('img');
+    const indicators = carousel.parentElement.querySelectorAll('.carousel-indicator');
+    
+    let currentIndex = 0;
+    indicators.forEach((ind, i) => {
+        if (ind.classList.contains('active')) currentIndex = i;
+    });
+    
+    let newIndex = currentIndex + direction;
+    if (newIndex < 0) newIndex = images.length - 1;
+    if (newIndex >= images.length) newIndex = 0;
+    
+    goToSlide(carouselId, newIndex);
+};
+
+/**
+ * Ir a slide específico
+ */
+window.goToSlide = function(carouselId, index) {
+    const carousel = document.getElementById(carouselId);
+    if (!carousel) return;
+    
+    const indicators = carousel.parentElement.querySelectorAll('.carousel-indicator');
+    
+    carousel.style.transform = `translateX(-${index * 100}%)`;
+    
+    indicators.forEach((ind, i) => {
+        ind.classList.toggle('active', i === index);
+    });
+};
+
         // Crear card de recurso
         function createResourceCard(item) {
             const icons = {
@@ -3175,12 +3466,8 @@ function escapeHtml(text) {
             
             return `
                 <div class="item-card" onclick="editResource(${item.id})">
-                    <div class="card-image">
-                        ${primaryImage ? 
-                            `<img src="${primaryImage}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover;">` : 
-                            icons[currentTab]
-                        }
-                        ${getImageCount(item, currentTab) > 0 ? `<div class="image-count">📷 ${getImageCount(item, currentTab)}</div>` : ''}
+                    <div class="card-image-container">
+                        ${createImageCarousel(item, currentTab)}
                     </div>
                     <div class="card-content">
                         <h3 class="card-title">${escapeHtml(title)}</h3>
@@ -3211,6 +3498,8 @@ function escapeHtml(text) {
 
         // Funciones del modal
         function openModal(mode, id = null) {
+            console.log('🎭 Abriendo modal:', mode, id);
+            
             const modal = document.getElementById('resourceModal');
             const title = document.getElementById('modalTitle');
             
@@ -3236,41 +3525,73 @@ function escapeHtml(text) {
             setTimeout(() => {
                 initializeMap();
             }, 200);
-
-           
+            
+            // ✅ NUEVO: Inicializar sistema de imágenes para días y actividades
+            setTimeout(() => {
+                if (currentTab === 'dias' || currentTab === 'actividades') {
+                    console.log('🖼️ Inicializando sistema de imágenes...');
+                    if (window.initImageSystem) {
+                        window.initImageSystem();
+                    }
+                }
+            }, 300);
             
             // Si es edición, cargar datos
             if (mode === 'edit' && id) {
                 loadResourceData(id);
             }
+            
+            console.log('✅ Modal abierto correctamente');
         }
 
-        function closeModal() {
-            const modal = document.getElementById('resourceModal');
-            modal.classList.remove('show');
-            
-            // Limpiar formulario
-            document.getElementById('resourceForm').reset();
-            
-            // AGREGAR ESTA LÍNEA:
-            limpiarUbicacionesSecundarias();
-            
-            // Destruir mapa
-            if (map) {
-                map.remove();
-                map = null;
-                currentMarker = null;
-            }
-            // AGREGAR ESTA LÍNEA:
-            limpiarSistemaCargaMultiple();
-            
-            // Destruir mapa
-            if (map) {
-                map.remove();
-                map = null;
-                currentMarker = null;
-            }
-        }
+function closeModal() {
+    console.log('🚪 Cerrando modal...');
+    
+    const modal = document.getElementById('resourceModal');
+    modal.classList.remove('show');
+    
+    // Limpiar formulario
+    document.getElementById('resourceForm').reset();
+    
+    // ✅ NUEVO: Limpiar sistema de imágenes
+    if (window.imageManager) {
+        window.imageManager.files = [];
+        window.imageManager.existing = [];
+    }
+    
+    const previewGrid = document.getElementById('imagePreviewsGrid');
+    if (previewGrid) {
+        previewGrid.innerHTML = '';
+    }
+    
+    // Limpiar inputs ocultos de imágenes
+    const input1 = document.getElementById('multiImageInput');
+    const input2 = document.getElementById('imagen2');
+    const input3 = document.getElementById('imagen3');
+    
+    [input1, input2, input3].forEach(inp => {
+        if (inp) inp.value = '';
+    });
+    
+    // Limpiar ubicaciones secundarias
+    limpiarUbicacionesSecundarias();
+    
+    // Destruir mapa
+    if (map) {
+        map.remove();
+        map = null;
+        currentMarker = null;
+    }
+    
+    // Limpiar cualquier indicador de imagen existente (para alojamientos)
+    document.querySelectorAll('.existing-image-indicator').forEach(el => el.remove());
+    
+    // Limpiar inputs ocultos de eliminación
+    document.querySelectorAll('input[name^="delete_"]').forEach(el => el.remove());
+    
+    console.log('✅ Modal cerrado y limpiado');
+}
+
         // NUEVA FUNCIÓN: Limpiar sistema de carga múltiple
 function limpiarSistemaCargaMultiple() {
     console.log('🧹 Limpiando sistema de carga múltiple...');
@@ -3495,32 +3816,40 @@ function loadSpecificFields() {
                 </div>
             </div>
 
-            <!-- IMÁGENES -->
+            <!-- IMÁGENES - SISTEMA MEJORADO -->
             <div class="form-group" style="grid-column: 1 / -1;">
-                <label>
+                <label style="display: block; margin-bottom: 12px; font-weight: 600; color: #2d3748; font-size: 15px;">
                     📷 Imágenes del Día
-                    <small style="display: block; color: #666; font-weight: normal; margin-top: 4px;">
-                        Selecciona hasta 3 imágenes a la vez (Ctrl/Cmd + clic para múltiple selección)
+                    <small style="display: block; color: #718096; font-weight: normal; margin-top: 6px; font-size: 13px;">
+                        Selecciona hasta 3 imágenes (Ctrl/Cmd + clic para selección múltiple o arrastra aquí)
                     </small>
                 </label>
                 
-                <div class="image-upload-area" 
-                    onclick="document.getElementById('imagenes').click()"
-                    ondrop="handleDrop(event)" 
-                    ondragover="handleDragOver(event)"
-                    ondragleave="handleDragLeave(event)"
-                    style="border: 3px dashed #cbd5e0; border-radius: 16px; padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.3s ease; background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%); min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                    <div style="font-size: 48px; margin-bottom: 10px;">📸</div>
-                    <div style="font-weight: 600; color: #2d3748; margin-bottom: 5px;">
-                        Haz clic o arrastra las imágenes aquí
-                    </div>
-                    <div style="font-size: 13px; color: #718096;">
-                        Máximo 3 imágenes • PNG, JPG, WEBP • Máx. 5MB cada una
+                <!-- Zona de Drop -->
+                <div class="image-drop-zone" id="imageDropZone">
+                    <div class="drop-zone-content">
+                        <div style="font-size: 48px; margin-bottom: 12px;">📸</div>
+                        <div style="font-weight: 600; color: #2d3748; font-size: 16px; margin-bottom: 6px;">
+                            Haz clic o arrastra hasta 3 imágenes aquí
+                        </div>
+                        <div style="font-size: 13px; color: #718096;">
+                            PNG, JPG, WEBP • Máx. 5MB cada una
+                        </div>
                     </div>
                 </div>
                 
-                <input type="file" id="imagenes" name="imagen1" accept="image/*" multiple style="display: none;" onchange="handleMultipleImageSelect(this)">
-                <div id="imagesPreviewContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;"></div>
+                <!-- Input de archivo (oculto) -->
+                <input type="file" 
+                    id="multiImageInput" 
+                    name="imagen1" 
+                    accept="image/png,image/jpeg,image/jpg,image/webp" 
+                    multiple 
+                    style="display: none;">
+                
+                <!-- Contenedor de previews -->
+                <div id="imagePreviewsGrid"></div>
+                
+                <!-- Inputs ocultos adicionales -->
                 <input type="file" id="imagen2" name="imagen2" accept="image/*" style="display: none;">
                 <input type="file" id="imagen3" name="imagen3" accept="image/*" style="display: none;">
             </div>
@@ -4504,233 +4833,442 @@ function showSearchError(message) {
         }
 
         // Cargar datos de recurso para editar - MEJORADO
+
+// ========================================
+// FUNCIÓN loadResourceData() COMPLETA Y CORREGIDA
+// ========================================
+
 async function loadResourceData(id) {
+    console.log('📥 Cargando datos del recurso:', id);
+    
     try {
-        console.log('🔄 Cargando datos del recurso:', id);
-        
-        const response = await fetch(`${APP_URL}/biblioteca/api?action=get&type=${currentTab}&id=${id}`);
+        const response = await fetch(`<?= APP_URL ?>/modules/biblioteca/api.php?action=get&type=${currentTab}&id=${id}`);
         
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(`Error HTTP: ${response.status}`);
         }
         
         const result = await response.json();
         
         if (!result.success) {
-            throw new Error(result.error || 'Error al cargar recurso');
+            throw new Error(result.error || 'Error al cargar datos');
         }
         
         const resource = result.data;
-        console.log('Cargando recurso desde API:', resource);
+        console.log('📋 Datos recibidos:', resource);
         
-        document.getElementById('resourceId').value = resource.id;
+        // ========================================
+        // LLENAR CAMPOS COMUNES
+        // ========================================
+        if (resource.idioma) {
+            const idiomaSelect = document.getElementById('idioma');
+            if (idiomaSelect) idiomaSelect.value = resource.idioma;
+        }
         
-        // Cargar campos comunes
-        const commonFields = ['idioma', 'descripcion'];
-        commonFields.forEach(field => {
-            const element = document.getElementById(field);
-            if (element && resource[field]) {
-                element.value = resource[field];
-            }
-        });
-        
-        // Cargar campos específicos por tipo
+        // ========================================
+        // LLENAR CAMPOS SEGÚN TIPO
+        // ========================================
         switch(currentTab) {
-case 'dias':
-    console.log('📥 Cargando datos de día:', resource);
-    
-    // Cargar título y descripción
-    setFieldValue('titulo', resource.titulo);
-    setFieldValue('descripcion', resource.descripcion);
-    
-    // Esperar a que los campos del widget estén en el DOM
-    setTimeout(() => {
-        // Cargar ubicación principal en el WIDGET
-        const ubicacionPrincipal = document.getElementById('ubicacion-principal');
-        if (ubicacionPrincipal && resource.ubicacion) {
-            ubicacionPrincipal.value = resource.ubicacion;
-            console.log('✅ Ubicación principal cargada:', resource.ubicacion);
-            
-            // Mostrar preview
-            const preview = document.getElementById('preview-ubicacion-principal');
-            if (preview) {
-                preview.innerHTML = `
-                    <div style="margin-top: 8px; padding: 10px; background: #f0fdf4; border-radius: 8px; border-left: 3px solid #10b981; font-size: 12px;">
-                        <div style="font-weight: 600; color: #065f46;">${resource.ubicacion}</div>
-                        ${resource.latitud && resource.longitud ? 
-                            `<div style="color: #059669; font-size: 11px; margin-top: 2px;">
-                                ${parseFloat(resource.latitud).toFixed(6)}, ${parseFloat(resource.longitud).toFixed(6)}
-                            </div>` : ''
-                        }
-                    </div>
-                `;
-            }
-        }
-        
-        // Cargar coordenadas en campos ocultos
-        const latPrincipal = document.getElementById('latitud-principal');
-        const lngPrincipal = document.getElementById('longitud-principal');
-        if (latPrincipal && resource.latitud) latPrincipal.value = resource.latitud;
-        if (lngPrincipal && resource.longitud) lngPrincipal.value = resource.longitud;
-        
-        setFieldValue('latitud', resource.latitud);
-        setFieldValue('longitud', resource.longitud);
-        setFieldValue('ubicacion', resource.ubicacion);
-        
-        // Reinicializar widget principal
-        if (typeof initUbicacionWidgetDias === 'function') {
-            initUbicacionWidgetDias();
-        }
-    }, 600);
-    
-    // Cargar ubicaciones secundarias
-    if (resource.ubicaciones_secundarias && resource.ubicaciones_secundarias.length > 0) {
-        console.log('📍 Cargando ' + resource.ubicaciones_secundarias.length + ' ubicaciones secundarias');
-        
-        setTimeout(() => {
-            const container = document.getElementById('ubicaciones-secundarias-container');
-            if (!container) {
-                console.error('❌ Container de ubicaciones secundarias NO encontrado');
-                return;
-            }
-            
-            console.log('✅ Container encontrado, limpiando...');
-            container.innerHTML = '';
-            
-            // Destruir widgets antiguos
-            if (window.widgetsUbicacionesSecundarias) {
-                widgetsUbicacionesSecundarias.forEach(w => {
-                    if (w.widget && w.widget.destroy) w.widget.destroy();
-                });
-            }
-            window.widgetsUbicacionesSecundarias = [];
-            
-            // Agregar cada ubicación
-            resource.ubicaciones_secundarias.forEach((ubic, idx) => {
-                console.log(`➕ Agregando ubicación ${idx + 1}:`, ubic.ubicacion);
+            // ========================================
+            // CASO: DÍAS
+            // ========================================
+            case 'dias':
+                console.log('🗓️ Cargando datos de DÍA');
                 
-                const index = Date.now() + idx;
-                const div = document.createElement('div');
-                div.className = 'ubicacion-item';
-                div.dataset.index = index;
-                div.style.cssText = 'display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start; width: 100%;';
+                // Título
+                if (resource.titulo) {
+                    const tituloInput = document.getElementById('titulo');
+                    if (tituloInput) {
+                        tituloInput.value = resource.titulo;
+                        console.log('✅ Título cargado:', resource.titulo);
+                    }
+                }
                 
-                div.innerHTML = `
-                    <div class="ubicacion-input-wrapper" style="width: 100%;">
-                        <input type="text" 
-                               name="ubicaciones_secundarias[]" 
-                               id="ubicacion-${index}"
-                               class="form-control"
-                               value="${ubic.ubicacion || ''}"
-                               placeholder="🔍 Buscar otra ubicación..."
-                               style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px;">
-                        <input type="hidden" name="ubicaciones_secundarias_lat[]" id="latitud-${index}" value="${ubic.latitud || ''}">
-                        <input type="hidden" name="ubicaciones_secundarias_lng[]" id="longitud-${index}" value="${ubic.longitud || ''}">
-                        <div id="preview-ubicacion-${index}">
-                            ${ubic.ubicacion ? `
-                                <div style="margin-top: 8px; padding: 8px; background: #f0fdf4; border-radius: 6px; border-left: 3px solid #10b981; font-size: 11px;">
-                                    <div style="font-weight: 600; color: #065f46;">${ubic.ubicacion}</div>
-                                    ${ubic.latitud && ubic.longitud ? 
-                                        `<div style="color: #059669; font-size: 10px; margin-top: 2px;">
-                                            ${parseFloat(ubic.latitud).toFixed(6)}, ${parseFloat(ubic.longitud).toFixed(6)}
-                                        </div>` : ''
-                                    }
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                    <button type="button" 
-                            onclick="removerUbicacionSecundaria(${index})"
-                            style="background: #e53e3e; color: white; border: none; border-radius: 8px; width: 40px; height: 40px; cursor: pointer; font-size: 18px;">
-                        ✕
-                    </button>
-                `;
+                // Descripción
+                if (resource.descripcion) {
+                    const descripcionInput = document.getElementById('descripcion');
+                    if (descripcionInput) {
+                        descripcionInput.value = resource.descripcion;
+                        console.log('✅ Descripción cargada');
+                    }
+                }
                 
-                container.appendChild(div);
+                // Ubicación principal
+                if (resource.ubicacion) {
+                    const ubicacionInput = document.getElementById('ubicacion');
+                    if (ubicacionInput) {
+                        ubicacionInput.value = resource.ubicacion;
+                        console.log('✅ Ubicación principal cargada:', resource.ubicacion);
+                    }
+                }
                 
-                // Inicializar widget después de agregar al DOM
+                // Coordenadas
+                if (resource.latitud) {
+                    const latInput = document.getElementById('latitud');
+                    if (latInput) latInput.value = resource.latitud;
+                }
+                
+                if (resource.longitud) {
+                    const lngInput = document.getElementById('longitud');
+                    if (lngInput) lngInput.value = resource.longitud;
+                }
+                
+                // ========================================
+                // CARGAR IMÁGENES EXISTENTES
+                // ========================================
                 setTimeout(() => {
-                    const input = document.getElementById(`ubicacion-${index}`);
-                    if (input && typeof UbicacionSearchWidget !== 'undefined') {
-                        const widget = new UbicacionSearchWidget(input, {
-                            apiUrl: '<?= APP_URL ?>/modules/ubicaciones/ubicaciones_api.php',
-                            latInputId: `latitud-${index}`,
-                            lngInputId: `longitud-${index}`,
-                            placeholder: '🔍 Buscar otra ubicación...',
-                            showPreview: true,
-                            previewContainerId: `preview-ubicacion-${index}`,
-                            autoSave: true
+                    console.log('🖼️ Iniciando carga de imágenes existentes...');
+                    if (window.loadExistingImages) {
+                        window.loadExistingImages(resource);
+                    } else {
+                        console.warn('⚠️ Función loadExistingImages no disponible');
+                    }
+                }, 400);
+                
+                // ========================================
+                // CARGAR UBICACIONES SECUNDARIAS
+                // ========================================
+                if (resource.ubicaciones_secundarias && resource.ubicaciones_secundarias.length > 0) {
+                    console.log('📍 Cargando ubicaciones secundarias:', resource.ubicaciones_secundarias.length, 'ubicaciones');
+                    
+                    setTimeout(() => {
+                        const container = document.getElementById('ubicaciones-secundarias-container');
+                        
+                        if (!container) {
+                            console.error('❌ Container de ubicaciones secundarias NO encontrado');
+                            return;
+                        }
+                        
+                        console.log('✅ Container encontrado, procesando ubicaciones...');
+                        
+                        // Procesar cada ubicación
+                        resource.ubicaciones_secundarias.forEach((ubic, idx) => {
+                            console.log(`➕ Procesando ubicación ${idx + 1}/${resource.ubicaciones_secundarias.length}:`, ubic.ubicacion);
+                            
+                            // Llamar función para agregar ubicación
+                            if (typeof agregarUbicacionSecundaria === 'function') {
+                                agregarUbicacionSecundaria();
+                                
+                                // Esperar a que se agregue al DOM
+                                setTimeout(() => {
+                                    // Obtener todos los items
+                                    const items = container.querySelectorAll('.ubicacion-item');
+                                    const lastItem = items[items.length - 1];
+                                    
+                                    if (lastItem) {
+                                        // Encontrar inputs dentro del item
+                                        const input = lastItem.querySelector('input[name="ubicaciones_secundarias[]"]');
+                                        const latInput = lastItem.querySelector('input[name="ubicaciones_secundarias_lat[]"]');
+                                        const lngInput = lastItem.querySelector('input[name="ubicaciones_secundarias_lng[]"]');
+                                        const preview = lastItem.querySelector('[id^="preview-ubicacion-"]');
+                                        
+                                        // Asignar valores
+                                        if (input) {
+                                            input.value = ubic.ubicacion;
+                                            console.log(`✅ Input ${idx + 1} rellenado:`, ubic.ubicacion);
+                                        }
+                                        
+                                        if (latInput && ubic.latitud) {
+                                            latInput.value = ubic.latitud;
+                                        }
+                                        
+                                        if (lngInput && ubic.longitud) {
+                                            lngInput.value = ubic.longitud;
+                                        }
+                                        
+                                        // Mostrar preview
+                                        if (preview && ubic.ubicacion) {
+                                            preview.innerHTML = `
+                                                <div style="
+                                                    margin-top: 8px;
+                                                    padding: 10px;
+                                                    background: #f0fdf4;
+                                                    border-radius: 8px;
+                                                    border-left: 3px solid #10b981;
+                                                    font-size: 12px;
+                                                ">
+                                                    <div style="font-weight: 600; color: #065f46;">
+                                                        📍 ${ubic.ubicacion}
+                                                    </div>
+                                                    ${ubic.latitud && ubic.longitud ? `
+                                                        <div style="color: #059669; font-size: 11px; margin-top: 2px;">
+                                                            ${parseFloat(ubic.latitud).toFixed(6)}, ${parseFloat(ubic.longitud).toFixed(6)}
+                                                        </div>
+                                                    ` : ''}
+                                                </div>
+                                            `;
+                                            preview.style.display = 'block';
+                                            console.log(`✅ Preview ${idx + 1} mostrado`);
+                                        }
+                                    } else {
+                                        console.warn(`⚠️ No se encontró el item ${idx + 1}`);
+                                    }
+                                }, 150 * (idx + 1)); // Delay progresivo para cada ubicación
+                                
+                            } else {
+                                console.error('❌ Función agregarUbicacionSecundaria no existe');
+                            }
                         });
                         
-                        if (!window.widgetsUbicacionesSecundarias) {
-                            window.widgetsUbicacionesSecundarias = [];
-                        }
-                        widgetsUbicacionesSecundarias.push({ index, widget });
-                        console.log(`✅ Widget ${idx + 1} inicializado`);
+                        console.log(`✅ ${resource.ubicaciones_secundarias.length} ubicaciones secundarias procesadas`);
+                        
+                    }, 1000); // Timeout de 1 segundo para asegurar que el DOM esté listo
+                } else {
+                    console.log('ℹ️ No hay ubicaciones secundarias para este día');
+                }
+                
+                // ========================================
+                // ACTUALIZAR CONTADORES DE CARACTERES
+                // ========================================
+                setTimeout(() => {
+                    // Contador de título
+                    const tituloInput = document.getElementById('titulo');
+                    const tituloCounter = document.getElementById('titulo-counter');
+                    if (tituloInput && tituloCounter) {
+                        const length = tituloInput.value.length;
+                        tituloCounter.textContent = `${length}/250`;
+                        console.log(`✅ Contador título actualizado: ${length}/250`);
                     }
-                }, 150 * (idx + 1));
-            });
-            
-            console.log(`✅ ${resource.ubicaciones_secundarias.length} ubicaciones secundarias agregadas al DOM`);
-        }, 1000);
-    } else {
-        console.log('ℹ️ No hay ubicaciones secundarias para este día');
-    }
-    
-    // Cargar imágenes
-    loadImagePreviews(['imagen1', 'imagen2', 'imagen3'], resource);
-    setTimeout(() => {
-        if (document.getElementById('dropZoneMultiple')) {
-            loadExistingImagesInMultipleSystem(resource);
-        }
-    }, 300);
-    
-    break;
+                    
+                    // Contador de descripción
+                    const descripcionInput = document.getElementById('descripcion');
+                    const descripcionCounter = document.getElementById('descripcion-counter');
+                    if (descripcionInput && descripcionCounter) {
+                        const length = descripcionInput.value.length;
+                        descripcionCounter.textContent = `${length}/1500`;
+                        console.log(`✅ Contador descripción actualizado: ${length}/1500`);
+                    }
+                }, 300);
                 
+                break;
+                
+            // ========================================
+            // CASO: ALOJAMIENTOS
+            // ========================================
             case 'alojamientos':
-                setFieldValue('nombre', resource.nombre);
-                setFieldValue('ubicacion', resource.ubicacion);
-                setFieldValue('tipo', resource.tipo);
-                setFieldValue('categoria', resource.categoria);
-                setFieldValue('sitio_web', resource.sitio_web);
-                setFieldValue('latitud', resource.latitud);
-                setFieldValue('longitud', resource.longitud);
-                loadImagePreviews(['imagen'], resource);
+                console.log('🏨 Cargando datos de ALOJAMIENTO');
+                
+                // Campos específicos
+                if (resource.nombre) {
+                    const nombreInput = document.getElementById('nombre');
+                    if (nombreInput) nombreInput.value = resource.nombre;
+                }
+                
+                if (resource.descripcion) {
+                    const descripcionInput = document.getElementById('descripcion');
+                    if (descripcionInput) descripcionInput.value = resource.descripcion;
+                }
+                
+                if (resource.ubicacion) {
+                    const ubicacionInput = document.getElementById('ubicacion');
+                    if (ubicacionInput) ubicacionInput.value = resource.ubicacion;
+                }
+                
+                if (resource.latitud) {
+                    const latInput = document.getElementById('latitud');
+                    if (latInput) latInput.value = resource.latitud;
+                }
+                
+                if (resource.longitud) {
+                    const lngInput = document.getElementById('longitud');
+                    if (lngInput) lngInput.value = resource.longitud;
+                }
+                
+                if (resource.tipo) {
+                    const tipoSelect = document.getElementById('tipo');
+                    if (tipoSelect) {
+                        tipoSelect.value = resource.tipo;
+                        // Llamar función para actualizar categoría
+                        if (typeof updateCategoryField === 'function') {
+                            updateCategoryField();
+                        }
+                    }
+                }
+                
+                if (resource.categoria) {
+                    const categoriaSelect = document.getElementById('categoria');
+                    if (categoriaSelect) categoriaSelect.value = resource.categoria;
+                }
+                
+                if (resource.sitio_web) {
+                    const sitioWebInput = document.getElementById('sitio_web');
+                    if (sitioWebInput) sitioWebInput.value = resource.sitio_web;
+                }
+                
+                // Actualizar contadores
+                setTimeout(() => {
+                    const nombreInput = document.getElementById('nombre');
+                    const nombreCounter = document.getElementById('nombre-counter');
+                    if (nombreInput && nombreCounter) {
+                        nombreCounter.textContent = `${nombreInput.value.length}/250`;
+                    }
+                    
+                    const descripcionInput = document.getElementById('descripcion');
+                    const descripcionCounter = document.getElementById('descripcion-counter');
+                    if (descripcionInput && descripcionCounter) {
+                        descripcionCounter.textContent = `${descripcionInput.value.length}/1500`;
+                    }
+                }, 300);
+                
                 break;
                 
+            // ========================================
+            // CASO: ACTIVIDADES
+            // ========================================
             case 'actividades':
-                setFieldValue('nombre', resource.nombre);
-                setFieldValue('ubicacion', resource.ubicacion);
-                setFieldValue('duracion', resource.duracion);
-                setFieldValue('precio', resource.precio);
-                setFieldValue('latitud', resource.latitud);
-                setFieldValue('longitud', resource.longitud);
-                loadImagePreviews(['imagen1', 'imagen2', 'imagen3'], resource);
+                console.log('🎯 Cargando datos de ACTIVIDAD');
+                
+                // Campos específicos
+                if (resource.nombre) {
+                    const nombreInput = document.getElementById('nombre');
+                    if (nombreInput) nombreInput.value = resource.nombre;
+                }
+                
+                if (resource.descripcion) {
+                    const descripcionInput = document.getElementById('descripcion');
+                    if (descripcionInput) descripcionInput.value = resource.descripcion;
+                }
+                
+                if (resource.ubicacion) {
+                    const ubicacionInput = document.getElementById('ubicacion');
+                    if (ubicacionInput) ubicacionInput.value = resource.ubicacion;
+                }
+                
+                if (resource.latitud) {
+                    const latInput = document.getElementById('latitud');
+                    if (latInput) latInput.value = resource.latitud;
+                }
+                
+                if (resource.longitud) {
+                    const lngInput = document.getElementById('longitud');
+                    if (lngInput) lngInput.value = resource.longitud;
+                }
+                
+                // ========================================
+                // CARGAR IMÁGENES EXISTENTES
+                // ========================================
+                setTimeout(() => {
+                    console.log('🖼️ Iniciando carga de imágenes existentes (actividad)...');
+                    if (window.loadExistingImages) {
+                        window.loadExistingImages(resource);
+                    } else {
+                        console.warn('⚠️ Función loadExistingImages no disponible');
+                    }
+                }, 400);
+                
+                // Actualizar contadores
+                setTimeout(() => {
+                    const nombreInput = document.getElementById('nombre');
+                    const nombreCounter = document.getElementById('nombre-counter');
+                    if (nombreInput && nombreCounter) {
+                        nombreCounter.textContent = `${nombreInput.value.length}/250`;
+                    }
+                    
+                    const descripcionInput = document.getElementById('descripcion');
+                    const descripcionCounter = document.getElementById('descripcion-counter');
+                    if (descripcionInput && descripcionCounter) {
+                        descripcionCounter.textContent = `${descripcionInput.value.length}/1500`;
+                    }
+                }, 300);
+                
                 break;
                 
+            // ========================================
+            // CASO: TRANSPORTES
+            // ========================================
             case 'transportes':
-                setFieldValue('titulo', resource.titulo);
-                setFieldValue('medio', resource.medio);
-                setFieldValue('lugar_salida', resource.lugar_salida);
-                setFieldValue('lugar_llegada', resource.lugar_llegada);
-                setFieldValue('duracion', resource.duracion);
-                setFieldValue('distancia_km', resource.distancia_km);
-                setFieldValue('lat_salida', resource.lat_salida);
-                setFieldValue('lng_salida', resource.lng_salida);
-                setFieldValue('lat_llegada', resource.lat_llegada);
-                setFieldValue('lng_llegada', resource.lng_llegada);
+                console.log('🚗 Cargando datos de TRANSPORTE');
+                
+                // Campos específicos
+                if (resource.medio) {
+                    const medioSelect = document.getElementById('medio');
+                    if (medioSelect) medioSelect.value = resource.medio;
+                }
+                
+                if (resource.titulo) {
+                    const tituloInput = document.getElementById('titulo');
+                    if (tituloInput) tituloInput.value = resource.titulo;
+                }
+                
+                if (resource.descripcion) {
+                    const descripcionInput = document.getElementById('descripcion');
+                    if (descripcionInput) descripcionInput.value = resource.descripcion;
+                }
+                
+                if (resource.lugar_salida) {
+                    const salidaInput = document.getElementById('lugar_salida');
+                    if (salidaInput) salidaInput.value = resource.lugar_salida;
+                }
+                
+                if (resource.lugar_llegada) {
+                    const llegadaInput = document.getElementById('lugar_llegada');
+                    if (llegadaInput) llegadaInput.value = resource.lugar_llegada;
+                }
+                
+                if (resource.lat_salida) {
+                    const latSalidaInput = document.getElementById('lat_salida');
+                    if (latSalidaInput) latSalidaInput.value = resource.lat_salida;
+                }
+                
+                if (resource.lng_salida) {
+                    const lngSalidaInput = document.getElementById('lng_salida');
+                    if (lngSalidaInput) lngSalidaInput.value = resource.lng_salida;
+                }
+                
+                if (resource.lat_llegada) {
+                    const latLlegadaInput = document.getElementById('lat_llegada');
+                    if (latLlegadaInput) latLlegadaInput.value = resource.lat_llegada;
+                }
+                
+                if (resource.lng_llegada) {
+                    const lngLlegadaInput = document.getElementById('lng_llegada');
+                    if (lngLlegadaInput) lngLlegadaInput.value = resource.lng_llegada;
+                }
+                
+                if (resource.duracion) {
+                    const duracionInput = document.getElementById('duracion');
+                    if (duracionInput) duracionInput.value = resource.duracion;
+                }
+                
+                if (resource.distancia_km) {
+                    const distanciaInput = document.getElementById('distancia_km');
+                    if (distanciaInput) distanciaInput.value = resource.distancia_km;
+                }
+                
+                // Actualizar contadores
+                setTimeout(() => {
+                    const tituloInput = document.getElementById('titulo');
+                    const tituloCounter = document.getElementById('titulo-counter');
+                    if (tituloInput && tituloCounter) {
+                        tituloCounter.textContent = `${tituloInput.value.length}/250`;
+                    }
+                    
+                    const descripcionInput = document.getElementById('descripcion');
+                    const descripcionCounter = document.getElementById('descripcion-counter');
+                    if (descripcionInput && descripcionCounter) {
+                        descripcionCounter.textContent = `${descripcionInput.value.length}/1500`;
+                    }
+                }, 300);
+                
                 break;
+                
+            // ========================================
+            // CASO POR DEFECTO
+            // ========================================
+            default:
+                console.warn(`⚠️ Tipo de recurso desconocido: ${currentTab}`);
         }
         
-        console.log('✅ Datos cargados correctamente');
+        console.log('✅ Todos los datos cargados correctamente');
         
-    } catch(error) {
-        console.error('❌ Error cargando datos:', error);
-        showToast('Error al cargar los datos del recurso', 'error');
+    } catch (error) {
+        console.error('❌ Error al cargar datos del recurso:', error);
+        console.error('Stack trace:', error.stack);
+        alert('Error al cargar los datos del recurso: ' + error.message);
+        closeModal();
     }
 }
 
-// Función para configurar contadores de caracteres en biblioteca
 // Función para configurar contadores de caracteres en biblioteca
 function setupBibliotecaCharacterCounters() {
     console.log('Configurando contadores de caracteres...');
@@ -5465,152 +6003,7 @@ function clearImagePreview(button) {
 // MANEJO DE MÚLTIPLES IMÁGENES PARA DÍAS
 // ====================================================================
 
-let selectedImages = []; // Array para almacenar las imágenes seleccionadas
 
-function handleMultipleImageSelect(input) {
-    const files = Array.from(input.files);
-    const maxImages = 3;
-    
-    console.log(`📸 ${files.length} imagen(es) seleccionada(s)`);
-    
-    // Limpiar array de imágenes anteriores
-    selectedImages = [];
-    
-    // Validar cantidad
-    if (files.length > maxImages) {
-        showAlert(`Solo puedes subir máximo ${maxImages} imágenes`, 'warning');
-        files.splice(maxImages); // Mantener solo las primeras 3
-    }
-    
-    // Validar cada archivo
-    files.forEach((file, index) => {
-        if (file.size > 5 * 1024 * 1024) {
-            showAlert(`La imagen "${file.name}" supera los 5MB`, 'error');
-            return;
-        }
-        
-        if (!file.type.startsWith('image/')) {
-            showAlert(`"${file.name}" no es una imagen válida`, 'error');
-            return;
-        }
-        
-        selectedImages.push({
-            file: file,
-            index: index,
-            preview: URL.createObjectURL(file)
-        });
-    });
-    
-    console.log(`✅ ${selectedImages.length} imágenes válidas agregadas`);
-    
-    // Mostrar previsualizaciones
-    displayImagePreviews();
-    
-    // Asignar archivos a los inputs ocultos para el backend
-    assignFilesToInputs();
-}
-
-function displayImagePreviews() {
-    const container = document.getElementById('imagesPreviewContainer');
-    if (!container) return;
-    
-    container.innerHTML = '';
-    
-    if (selectedImages.length === 0) {
-        return;
-    }
-    
-    selectedImages.forEach((imgData, index) => {
-        const previewCard = document.createElement('div');
-        previewCard.className = 'image-preview-card';
-        previewCard.style.cssText = `
-            position: relative;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            background: white;
-        `;
-        
-        previewCard.innerHTML = `
-            <div style="position: relative;">
-                <img src="${imgData.preview}" 
-                     alt="Preview ${index + 1}"
-                     style="
-                        width: 100%;
-                        height: 200px;
-                        object-fit: cover;
-                        display: block;
-                     ">
-                
-                <!-- Badge de posición -->
-                <div style="
-                    position: absolute;
-                    top: 10px;
-                    left: 10px;
-                    background: ${index === 0 ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#48bb78'};
-                    color: white;
-                    padding: 5px 12px;
-                    border-radius: 20px;
-                    font-size: 12px;
-                    font-weight: 600;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-                ">
-                    ${index === 0 ? '⭐ Principal' : `#${index + 1}`}
-                </div>
-                
-                <!-- Botón de eliminar -->
-                <button type="button"
-                        onclick="removeImage(${index})"
-                        style="
-                            position: absolute;
-                            top: 10px;
-                            right: 10px;
-                            background: rgba(239, 68, 68, 0.95);
-                            color: white;
-                            border: none;
-                            border-radius: 50%;
-                            width: 32px;
-                            height: 32px;
-                            cursor: pointer;
-                            font-size: 16px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            transition: all 0.2s;
-                            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-                        "
-                        onmouseover="this.style.background='rgba(220, 38, 38, 0.95)'; this.style.transform='scale(1.1)'"
-                        onmouseout="this.style.background='rgba(239, 68, 68, 0.95)'; this.style.transform='scale(1)'">
-                    ✕
-                </button>
-            </div>
-            
-            <!-- Información del archivo -->
-            <div style="padding: 12px;">
-                <div style="
-                    font-size: 13px;
-                    color: #2d3748;
-                    font-weight: 600;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    margin-bottom: 5px;
-                ">
-                    ${imgData.file.name}
-                </div>
-                <div style="
-                    font-size: 11px;
-                    color: #718096;
-                ">
-                    ${(imgData.file.size / 1024).toFixed(0)} KB
-                </div>
-            </div>
-        `;
-        
-        container.appendChild(previewCard);
-    });
-}
 
 function removeImage(index) {
     console.log(`🗑️ Eliminando imagen en posición ${index}`);
@@ -5637,33 +6030,7 @@ function removeImage(index) {
     console.log(`✅ Imagen eliminada. Quedan ${selectedImages.length} imágenes`);
 }
 
-function assignFilesToInputs() {
-    // Crear un DataTransfer para asignar archivos a los inputs
-    const dt1 = new DataTransfer();
-    const dt2 = new DataTransfer();
-    const dt3 = new DataTransfer();
-    
-    if (selectedImages[0]) {
-        dt1.items.add(selectedImages[0].file);
-        document.getElementById('imagenes').files = dt1.files;
-    }
-    
-    if (selectedImages[1]) {
-        dt2.items.add(selectedImages[1].file);
-        document.getElementById('imagen2').files = dt2.files;
-    }
-    
-    if (selectedImages[2]) {
-        dt3.items.add(selectedImages[2].file);
-        document.getElementById('imagen3').files = dt3.files;
-    }
-    
-    console.log('✅ Archivos asignados a inputs:', {
-        imagen1: selectedImages[0]?.file.name,
-        imagen2: selectedImages[1]?.file.name,
-        imagen3: selectedImages[2]?.file.name
-    });
-}
+
 
 // Drag & Drop handlers
 function handleDragOver(e) {
@@ -5716,14 +6083,7 @@ function limpiarImagenesPrevias() {
     if (input3) input3.value = '';
 }
 
-// Llamar a limpiarImagenesPrevias cuando se cierra el modal
-const originalCloseModal = window.closeModal;
-window.closeModal = function() {
-    limpiarImagenesPrevias();
-    if (originalCloseModal) {
-        originalCloseModal();
-    }
-};
+
 function setupCharCountersDirectly() {
     console.log('Configurando contadores directamente...');
     
@@ -7906,6 +8266,306 @@ function clearSecondaryLocationSuggestions(input) {
     });
 }
 // ===== FIN SISTEMA DE CARGA MÚLTIPLE =====
+
+
+// ========================================
+// SISTEMA COMPLETO DE CARGA MÚLTIPLE DE IMÁGENES - V2 LIMPIO
+// ========================================
+
+(function() {
+    'use strict';
+    
+    // Variables globales
+    window.imageManager = {
+        files: [],
+        existing: [],
+        maxImages: 3
+    };
+    
+    /**
+     * Inicializar sistema
+     */
+    window.initImageSystem = function() {
+        console.log('🖼️ Inicializando sistema de imágenes...');
+        
+        const dropZone = document.getElementById('imageDropZone');
+        const fileInput = document.getElementById('multiImageInput');
+        
+        if (!dropZone || !fileInput) {
+            console.log('⚠️ Elementos no encontrados');
+            return;
+        }
+        
+        // Reset
+        window.imageManager.files = [];
+        window.imageManager.existing = [];
+        
+        // Limpiar preview
+        const previewGrid = document.getElementById('imagePreviewsGrid');
+        if (previewGrid) previewGrid.innerHTML = '';
+        
+        // Configurar eventos
+        setupEvents(dropZone, fileInput);
+        
+        console.log('✅ Sistema inicializado');
+    };
+    
+    /**
+     * Configurar eventos
+     */
+    function setupEvents(dropZone, fileInput) {
+        // Click en zona
+        dropZone.onclick = () => fileInput.click();
+        
+        // Drag & drop
+        dropZone.ondragover = (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#667eea';
+            dropZone.style.background = 'linear-gradient(135deg, #e6f3ff 0%, #f0f4ff 100%)';
+        };
+        
+        dropZone.ondragleave = (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#cbd5e0';
+            dropZone.style.background = 'linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%)';
+        };
+        
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#cbd5e0';
+            dropZone.style.background = 'linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%)';
+            
+            const files = Array.from(e.dataTransfer.files);
+            processFiles(files);
+        };
+        
+        // Change input
+        fileInput.onchange = () => {
+            const files = Array.from(fileInput.files);
+            processFiles(files);
+        };
+    }
+    
+    /**
+     * Procesar archivos
+     */
+    function processFiles(files) {
+        console.log(`📁 ${files.length} archivo(s) seleccionado(s)`);
+        
+        const total = window.imageManager.files.length + window.imageManager.existing.length;
+        const available = window.imageManager.maxImages - total;
+        
+        if (available === 0) {
+            alert('Ya tienes 3 imágenes. Elimina alguna para agregar nuevas.');
+            return;
+        }
+        
+        const toAdd = files.slice(0, available);
+        
+        if (toAdd.length < files.length) {
+            alert(`Solo puedes agregar ${toAdd.length} imagen(es) más`);
+        }
+        
+        toAdd.forEach(file => {
+            if (validateFile(file)) {
+                window.imageManager.files.push(file);
+            }
+        });
+        
+        renderPreviews();
+        updateInputs();
+    }
+    
+    /**
+     * Validar archivo
+     */
+    function validateFile(file) {
+        if (!file.type.startsWith('image/')) {
+            alert(`"${file.name}" no es una imagen válida`);
+            return false;
+        }
+        
+        if (file.size > 5 * 1024 * 1024) {
+            alert(`"${file.name}" supera los 5MB`);
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Renderizar previews
+     */
+    function renderPreviews() {
+        const container = document.getElementById('imagePreviewsGrid');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        // Existentes
+        window.imageManager.existing.forEach((img, i) => {
+            container.appendChild(createExistingCard(img, i));
+        });
+        
+        // Nuevas
+        window.imageManager.files.forEach((file, i) => {
+            container.appendChild(createNewCard(file, i));
+        });
+    }
+    
+    /**
+     * Crear card de imagen existente
+     */
+    function createExistingCard(img, index) {
+        const card = document.createElement('div');
+        card.className = 'image-preview-card';
+        
+        card.innerHTML = `
+            <img src="${img.url}" alt="${img.field}">
+            <div class="image-preview-badge existing-image-badge">
+                ✅ Guardada
+            </div>
+            <button type="button" class="image-preview-remove" onclick="window.removeExistingImage(${index})">
+                ✕
+            </button>
+            <div class="image-preview-info">
+                <div class="image-preview-name">${img.field}</div>
+                <div class="image-preview-size">Imagen existente</div>
+            </div>
+        `;
+        
+        return card;
+    }
+    
+    /**
+     * Crear card de imagen nueva
+     */
+    function createNewCard(file, index) {
+        const card = document.createElement('div');
+        card.className = 'image-preview-card';
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const isFirst = index === 0 && window.imageManager.existing.length === 0;
+            card.innerHTML = `
+                <img src="${e.target.result}" alt="${file.name}">
+                <div class="image-preview-badge ${isFirst ? '' : 'secondary'}">
+                    ${isFirst ? '⭐ Principal' : `#${index + 1}`}
+                </div>
+                <button type="button" class="image-preview-remove" onclick="window.removeNewImage(${index})">
+                    ✕
+                </button>
+                <div class="image-preview-info">
+                    <div class="image-preview-name">${file.name}</div>
+                    <div class="image-preview-size">${formatSize(file.size)}</div>
+                </div>
+            `;
+        };
+        reader.readAsDataURL(file);
+        
+        return card;
+    }
+    
+    /**
+     * Remover imagen existente
+     */
+    window.removeExistingImage = function(index) {
+        const img = window.imageManager.existing[index];
+        
+        // Marcar para eliminar
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = `delete_${img.field}`;
+        input.value = '1';
+        document.getElementById('resourceForm').appendChild(input);
+        
+        window.imageManager.existing.splice(index, 1);
+        renderPreviews();
+        
+        console.log(`🗑️ ${img.field} marcada para eliminar`);
+    };
+    
+    /**
+     * Remover imagen nueva
+     */
+    window.removeNewImage = function(index) {
+        window.imageManager.files.splice(index, 1);
+        renderPreviews();
+        updateInputs();
+        
+        console.log(`🗑️ Imagen ${index + 1} eliminada`);
+    };
+    
+    /**
+     * Actualizar inputs ocultos
+     */
+    function updateInputs() {
+        const inputs = [
+            document.getElementById('multiImageInput'),
+            document.getElementById('imagen2'),
+            document.getElementById('imagen3')
+        ];
+        
+        // Limpiar
+        inputs.forEach(inp => {
+            if (inp) {
+                const dt = new DataTransfer();
+                inp.files = dt.files;
+            }
+        });
+        
+        // Asignar
+        window.imageManager.files.forEach((file, i) => {
+            if (inputs[i]) {
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                inputs[i].files = dt.files;
+            }
+        });
+    }
+    
+    /**
+     * Cargar imágenes existentes (para edición)
+     */
+    window.loadExistingImages = function(resource) {
+        console.log('📥 Cargando imágenes existentes...');
+        
+        window.imageManager.existing = [];
+        
+        if (resource.imagen1) {
+            window.imageManager.existing.push({ 
+                url: resource.imagen1, 
+                field: 'imagen1' 
+            });
+        }
+        if (resource.imagen2) {
+            window.imageManager.existing.push({ 
+                url: resource.imagen2, 
+                field: 'imagen2' 
+            });
+        }
+        if (resource.imagen3) {
+            window.imageManager.existing.push({ 
+                url: resource.imagen3, 
+                field: 'imagen3' 
+            });
+        }
+        
+        renderPreviews();
+        
+        console.log(`✅ ${window.imageManager.existing.length} imagen(es) cargada(s)`);
+    };
+    
+    /**
+     * Formatear tamaño
+     */
+    function formatSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+    
+})();
 </script>
 <!-- Agregar antes del cierre de </body> -->
 <a href="<?= APP_URL ?>/itinerarios" class="floating-itinerarios-btn" title="Ir a Itinerarios">
