@@ -1711,6 +1711,8 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
 }
 
 .input-with-counter input {
+    width: 100%;
+    box-sizing: border-box;
     padding-right: 60px;
 }
 
@@ -3387,7 +3389,7 @@ function loadSpecificFields() {
         case 'dias':
         fieldsHTML = `
             <!-- TÍTULO -->
-            <div class="form-group">
+            <div class="form-group" style="grid-column: 1 / -1;">
                 <label for="titulo">Título de la Jornada</label>
                 <div class="input-with-counter">
                     <input type="text" id="titulo" name="titulo" required 
