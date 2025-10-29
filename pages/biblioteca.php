@@ -3,7 +3,7 @@
 // ARCHIVO: pages/biblioteca.php - Biblioteca con Componentes UI Integrados
 // =====================================
 
-App::requireLogin();
+App::requireLogin(); 
 
 // Incluir ConfigManager y componentes UI
 require_once 'config/config_functions.php';
@@ -25,6 +25,7 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Biblioteca - <?= htmlspecialchars($companyName) ?></title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <!-- Incluir estilos de componentes -->
     <?= UIComponents::getComponentStyles() ?>
@@ -851,7 +852,37 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
     font-style: italic;
 }
 
+/* Contenedor del mapa - Más elegante */
+.map-container {
+    height: 350px;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 30px;
+    border: 3px solid #e2e8f0;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
 
+.map-container::before {
+    content: '🗺️ Selecciona una ubicación en el mapa';
+    position: absolute;
+    top: 15px;
+    left: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #4a5568;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+    border-radius: 13px;
+}
 
 /* Acciones del formulario - Botones mejorados */
 .form-actions {
@@ -1660,6 +1691,88 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
+.images-preview-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.image-preview-item {
+    position: relative;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.image-preview-item:hover {
+    border-color: var(--primary-color, #667eea);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.image-preview-item img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+.image-preview-info {
+    padding: 12px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.image-preview-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.image-preview-size {
+    font-size: 11px;
+    color: #718096;
+}
+
+.image-remove-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(229, 62, 62, 0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.image-remove-btn:hover {
+    background: #e53e3e;
+    transform: scale(1.1);
+}
+
+.image-slot-indicator {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(102, 126, 234, 0.9);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+}
 /* Estilos para imágenes existentes */
 .existing-image {
     border-color: #10b981 !important;
@@ -1711,8 +1824,6 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
 }
 
 .input-with-counter input {
-    width: 100%;
-    box-sizing: border-box;
     padding-right: 60px;
 }
 
@@ -1796,250 +1907,6 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
 .btn-add-ubicacion:active {
     transform: scale(0.98);
 }
-
-
-/* ========================================
-   SISTEMA DE CARGA MÚLTIPLE DE IMÁGENES
-   ======================================== */
-
-.image-drop-zone {
-    border: 3px dashed #cbd5e0;
-    border-radius: 16px;
-    padding: 40px 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
-    min-height: 180px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.image-drop-zone:hover {
-    border-color: #667eea;
-    background: linear-gradient(135deg, #e6f3ff 0%, #f0f4ff 100%);
-    transform: translateY(-2px);
-}
-
-.image-drop-zone.drag-over {
-    border-color: #667eea;
-    background: linear-gradient(135deg, #dae7ff 0%, #e6f2ff 100%);
-    transform: scale(1.02);
-}
-
-.drop-zone-content {
-    pointer-events: none;
-}
-
-/* Grid de previews */
-#imagePreviewsGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 16px;
-    margin-top: 20px;
-}
-
-
-
-.image-preview-badge {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-}
-
-.image-preview-badge.secondary {
-    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-}
-
-
-
-
-/* ========== ESTILOS PARA IMÁGENES EXISTENTES ========== */
-
-/* Contenedor de previews */
-.images-preview-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 15px;
-    margin-top: 20px;
-    padding: 10px;
-    min-height: 60px;
-}
-
-/* Card individual de imagen */
-.image-preview-card {
-    position: relative;
-    border: 2px solid #e2e8f0;
-    border-radius: 12px;
-    overflow: hidden;
-    background: white;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-
-.image-preview-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-    border-color: #667eea;
-}
-
-/* Imagen del card */
-.image-preview-card img {
-    width: 100%;
-    height: 140px;
-    object-fit: cover;
-    display: block;
-}
-
-/* Badge verde "Guardada" */
-.existing-image-badge {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
-    padding: 5px 12px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-    z-index: 2;
-}
-
-/* Botón rojo de eliminar */
-.image-preview-remove {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: rgba(239, 68, 68, 0.95);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    z-index: 3;
-}
-
-.image-preview-remove:hover {
-    background: rgba(220, 38, 38, 1);
-    transform: scale(1.15);
-}
-
-/* Info del card (nombre y tamaño) */
-.image-preview-info {
-    padding: 12px;
-    background: #f7fafc;
-    border-top: 1px solid #e2e8f0;
-}
-
-.image-preview-name {
-    font-size: 12px;
-    color: #2d3748;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-bottom: 4px;
-}
-
-.image-preview-size {
-    font-size: 10px;
-    color: #718096;
-}
-
-
-
-/* Carrusel en tarjetas del listado */
-.card-image-container {
-    position: relative;
-    width: 100%;
-    height: 180px;
-    overflow: hidden;
-}
-
-.card-image-carousel {
-    display: flex;
-    transition: transform 0.3s ease;
-    height: 100%;
-}
-
-.card-image-carousel img {
-    min-width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.carousel-button {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(0, 0, 0, 0.6);
-    color: white;
-    border: none;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    z-index: 2;
-}
-
-.carousel-button:hover {
-    background: rgba(0, 0, 0, 0.8);
-    transform: translateY(-50%) scale(1.1);
-}
-
-.carousel-button.prev {
-    left: 8px;
-}
-
-.carousel-button.next {
-    right: 8px;
-}
-
-.carousel-indicators {
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 6px;
-    z-index: 2;
-}
-
-.carousel-indicator {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.5);
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.carousel-indicator.active {
-    background: white;
-    width: 24px;
-    border-radius: 4px;
-}
     </style>
     <script src="<?= APP_URL ?>/assets/js/ubicacion-search-widget.js"></script>
 </head>
@@ -2119,6 +1986,14 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
                 <!-- Campos específicos se cargan dinámicamente -->
                 <div id="specificFields"></div>
 
+                <!-- Mapa para ubicación -->
+                <div class="form-group" id="mapSection">
+                    <label>Seleccionar Ubicación en el Mapa</label>
+                    <div class="map-container">
+                        <div id="map"></div>
+                    </div>
+                </div>
+
                 <!-- Botones de acción -->
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" onclick="closeModal()">Cancelar</button>
@@ -2130,12 +2005,15 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
 
 
     <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // Configuración global - SIN API KEYS
         const APP_URL = '<?= APP_URL ?>';
         const DEFAULT_LANGUAGE = '<?= $defaultLanguage ?>';
 
         let currentTab = 'dias';
+        let map = null;
+        let currentMarker = null;
         let sidebarOpen = false;
         let resources = {
             dias: [],
@@ -2521,6 +2399,7 @@ function setupLocationAutocompleteForElement(input, latInput, lngInput, preview)
     console.log('🔧 Configurando autocompletado para:', input.id || input.name || 'input sin id');
     
     let timeout;
+    let suggestionsList = null;
     
     input.addEventListener('input', function() {
         clearTimeout(timeout);
@@ -2823,9 +2702,282 @@ function limpiarUbicacionesSecundarias() {
     console.log('✅ Ubicaciones secundarias limpiadas. Contador reseteado a 0');
 }
 
+        // Inicializar mapa con OpenStreetMap (GRATIS)
+function initializeMap() {
+    const mapContainer = document.getElementById('map');
+    
+    try {
+        // Limpiar contenedor
+        mapContainer.innerHTML = '';
+        
+        // Crear mapa con OpenStreetMap
+        map = L.map('map').setView([4.7110, -74.0721], 10); // Bogotá por defecto
 
+        // Agregar capa gratuita de OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 18,
+            minZoom: 2
+        }).addTo(map);
 
-      
+        // Control de zoom
+        L.control.zoom({
+            position: 'topright'
+        }).addTo(map);
+
+        // 🎯 GRUPO DE MARCADORES PARA ORGANIZAR MEJOR
+        window.markersGroup = L.layerGroup().addTo(map);
+
+        // Click en el mapa para seleccionar ubicación PRINCIPAL
+        map.on('click', function(e) {
+            const coords = e.latlng;
+            updatePrimaryLocation(coords.lat, coords.lng);
+        });
+
+       
+        // Evento cuando el mapa se carga
+        map.whenReady(function() {
+            console.log('✅ Mapa con ubicaciones múltiples cargado');
+            
+            // Mensaje de bienvenida
+            setTimeout(() => {
+                if (window.markersGroup.getLayers().length === 0) {
+                    L.popup()
+                        .setLatLng([4.7110, -74.0721])
+                        .setContent(`
+                            <div style="text-align: center;">
+                                <strong>🗺️ Mapa Interactivo</strong><br>
+                                <small>Haz clic para ubicación principal<br>
+                                Las secundarias se mostrarán automáticamente</small>
+                            </div>
+                        `)
+                        .openOn(map);
+                }
+            }, 1000);
+        });
+
+        // Redimensionar mapa cuando se abre el modal
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 100);
+
+    } catch (error) {
+        console.error('Error cargando mapa:', error);
+        initializeMapFallback();
+    }
+}
+
+        // Función de respaldo si falla el mapa
+        function initializeMapFallback() {
+            const mapContainer = document.getElementById('map');
+            mapContainer.innerHTML = `
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center; border-radius: 10px; padding: 20px;">
+                    <div style="font-size: 48px; margin-bottom: 20px;">📍</div>
+                    <h3 style="margin-bottom: 15px;">Seleccionar Ubicación</h3>
+                    <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 20px; width: 100%; max-width: 300px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                            <input type="number" id="manual-lat" placeholder="Latitud" step="any" style="padding: 10px; border: none; border-radius: 5px; text-align: center;">
+                            <input type="number" id="manual-lng" placeholder="Longitud" step="any" style="padding: 10px; border: none; border-radius: 5px; text-align: center;">
+                        </div>
+                        <button onclick="useCurrentLocation()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 25px; cursor: pointer; margin-right: 10px;">📱 Mi Ubicación</button>
+                        <button onclick="searchLocationPrompt()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 25px; cursor: pointer;">🔍 Buscar</button>
+                    </div>
+                </div>
+            `;
+            
+            setTimeout(() => {
+                const latInput = document.getElementById('manual-lat');
+                const lngInput = document.getElementById('manual-lng');
+                
+                if (latInput && lngInput) {
+                    latInput.addEventListener('change', updateLocationFromCoords);
+                    lngInput.addEventListener('change', updateLocationFromCoords);
+                }
+            }, 100);
+        }
+
+        // ============================================= 
+        // GEOCODIFICACIÓN GRATUITA CON NOMINATIM
+        // ============================================= 
+
+        function reverseGeocodeOSM(lat, lng) {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=es`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.display_name) {
+                        const ubicacionField = document.getElementById('ubicacion');
+                        if (ubicacionField) {
+                            ubicacionField.value = data.display_name;
+                        }
+                        
+                        // Guardar coordenadas en campos ocultos
+                        updateCoordinateFields(lat, lng);
+                        
+                        console.log('📍 Ubicación encontrada:', data.display_name);
+                    } else {
+                        // Si no hay resultado, usar coordenadas
+                        const ubicacionField = document.getElementById('ubicacion');
+                        if (ubicacionField) {
+                            ubicacionField.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                        }
+                        updateCoordinateFields(lat, lng);
+                    }
+                })
+                .catch(error => {
+                    console.warn('Geocodificación no disponible:', error);
+                    const ubicacionField = document.getElementById('ubicacion');
+                    if (ubicacionField) {
+                        ubicacionField.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                    }
+                    updateCoordinateFields(lat, lng);
+                });
+        }
+
+       // ============================================= 
+        // FUNCIONES AUXILIARES
+        // ============================================= 
+
+        function updateCoordinateFields(lat, lng) {
+            // Buscar campos de latitud y longitud en el formulario
+            const latField = document.getElementById('latitud') || document.querySelector('input[name="latitud"]');
+            const lngField = document.getElementById('longitud') || document.querySelector('input[name="longitud"]');
+            
+            if (latField) latField.value = lat;
+            if (lngField) lngField.value = lng;
+
+            // Para transportes, también actualizar campos específicos si es el campo activo
+            const currentInput = document.activeElement;
+            if (currentInput && currentInput.name === 'lugar_salida') {
+                const latSalidaField = document.getElementById('lat_salida');
+                const lngSalidaField = document.getElementById('lng_salida');
+                if (latSalidaField) latSalidaField.value = lat;
+                if (lngSalidaField) lngSalidaField.value = lng;
+            } else if (currentInput && currentInput.name === 'lugar_llegada') {
+                const latLlegadaField = document.getElementById('lat_llegada');
+                const lngLlegadaField = document.getElementById('lng_llegada');
+                if (latLlegadaField) latLlegadaField.value = lat;
+                if (lngLlegadaField) lngLlegadaField.value = lng;
+            }
+        }
+
+        function updateLocationFromCoords() {
+            const latInput = document.getElementById('manual-lat');
+            const lngInput = document.getElementById('manual-lng');
+            
+            if (latInput && lngInput) {
+                const lat = parseFloat(latInput.value);
+                const lng = parseFloat(lngInput.value);
+                
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    reverseGeocodeOSM(lat, lng);
+                }
+            }
+        }
+
+        function searchLocationOSM(query) {
+            if (!query || query.length < 3) return;
+            
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&accept-language=es`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        const result = data[0];
+                        const lat = parseFloat(result.lat);
+                        const lng = parseFloat(result.lon);
+                        
+                        if (map) {
+                            // Centrar mapa en el resultado
+                            map.setView([lat, lng], 15);
+                            
+                            // Agregar/mover marcador
+                            if (currentMarker) {
+                                map.removeLayer(currentMarker);
+                            }
+                            
+                            currentMarker = L.marker([lat, lng], {
+                                draggable: true
+                            }).addTo(map);
+                            
+                            currentMarker.bindPopup(`
+                                <div style="text-align: center;">
+                                    <strong>🔍 ${result.display_name}</strong><br>
+                                    <small>Lat: ${lat.toFixed(6)}<br>
+                                    Lng: ${lng.toFixed(6)}</small>
+                                </div>
+                            `).openPopup();
+                        }
+                        
+                        // Actualizar campos
+                        const ubicacionField = document.getElementById('ubicacion');
+                        if (ubicacionField) {
+                            ubicacionField.value = result.display_name;
+                        }
+                        
+                        updateCoordinateFields(lat, lng);
+                        console.log('🔍 Búsqueda exitosa:', result.display_name);
+                    } else {
+                        alert('No se encontraron resultados para: ' + query);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error en búsqueda:', error);
+                    alert('Error en la búsqueda. Verifica tu conexión a internet.');
+                });
+        }
+
+        function useCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    if (map) {
+                        map.setView([lat, lng], 15);
+                        
+                        if (currentMarker) {
+                            map.removeLayer(currentMarker);
+                        }
+                        
+                        currentMarker = L.marker([lat, lng], {
+                            draggable: true
+                        }).addTo(map);
+                        
+                        currentMarker.bindPopup(`
+                            <div style="text-align: center;">
+                                <strong>📱 Tu Ubicación Actual</strong><br>
+                                <small>Lat: ${lat.toFixed(6)}<br>
+                                Lng: ${lng.toFixed(6)}</small>
+                            </div>
+                        `).openPopup();
+                    } else {
+                        // Para modo fallback
+                        const latInput = document.getElementById('manual-lat');
+                        const lngInput = document.getElementById('manual-lng');
+                        if (latInput && lngInput) {
+                            latInput.value = lat.toFixed(6);
+                            lngInput.value = lng.toFixed(6);
+                        }
+                    }
+                    
+                    reverseGeocodeOSM(lat, lng);
+                }, function(error) {
+                    alert('No se pudo obtener la ubicación: ' + error.message);
+                });
+            } else {
+                alert('La geolocalización no es compatible con este navegador');
+            }
+        }
+
+        function searchLocationPrompt() {
+            const query = prompt('Ingresa el nombre del lugar que quieres buscar:\n(Ejemplo: "Torre Eiffel, París" o "Medellín, Colombia")');
+            if (query && query.trim()) {
+                searchLocationOSM(query.trim());
+            }
+        }
 
         // Configuración de tabs
         function initializeTabs() {
@@ -3006,90 +3158,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-/**
- * Crear carrusel de imágenes para tarjeta
- */
-function createImageCarousel(item, type) {
-    const images = getItemImages(item, type);
-    
-    if (images.length === 0) {
-        return '<div style="height: 180px; background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e0 100%); display: flex; align-items: center; justify-content: center; color: #718096; font-size: 48px;">📷</div>';
-    }
-    
-    if (images.length === 1) {
-        return `<img src="${images[0]}" alt="${item.titulo || item.nombre}" style="width: 100%; height: 180px; object-fit: cover;">`;
-    }
-    
-    // Múltiples imágenes - crear carrusel
-    const carouselId = `carousel-${item.id}`;
-    
-    return `
-        <div class="card-image-carousel" id="${carouselId}">
-            ${images.map(img => `<img src="${img}" alt="${item.titulo || item.nombre}">`).join('')}
-        </div>
-        <button class="carousel-button prev" onclick="event.stopPropagation(); moveCarousel('${carouselId}', -1)">‹</button>
-        <button class="carousel-button next" onclick="event.stopPropagation(); moveCarousel('${carouselId}', 1)">›</button>
-        <div class="carousel-indicators">
-            ${images.map((_, i) => `<div class="carousel-indicator ${i === 0 ? 'active' : ''}" onclick="event.stopPropagation(); goToSlide('${carouselId}', ${i})"></div>`).join('')}
-        </div>
-    `;
-}
-
-/**
- * Obtener todas las imágenes de un item
- */
-function getItemImages(item, type) {
-    const images = [];
-    
-    if (type === 'dias' || type === 'actividades') {
-        if (item.imagen1) images.push(item.imagen1);
-        if (item.imagen2) images.push(item.imagen2);
-        if (item.imagen3) images.push(item.imagen3);
-    } else if (type === 'alojamientos') {
-        if (item.imagen) images.push(item.imagen);
-    }
-    
-    return images;
-}
-
-/**
- * Mover carrusel
- */
-window.moveCarousel = function(carouselId, direction) {
-    const carousel = document.getElementById(carouselId);
-    if (!carousel) return;
-    
-    const images = carousel.querySelectorAll('img');
-    const indicators = carousel.parentElement.querySelectorAll('.carousel-indicator');
-    
-    let currentIndex = 0;
-    indicators.forEach((ind, i) => {
-        if (ind.classList.contains('active')) currentIndex = i;
-    });
-    
-    let newIndex = currentIndex + direction;
-    if (newIndex < 0) newIndex = images.length - 1;
-    if (newIndex >= images.length) newIndex = 0;
-    
-    goToSlide(carouselId, newIndex);
-};
-
-/**
- * Ir a slide específico
- */
-window.goToSlide = function(carouselId, index) {
-    const carousel = document.getElementById(carouselId);
-    if (!carousel) return;
-    
-    const indicators = carousel.parentElement.querySelectorAll('.carousel-indicator');
-    
-    carousel.style.transform = `translateX(-${index * 100}%)`;
-    
-    indicators.forEach((ind, i) => {
-        ind.classList.toggle('active', i === index);
-    });
-};
-
         // Crear card de recurso
         function createResourceCard(item) {
             const icons = {
@@ -3107,8 +3175,12 @@ window.goToSlide = function(carouselId, index) {
             
             return `
                 <div class="item-card" onclick="editResource(${item.id})">
-                    <div class="card-image-container">
-                        ${createImageCarousel(item, currentTab)}
+                    <div class="card-image">
+                        ${primaryImage ? 
+                            `<img src="${primaryImage}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover;">` : 
+                            icons[currentTab]
+                        }
+                        ${getImageCount(item, currentTab) > 0 ? `<div class="image-count">📷 ${getImageCount(item, currentTab)}</div>` : ''}
                     </div>
                     <div class="card-content">
                         <h3 class="card-title">${escapeHtml(title)}</h3>
@@ -3139,8 +3211,6 @@ window.goToSlide = function(carouselId, index) {
 
         // Funciones del modal
         function openModal(mode, id = null) {
-            console.log('🎭 Abriendo modal:', mode, id);
-            
             const modal = document.getElementById('resourceModal');
             const title = document.getElementById('modalTitle');
             
@@ -3161,72 +3231,46 @@ window.goToSlide = function(carouselId, index) {
             
             // Mostrar modal
             modal.classList.add('show');
-
             
-
-            // 2. Luego imágenes
+            // Inicializar mapa después de mostrar modal
             setTimeout(() => {
-                if (currentTab === 'dias' || currentTab === 'actividades') {
-                    console.log('🖼️ Inicializando sistema de imágenes...');
-                    if (window.initImageSystem) {
-                        window.initImageSystem();
-                    }
-                }
-            }, 300);
+                initializeMap();
+            }, 200);
 
-            // 3. Finalmente datos si es edición
-            if (mode === 'edit' && id) {
-                setTimeout(() => {
-                    loadResourceData(id);
-                }, 500);
-            }
+           
             
-            console.log('✅ Modal abierto correctamente');
+            // Si es edición, cargar datos
+            if (mode === 'edit' && id) {
+                loadResourceData(id);
+            }
         }
 
-function closeModal() {
-    console.log('🚪 Cerrando modal...');
-    window._charCountersConfigured = false;
-    
-    const modal = document.getElementById('resourceModal');
-    modal.classList.remove('show');
-    
-    // Limpiar formulario
-    document.getElementById('resourceForm').reset();
-    
-    // ✅ NUEVO: Limpiar sistema de imágenes
-    if (window.imageManager) {
-        window.imageManager.files = [];
-        window.imageManager.existing = [];
-    }
-    
-    const previewGrid = document.getElementById('imagePreviewsGrid');
-    if (previewGrid) {
-        previewGrid.innerHTML = '';
-    }
-    
-    // Limpiar inputs ocultos de imágenes
-    const input1 = document.getElementById('multiImageInput');
-    const input2 = document.getElementById('imagen2');
-    const input3 = document.getElementById('imagen3');
-    
-    [input1, input2, input3].forEach(inp => {
-        if (inp) inp.value = '';
-    });
-    
-    // Limpiar ubicaciones secundarias
-    limpiarUbicacionesSecundarias();
-    
-  
-    // Limpiar cualquier indicador de imagen existente (para alojamientos)
-    document.querySelectorAll('.existing-image-indicator').forEach(el => el.remove());
-    
-    // Limpiar inputs ocultos de eliminación
-    document.querySelectorAll('input[name^="delete_"]').forEach(el => el.remove());
-    
-    console.log('✅ Modal cerrado y limpiado');
-}
-
+        function closeModal() {
+            const modal = document.getElementById('resourceModal');
+            modal.classList.remove('show');
+            
+            // Limpiar formulario
+            document.getElementById('resourceForm').reset();
+            
+            // AGREGAR ESTA LÍNEA:
+            limpiarUbicacionesSecundarias();
+            
+            // Destruir mapa
+            if (map) {
+                map.remove();
+                map = null;
+                currentMarker = null;
+            }
+            // AGREGAR ESTA LÍNEA:
+            limpiarSistemaCargaMultiple();
+            
+            // Destruir mapa
+            if (map) {
+                map.remove();
+                map = null;
+                currentMarker = null;
+            }
+        }
         // NUEVA FUNCIÓN: Limpiar sistema de carga múltiple
 function limpiarSistemaCargaMultiple() {
     console.log('🧹 Limpiando sistema de carga múltiple...');
@@ -3389,7 +3433,7 @@ function loadSpecificFields() {
         case 'dias':
         fieldsHTML = `
             <!-- TÍTULO -->
-            <div class="form-group" style="grid-column: 1 / -1;">
+            <div class="form-group">
                 <label for="titulo">Título de la Jornada</label>
                 <div class="input-with-counter">
                     <input type="text" id="titulo" name="titulo" required 
@@ -3451,40 +3495,32 @@ function loadSpecificFields() {
                 </div>
             </div>
 
-            <!-- IMÁGENES - SISTEMA MEJORADO -->
+            <!-- IMÁGENES -->
             <div class="form-group" style="grid-column: 1 / -1;">
-                <label style="display: block; margin-bottom: 12px; font-weight: 600; color: #2d3748; font-size: 15px;">
+                <label>
                     📷 Imágenes del Día
-                    <small style="display: block; color: #718096; font-weight: normal; margin-top: 6px; font-size: 13px;">
-                        Selecciona hasta 3 imágenes (Ctrl/Cmd + clic para selección múltiple o arrastra aquí)
+                    <small style="display: block; color: #666; font-weight: normal; margin-top: 4px;">
+                        Selecciona hasta 3 imágenes a la vez (Ctrl/Cmd + clic para múltiple selección)
                     </small>
                 </label>
                 
-                <!-- Zona de Drop -->
-                <div class="image-drop-zone" id="imageDropZone">
-                    <div class="drop-zone-content">
-                        <div style="font-size: 48px; margin-bottom: 12px;">📸</div>
-                        <div style="font-weight: 600; color: #2d3748; font-size: 16px; margin-bottom: 6px;">
-                            Haz clic o arrastra hasta 3 imágenes aquí
-                        </div>
-                        <div style="font-size: 13px; color: #718096;">
-                            PNG, JPG, WEBP • Máx. 5MB cada una
-                        </div>
+                <div class="image-upload-area" 
+                    onclick="document.getElementById('imagenes').click()"
+                    ondrop="handleDrop(event)" 
+                    ondragover="handleDragOver(event)"
+                    ondragleave="handleDragLeave(event)"
+                    style="border: 3px dashed #cbd5e0; border-radius: 16px; padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.3s ease; background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%); min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div style="font-size: 48px; margin-bottom: 10px;">📸</div>
+                    <div style="font-weight: 600; color: #2d3748; margin-bottom: 5px;">
+                        Haz clic o arrastra las imágenes aquí
+                    </div>
+                    <div style="font-size: 13px; color: #718096;">
+                        Máximo 3 imágenes • PNG, JPG, WEBP • Máx. 5MB cada una
                     </div>
                 </div>
                 
-                <!-- Input de archivo (oculto) -->
-                <input type="file" 
-                    id="multiImageInput" 
-                    name="imagen1" 
-                    accept="image/png,image/jpeg,image/jpg,image/webp" 
-                    multiple 
-                    style="display: none;">
-                
-                <!-- Contenedor de previews -->
-                <div id="imagePreviewsGrid"></div>
-                
-                <!-- Inputs ocultos adicionales -->
+                <input type="file" id="imagenes" name="imagen1" accept="image/*" multiple style="display: none;" onchange="handleMultipleImageSelect(this)">
+                <div id="imagesPreviewContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;"></div>
                 <input type="file" id="imagen2" name="imagen2" accept="image/*" style="display: none;">
                 <input type="file" id="imagen3" name="imagen3" accept="image/*" style="display: none;">
             </div>
@@ -3494,22 +3530,6 @@ function loadSpecificFields() {
             <input type="hidden" id="latitud" name="latitud">
             <input type="hidden" id="longitud" name="longitud">
         `;
-        setTimeout(() => {
-            console.log('🖼️ Verificando imágenes para cargar...');
-            
-            if (typeof loadExistingImagesInMultipleSystem === 'function') {
-                console.log('📸 Llamando a loadExistingImagesInMultipleSystem');
-                loadExistingImagesInMultipleSystem(resource);
-            } else {
-                console.error('❌ Función loadExistingImagesInMultipleSystem no disponible');
-            }
-            
-            const imageSection = document.querySelector('.image-upload-section');
-            if (imageSection) imageSection.style.display = 'block';
-            
-            const previewContainer = document.getElementById('imagesPreviewContainer');
-            if (previewContainer) previewContainer.style.display = 'grid';
-        }, 800);
         break;
             
         case 'alojamientos':
@@ -4392,6 +4412,52 @@ function showSearchError(message) {
             }, 3000);
         }
 
+        // Función mejorada para mostrar mensajes de error
+        function showErrorMessage(message) {
+            const toast = document.createElement('div');
+            toast.className = 'error-toast';
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #e53e3e 0%, #dc2626 100%);
+                color: white;
+                padding: 16px 20px;
+                border-radius: 12px;
+                box-shadow: 0 8px 25px rgba(229, 62, 62, 0.3);
+                z-index: 10000;
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+                max-width: 350px;
+            `;
+            
+            toast.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="font-size: 20px;">❌</div>
+                    <div>
+                        <div style="font-weight: 600; margin-bottom: 2px;">Error</div>
+                        <div style="font-size: 13px; opacity: 0.9;">${message}</div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // Animar entrada
+            setTimeout(() => {
+                toast.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // Remover después de 4 segundos
+            setTimeout(() => {
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 4000);
+        }
 
         async function deleteResource(id) {
             const confirmed = await showConfirmModal({
@@ -4437,801 +4503,331 @@ function showSearchError(message) {
             }
         }
 
-
-
-
-/**
- * FUNCIONES PARA CARGAR IMAGENES EXISTENTES
- * Agregar DESPUES de corregir los errores de sintaxis
- */
-
-window.loadExistingImages = function(resource) {
-    console.log('Loading existing images:', resource);
-    
-    const container = document.getElementById('imagePreviewsGrid');
-    if (!container) {
-        console.error('Container imagePreviewsGrid not found');
-        return;
-    }
-    
-    console.log('Container found, cleaning...');
-    container.innerHTML = '';
-    
-    if (window.imageManager) {
-        window.imageManager.existing = [];
-        window.imageManager.files = [];
-    }
-    
-    const imagesToLoad = [];
-    
-    if (resource.imagen1 && resource.imagen1.trim()) {
-        console.log('Image 1 found:', resource.imagen1.substring(0, 50) + '...');
-        imagesToLoad.push({
-            url: resource.imagen1.trim(),
-            field: 'imagen1',
-            name: 'Imagen 1'
-        });
-    }
-    
-    if (resource.imagen2 && resource.imagen2.trim() && resource.imagen2 !== resource.imagen1) {
-        console.log('Image 2 found:', resource.imagen2.substring(0, 50) + '...');
-        imagesToLoad.push({
-            url: resource.imagen2.trim(),
-            field: 'imagen2',
-            name: 'Imagen 2'
-        });
-    }
-    
-    if (resource.imagen3 && resource.imagen3.trim() && 
-        resource.imagen3 !== resource.imagen1 && 
-        resource.imagen3 !== resource.imagen2) {
-        console.log('Image 3 found:', resource.imagen3.substring(0, 50) + '...');
-        imagesToLoad.push({
-            url: resource.imagen3.trim(),
-            field: 'imagen3',
-            name: 'Imagen 3'
-        });
-    }
-    
-    if (resource.imagen && resource.imagen.trim() && !resource.imagen1) {
-        console.log('Accommodation image found');
-        imagesToLoad.push({
-            url: resource.imagen.trim(),
-            field: 'imagen',
-            name: 'Imagen del alojamiento'
-        });
-    }
-    
-    console.log('Total images to load:', imagesToLoad.length);
-    
-    if (imagesToLoad.length === 0) {
-        console.warn('No images to load');
-        return;
-    }
-    
-    imagesToLoad.forEach((img, index) => {
-        console.log('Creating card', index + 1, 'for:', img.name);
-        
-        if (window.createImageCardForEdit) {
-            const card = window.createImageCardForEdit(img, index);
-            container.appendChild(card);
-            console.log('Card', index + 1, 'added to container');
-        } else {
-            console.error('Function createImageCardForEdit does not exist');
-            return;
-        }
-        
-        if (window.imageManager) {
-            window.imageManager.existing.push(img);
-        }
-    });
-    
-    console.log('All images loaded successfully');
-};
-
-window.createImageCardForEdit = function(imageData, index) {
-    console.log('Building card for:', imageData.name);
-    
-    const card = document.createElement('div');
-    card.className = 'image-preview-card';
-    card.setAttribute('data-field', imageData.field);
-    card.setAttribute('data-index', index);
-    
-    card.innerHTML = `
-        <img src="${imageData.url}" 
-             alt="${imageData.name}" 
-             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2220%22%3ENo image%3C/text%3E%3C/svg%3E';">
-        
-        <div class="existing-image-badge">
-            &#10003; Guardada
-        </div>
-        
-        <button type="button" 
-                class="image-preview-remove" 
-                onclick="window.removeExistingImageFromEdit('${imageData.field}', ${index})"
-                title="Eliminar imagen">
-            &times;
-        </button>
-        
-        <div class="image-preview-info">
-            <div class="image-preview-name">${imageData.name}</div>
-            <div class="image-preview-size">Imagen existente</div>
-        </div>
-    `;
-    
-    console.log('Card built for:', imageData.name);
-    return card;
-};
-
-window.removeExistingImageFromEdit = function(fieldName, index) {
-    console.log('Attempting to delete image:', fieldName);
-    
-    if (!confirm('Delete this image?')) {
-        console.log('Deletion cancelled');
-        return;
-    }
-    
-    const container = document.getElementById('imagePreviewsGrid');
-    const card = container ? container.querySelector(`[data-field="${fieldName}"]`) : null;
-    
-    if (!card) {
-        console.error('Card not found with field=', fieldName);
-        return;
-    }
-    
-    console.log('Card found, applying exit animation...');
-    
-    card.style.transition = 'all 0.3s ease';
-    card.style.opacity = '0';
-    card.style.transform = 'scale(0.8)';
-    
-    setTimeout(() => {
-        card.remove();
-        console.log('Card removed from DOM');
-    }, 300);
-    
-    const deleteInput = document.createElement('input');
-    deleteInput.type = 'hidden';
-    deleteInput.name = `delete_${fieldName}`;
-    deleteInput.value = '1';
-    
-    const form = document.getElementById('resourceForm');
-    if (form) {
-        form.appendChild(deleteInput);
-        console.log('Marked for deletion on server:', `delete_${fieldName}`);
-    }
-    
-    if (window.imageManager && window.imageManager.existing) {
-        window.imageManager.existing.splice(index, 1);
-        console.log('Manager updated, remaining images:', window.imageManager.existing.length);
-    }
-    
-    console.log('Deletion completed for:', fieldName);
-};
-
-console.log('Image loading functions registered successfully');
-
-
-
-/**
- * FUNCIÓN OPTIMIZADA loadResourceData
- * Versión corregida que carga correctamente todas las imágenes
- */
-
-
-
+        // Cargar datos de recurso para editar - MEJORADO
 async function loadResourceData(id) {
-    console.log('📥 Cargando datos del recurso:', id);
-    
     try {
-        const response = await fetch(`<?= APP_URL ?>/modules/biblioteca/api.php?action=get&type=${currentTab}&id=${id}`);
+        console.log('🔄 Cargando datos del recurso:', id);
+        
+        const response = await fetch(`${APP_URL}/biblioteca/api?action=get&type=${currentTab}&id=${id}`);
         
         if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status}`);
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const result = await response.json();
         
         if (!result.success) {
-            throw new Error(result.error || 'Error al cargar datos');
+            throw new Error(result.error || 'Error al cargar recurso');
         }
         
         const resource = result.data;
-        console.log('📋 Datos recibidos:', resource);
+        console.log('Cargando recurso desde API:', resource);
         
-        // ========================================
-        // LLENAR CAMPO COMÚN: IDIOMA
-        // ========================================
-        if (resource.idioma) {
-            const idiomaSelect = document.getElementById('idioma');
-            if (idiomaSelect) {
-                idiomaSelect.value = resource.idioma;
-                console.log('✅ Idioma cargado:', resource.idioma);
+        document.getElementById('resourceId').value = resource.id;
+        
+        // Cargar campos comunes
+        const commonFields = ['idioma', 'descripcion'];
+        commonFields.forEach(field => {
+            const element = document.getElementById(field);
+            if (element && resource[field]) {
+                element.value = resource[field];
+            }
+        });
+        
+        // Cargar campos específicos por tipo
+        switch(currentTab) {
+case 'dias':
+    console.log('📥 Cargando datos de día:', resource);
+    
+    // Cargar título y descripción
+    setFieldValue('titulo', resource.titulo);
+    setFieldValue('descripcion', resource.descripcion);
+    
+    // Esperar a que los campos del widget estén en el DOM
+    setTimeout(() => {
+        // Cargar ubicación principal en el WIDGET
+        const ubicacionPrincipal = document.getElementById('ubicacion-principal');
+        if (ubicacionPrincipal && resource.ubicacion) {
+            ubicacionPrincipal.value = resource.ubicacion;
+            console.log('✅ Ubicación principal cargada:', resource.ubicacion);
+            
+            // Mostrar preview
+            const preview = document.getElementById('preview-ubicacion-principal');
+            if (preview) {
+                preview.innerHTML = `
+                    <div style="margin-top: 8px; padding: 10px; background: #f0fdf4; border-radius: 8px; border-left: 3px solid #10b981; font-size: 12px;">
+                        <div style="font-weight: 600; color: #065f46;">${resource.ubicacion}</div>
+                        ${resource.latitud && resource.longitud ? 
+                            `<div style="color: #059669; font-size: 11px; margin-top: 2px;">
+                                ${parseFloat(resource.latitud).toFixed(6)}, ${parseFloat(resource.longitud).toFixed(6)}
+                            </div>` : ''
+                        }
+                    </div>
+                `;
             }
         }
         
-        // ========================================
-        // LLENAR CAMPOS SEGÚN TIPO DE RECURSO
-        // ========================================
-        switch(currentTab) {
+        // Cargar coordenadas en campos ocultos
+        const latPrincipal = document.getElementById('latitud-principal');
+        const lngPrincipal = document.getElementById('longitud-principal');
+        if (latPrincipal && resource.latitud) latPrincipal.value = resource.latitud;
+        if (lngPrincipal && resource.longitud) lngPrincipal.value = resource.longitud;
+        
+        setFieldValue('latitud', resource.latitud);
+        setFieldValue('longitud', resource.longitud);
+        setFieldValue('ubicacion', resource.ubicacion);
+        
+        // Reinicializar widget principal
+        if (typeof initUbicacionWidgetDias === 'function') {
+            initUbicacionWidgetDias();
+        }
+    }, 600);
+    
+    // Cargar ubicaciones secundarias
+    if (resource.ubicaciones_secundarias && resource.ubicaciones_secundarias.length > 0) {
+        console.log('📍 Cargando ' + resource.ubicaciones_secundarias.length + ' ubicaciones secundarias');
+        
+        setTimeout(() => {
+            const container = document.getElementById('ubicaciones-secundarias-container');
+            if (!container) {
+                console.error('❌ Container de ubicaciones secundarias NO encontrado');
+                return;
+            }
             
-            // ========================================
-            // CASO: DÍAS
-            // ========================================
-            case 'dias':
-                console.log('🗓️ Cargando datos de DÍA');
+            console.log('✅ Container encontrado, limpiando...');
+            container.innerHTML = '';
+            
+            // Destruir widgets antiguos
+            if (window.widgetsUbicacionesSecundarias) {
+                widgetsUbicacionesSecundarias.forEach(w => {
+                    if (w.widget && w.widget.destroy) w.widget.destroy();
+                });
+            }
+            window.widgetsUbicacionesSecundarias = [];
+            
+            // Agregar cada ubicación
+            resource.ubicaciones_secundarias.forEach((ubic, idx) => {
+                console.log(`➕ Agregando ubicación ${idx + 1}:`, ubic.ubicacion);
                 
-                // 1. CAMPOS BÁSICOS
-                if (resource.titulo) {
-                    const tituloInput = document.getElementById('titulo');
-                    if (tituloInput) {
-                        tituloInput.value = resource.titulo;
-                        console.log('✅ Título cargado:', resource.titulo);
-                    }
-                }
+                const index = Date.now() + idx;
+                const div = document.createElement('div');
+                div.className = 'ubicacion-item';
+                div.dataset.index = index;
+                div.style.cssText = 'display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start; width: 100%;';
                 
-                if (resource.descripcion) {
-                    const descripcionInput = document.getElementById('descripcion');
-                    if (descripcionInput) {
-                        descripcionInput.value = resource.descripcion;
-                        console.log('✅ Descripción cargada');
-                    }
-                }
-                
-                // 2. COORDENADAS PRINCIPALES
-                if (resource.latitud) {
-                    const latInput = document.getElementById('latitud');
-                    const latPrincipalInput = document.getElementById('latitud-principal');
-                    if (latInput) latInput.value = resource.latitud;
-                    if (latPrincipalInput) latPrincipalInput.value = resource.latitud;
-                }
-                
-                if (resource.longitud) {
-                    const lngInput = document.getElementById('longitud');
-                    const lngPrincipalInput = document.getElementById('longitud-principal');
-                    if (lngInput) lngInput.value = resource.longitud;
-                    if (lngPrincipalInput) lngPrincipalInput.value = resource.longitud;
-                }
-                
-                // 3. UBICACIÓN PRINCIPAL (con delay para widget)
-                if (resource.ubicacion) {
-                    setTimeout(() => {
-                        const inputUbicacion = document.getElementById('ubicacion-principal');
-                        const ubicacionField = document.getElementById('ubicacion');
-                        
-                        if (inputUbicacion) {
-                            inputUbicacion.value = resource.ubicacion;
-                        }
-                        
-                        if (ubicacionField) {
-                            ubicacionField.value = resource.ubicacion;
-                        }
-                        
-                        // Widget de ubicación principal si existe
-                        if (window.widgetUbicacionPrincipal && typeof window.widgetUbicacionPrincipal.setData === 'function') {
-                            window.widgetUbicacionPrincipal.setData({
-                                display_name: resource.ubicacion,
-                                lat: resource.latitud,
-                                lon: resource.longitud
-                            });
-                        }
-                        
-                        console.log('✅ Ubicación principal cargada:', resource.ubicacion);
-                    }, 500);
-                }
-                
-                // 4. IMÁGENES EXISTENTES
-                setTimeout(() => {
-                    console.log('🖼️ Cargando imágenes del día...');
-                    console.log('Imágenes disponibles:', {
-                        imagen1: resource.imagen1 ? 'SÍ' : 'NO',
-                        imagen2: resource.imagen2 ? 'SÍ' : 'NO',
-                        imagen3: resource.imagen3 ? 'SÍ' : 'NO'
-                    });
-                    
-                    if (window.loadExistingImages) {
-                        window.loadExistingImages(resource);
-                    } else {
-                        console.error('❌ Función loadExistingImages NO está disponible');
-                    }
-                }, 400);
-                
-                // 5. UBICACIONES SECUNDARIAS
-                if (resource.ubicaciones_secundarias && resource.ubicaciones_secundarias.length > 0) {
-                    console.log('📍 Cargando ubicaciones secundarias:', resource.ubicaciones_secundarias.length);
-                    
-                    setTimeout(() => {
-                        const container = document.getElementById('ubicaciones-secundarias-container');
-                        
-                        if (!container) {
-                            console.error('❌ Container de ubicaciones secundarias NO encontrado');
-                            return;
-                        }
-                        
-                        console.log('✅ Container encontrado, procesando ubicaciones...');
-                        
-                        resource.ubicaciones_secundarias.forEach((ubic, idx) => {
-                            console.log(`➕ Procesando ubicación ${idx + 1}:`, ubic.ubicacion);
-                            
-                            if (typeof agregarUbicacionSecundaria === 'function') {
-                                agregarUbicacionSecundaria();
-                                
-                                setTimeout(() => {
-                                    const items = container.querySelectorAll('.ubicacion-item');
-                                    const lastItem = items[items.length - 1];
-                                    
-                                    if (lastItem) {
-                                        const input = lastItem.querySelector('input[name="ubicaciones_secundarias[]"]');
-                                        const latInput = lastItem.querySelector('input[name="ubicaciones_secundarias_lat[]"]');
-                                        const lngInput = lastItem.querySelector('input[name="ubicaciones_secundarias_lng[]"]');
-                                        const preview = lastItem.querySelector('[id^="preview-ubicacion-"]');
-                                        
-                                        if (input) {
-                                            input.value = ubic.ubicacion;
-                                            console.log(`✅ Input ${idx + 1} rellenado:`, ubic.ubicacion);
-                                        }
-                                        
-                                        if (latInput && ubic.latitud) latInput.value = ubic.latitud;
-                                        if (lngInput && ubic.longitud) lngInput.value = ubic.longitud;
-                                        
-                                        if (preview && ubic.ubicacion) {
-                                            preview.innerHTML = `
-                                                <div style="
-                                                    margin-top: 8px;
-                                                    padding: 10px;
-                                                    background: #f0fdf4;
-                                                    border-radius: 8px;
-                                                    border-left: 3px solid #10b981;
-                                                    font-size: 12px;
-                                                ">
-                                                    <div style="font-weight: 600; color: #065f46;">
-                                                        📍 ${ubic.ubicacion}
-                                                    </div>
-                                                    ${ubic.latitud && ubic.longitud ? `
-                                                        <div style="color: #059669; font-size: 11px; margin-top: 2px;">
-                                                            ${parseFloat(ubic.latitud).toFixed(6)}, ${parseFloat(ubic.longitud).toFixed(6)}
-                                                        </div>
-                                                    ` : ''}
-                                                </div>
-                                            `;
-                                            preview.style.display = 'block';
-                                            console.log(`✅ Preview ${idx + 1} mostrado`);
-                                        }
+                div.innerHTML = `
+                    <div class="ubicacion-input-wrapper" style="width: 100%;">
+                        <input type="text" 
+                               name="ubicaciones_secundarias[]" 
+                               id="ubicacion-${index}"
+                               class="form-control"
+                               value="${ubic.ubicacion || ''}"
+                               placeholder="🔍 Buscar otra ubicación..."
+                               style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px;">
+                        <input type="hidden" name="ubicaciones_secundarias_lat[]" id="latitud-${index}" value="${ubic.latitud || ''}">
+                        <input type="hidden" name="ubicaciones_secundarias_lng[]" id="longitud-${index}" value="${ubic.longitud || ''}">
+                        <div id="preview-ubicacion-${index}">
+                            ${ubic.ubicacion ? `
+                                <div style="margin-top: 8px; padding: 8px; background: #f0fdf4; border-radius: 6px; border-left: 3px solid #10b981; font-size: 11px;">
+                                    <div style="font-weight: 600; color: #065f46;">${ubic.ubicacion}</div>
+                                    ${ubic.latitud && ubic.longitud ? 
+                                        `<div style="color: #059669; font-size: 10px; margin-top: 2px;">
+                                            ${parseFloat(ubic.latitud).toFixed(6)}, ${parseFloat(ubic.longitud).toFixed(6)}
+                                        </div>` : ''
                                     }
-                                }, 150 * (idx + 1));
-                            } else {
-                                console.error('❌ Función agregarUbicacionSecundaria no existe');
-                            }
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <button type="button" 
+                            onclick="removerUbicacionSecundaria(${index})"
+                            style="background: #e53e3e; color: white; border: none; border-radius: 8px; width: 40px; height: 40px; cursor: pointer; font-size: 18px;">
+                        ✕
+                    </button>
+                `;
+                
+                container.appendChild(div);
+                
+                // Inicializar widget después de agregar al DOM
+                setTimeout(() => {
+                    const input = document.getElementById(`ubicacion-${index}`);
+                    if (input && typeof UbicacionSearchWidget !== 'undefined') {
+                        const widget = new UbicacionSearchWidget(input, {
+                            apiUrl: '<?= APP_URL ?>/modules/ubicaciones/ubicaciones_api.php',
+                            latInputId: `latitud-${index}`,
+                            lngInputId: `longitud-${index}`,
+                            placeholder: '🔍 Buscar otra ubicación...',
+                            showPreview: true,
+                            previewContainerId: `preview-ubicacion-${index}`,
+                            autoSave: true
                         });
                         
-                        console.log(`✅ ${resource.ubicaciones_secundarias.length} ubicaciones secundarias procesadas`);
-                    }, 1000);
-                } else {
-                    console.log('ℹ️ No hay ubicaciones secundarias');
-                }
-                
-                // 6. ACTUALIZAR CONTADORES DE CARACTERES
-                setTimeout(() => {
-                    const tituloInput = document.getElementById('titulo');
-                    const tituloCounter = document.getElementById('titulo-counter');
-                    if (tituloInput && tituloCounter) {
-                        const length = tituloInput.value.length;
-                        tituloCounter.textContent = `${length}/250`;
-                        console.log(`✅ Contador título: ${length}/250`);
+                        if (!window.widgetsUbicacionesSecundarias) {
+                            window.widgetsUbicacionesSecundarias = [];
+                        }
+                        widgetsUbicacionesSecundarias.push({ index, widget });
+                        console.log(`✅ Widget ${idx + 1} inicializado`);
                     }
-                    
-                    const descripcionInput = document.getElementById('descripcion');
-                    const descripcionCounter = document.getElementById('descripcion-counter');
-                    if (descripcionInput && descripcionCounter) {
-                        const length = descripcionInput.value.length;
-                        descripcionCounter.textContent = `${length}/1500`;
-                        console.log(`✅ Contador descripción: ${length}/1500`);
-                    }
-                }, 600);
+                }, 150 * (idx + 1));
+            });
+            
+            console.log(`✅ ${resource.ubicaciones_secundarias.length} ubicaciones secundarias agregadas al DOM`);
+        }, 1000);
+    } else {
+        console.log('ℹ️ No hay ubicaciones secundarias para este día');
+    }
+    
+    // Cargar imágenes
+    loadImagePreviews(['imagen1', 'imagen2', 'imagen3'], resource);
+    setTimeout(() => {
+        if (document.getElementById('dropZoneMultiple')) {
+            loadExistingImagesInMultipleSystem(resource);
+        }
+    }, 300);
+    
+    break;
                 
-                break;
-                
-            // ========================================
-            // CASO: ALOJAMIENTOS
-            // ========================================
             case 'alojamientos':
-                console.log('Loading ACCOMMODATION data');
-                
-                // 1. BASIC FIELDS
-                if (resource.nombre) {
-                    const nombreInput = document.getElementById('nombre');
-                    if (nombreInput) {
-                        nombreInput.value = resource.nombre;
-                        console.log('Name loaded:', resource.nombre);
-                    }
-                }
-                
-                if (resource.descripcion) {
-                    const descripcionInput = document.getElementById('descripcion');
-                    if (descripcionInput) {
-                        descripcionInput.value = resource.descripcion;
-                        console.log('Description loaded');
-                    }
-                }
-                
-                if (resource.ubicacion) {
-                    const ubicacionInput = document.getElementById('ubicacion');
-                    if (ubicacionInput) {
-                        ubicacionInput.value = resource.ubicacion;
-                        console.log('Location loaded:', resource.ubicacion);
-                    }
-                }
-                
-                // 2. COORDINATES
-                if (resource.latitud) {
-                    const latInput = document.getElementById('latitud');
-                    if (latInput) latInput.value = resource.latitud;
-                }
-                
-                if (resource.longitud) {
-                    const lngInput = document.getElementById('longitud');
-                    if (lngInput) lngInput.value = resource.longitud;
-                }
-                
-                // 3. ACCOMMODATION SPECIFIC FIELDS
-                if (resource.tipo) {
-                    const tipoSelect = document.getElementById('tipo');
-                    if (tipoSelect) {
-                        tipoSelect.value = resource.tipo;
-                        console.log('Type loaded:', resource.tipo);
-                        
-                        // Update category field based on type
-                        if (typeof updateCategoryField === 'function') {
-                            updateCategoryField();
-                        }
-                    }
-                }
-                
-                if (resource.categoria) {
-                    const categoriaSelect = document.getElementById('categoria');
-                    if (categoriaSelect) {
-                        categoriaSelect.value = resource.categoria;
-                        console.log('Category loaded:', resource.categoria);
-                    }
-                }
-                
-                if (resource.sitio_web) {
-                    const sitioWebInput = document.getElementById('sitio_web');
-                    if (sitioWebInput) {
-                        sitioWebInput.value = resource.sitio_web;
-                        console.log('Website loaded');
-                    }
-                }
-                
-                // 4. LOAD ACCOMMODATION IMAGE (only 1 image)
-                setTimeout(() => {
-                    console.log('Loading accommodation image...');
-                    console.log('Image available:', resource.imagen ? 'YES' : 'NO');
-                    
-                    if (resource.imagen && resource.imagen.trim()) {
-                        const container = document.getElementById('imagePreviewsGrid');
-                        if (container) {
-                            container.innerHTML = '';
-                            
-                            const imageData = {
-                                url: resource.imagen.trim(),
-                                field: 'imagen',
-                                name: 'Imagen del alojamiento'
-                            };
-                            
-                            if (window.createImageCardForEdit) {
-                                const card = window.createImageCardForEdit(imageData, 0);
-                                container.appendChild(card);
-                                console.log('Accommodation image loaded successfully');
-                            } else {
-                                console.error('Function createImageCardForEdit NOT available');
-                            }
-                        } else {
-                            console.error('Container imagePreviewsGrid NOT found');
-                        }
-                    } else {
-                        console.log('No image for this accommodation');
-                    }
-                }, 400);
-                
-                // 5. UPDATE COUNTERS
-                setTimeout(() => {
-                    const nombreInput = document.getElementById('nombre');
-                    const nombreCounter = document.getElementById('nombre-counter');
-                    if (nombreInput && nombreCounter) {
-                        nombreCounter.textContent = `${nombreInput.value.length}/250`;
-                    }
-                    
-                    const descripcionInput = document.getElementById('descripcion');
-                    const descripcionCounter = document.getElementById('descripcion-counter');
-                    if (descripcionInput && descripcionCounter) {
-                        descripcionCounter.textContent = `${descripcionInput.value.length}/1500`;
-                    }
-                }, 600);
-                
+                setFieldValue('nombre', resource.nombre);
+                setFieldValue('ubicacion', resource.ubicacion);
+                setFieldValue('tipo', resource.tipo);
+                setFieldValue('categoria', resource.categoria);
+                setFieldValue('sitio_web', resource.sitio_web);
+                setFieldValue('latitud', resource.latitud);
+                setFieldValue('longitud', resource.longitud);
+                loadImagePreviews(['imagen'], resource);
                 break;
                 
-            // ========================================
-            // CASO: ACTIVIDADES
-            // ========================================
             case 'actividades':
-                console.log('Loading ACTIVITY data');
-                
-                // 1. BASIC FIELDS
-                if (resource.nombre) {
-                    const nombreInput = document.getElementById('nombre');
-                    if (nombreInput) {
-                        nombreInput.value = resource.nombre;
-                        console.log('Name loaded:', resource.nombre);
-                    }
-                }
-                
-                if (resource.descripcion) {
-                    const descripcionInput = document.getElementById('descripcion');
-                    if (descripcionInput) {
-                        descripcionInput.value = resource.descripcion;
-                        console.log('Description loaded');
-                    }
-                }
-                
-                if (resource.ubicacion) {
-                    const ubicacionInput = document.getElementById('ubicacion');
-                    if (ubicacionInput) {
-                        ubicacionInput.value = resource.ubicacion;
-                        console.log('Location loaded:', resource.ubicacion);
-                    }
-                }
-                
-                // 2. COORDINATES
-                if (resource.latitud) {
-                    const latInput = document.getElementById('latitud');
-                    if (latInput) latInput.value = resource.latitud;
-                }
-                
-                if (resource.longitud) {
-                    const lngInput = document.getElementById('longitud');
-                    if (lngInput) lngInput.value = resource.longitud;
-                }
-                
-                // 3. LOAD EXISTING IMAGES (up to 3)
-                setTimeout(() => {
-                    console.log('Loading activity images...');
-                    console.log('Available images:', {
-                        imagen1: resource.imagen1 ? 'YES' : 'NO',
-                        imagen2: resource.imagen2 ? 'YES' : 'NO',
-                        imagen3: resource.imagen3 ? 'YES' : 'NO'
-                    });
-                    
-                    if (window.loadExistingImages) {
-                        window.loadExistingImages(resource);
-                    } else {
-                        console.error('Function loadExistingImages NOT available');
-                    }
-                }, 400);
-                
-                // 4. UPDATE COUNTERS
-                setTimeout(() => {
-                    const nombreInput = document.getElementById('nombre');
-                    const nombreCounter = document.getElementById('nombre-counter');
-                    if (nombreInput && nombreCounter) {
-                        nombreCounter.textContent = `${nombreInput.value.length}/250`;
-                    }
-                    
-                    const descripcionInput = document.getElementById('descripcion');
-                    const descripcionCounter = document.getElementById('descripcion-counter');
-                    if (descripcionInput && descripcionCounter) {
-                        descripcionCounter.textContent = `${descripcionInput.value.length}/1500`;
-                    }
-                }, 600);
-                
+                setFieldValue('nombre', resource.nombre);
+                setFieldValue('ubicacion', resource.ubicacion);
+                setFieldValue('duracion', resource.duracion);
+                setFieldValue('precio', resource.precio);
+                setFieldValue('latitud', resource.latitud);
+                setFieldValue('longitud', resource.longitud);
+                loadImagePreviews(['imagen1', 'imagen2', 'imagen3'], resource);
                 break;
                 
-            // ========================================
-            // CASO: TRANSPORTES
-            // ========================================
             case 'transportes':
-                console.log('🚗 Cargando datos de TRANSPORTE');
-                
-                // 1. CAMPOS BÁSICOS
-                if (resource.medio) {
-                    const medioSelect = document.getElementById('medio');
-                    if (medioSelect) {
-                        medioSelect.value = resource.medio;
-                        console.log('✅ Medio cargado:', resource.medio);
-                    }
-                }
-                
-                if (resource.titulo) {
-                    const tituloInput = document.getElementById('titulo');
-                    if (tituloInput) {
-                        tituloInput.value = resource.titulo;
-                        console.log('✅ Título cargado:', resource.titulo);
-                    }
-                }
-                
-                if (resource.descripcion) {
-                    const descripcionInput = document.getElementById('descripcion');
-                    if (descripcionInput) {
-                        descripcionInput.value = resource.descripcion;
-                        console.log('✅ Descripción cargada');
-                    }
-                }
-                
-                // 2. UBICACIONES Y COORDENADAS DE SALIDA
-                if (resource.lugar_salida) {
-                    const salidaInput = document.getElementById('lugar_salida');
-                    if (salidaInput) {
-                        salidaInput.value = resource.lugar_salida;
-                        console.log('✅ Lugar salida cargado:', resource.lugar_salida);
-                    }
-                }
-                
-                if (resource.lat_salida) {
-                    const latSalidaInput = document.getElementById('lat_salida');
-                    if (latSalidaInput) latSalidaInput.value = resource.lat_salida;
-                }
-                
-                if (resource.lng_salida) {
-                    const lngSalidaInput = document.getElementById('lng_salida');
-                    if (lngSalidaInput) lngSalidaInput.value = resource.lng_salida;
-                }
-                
-                // 3. UBICACIONES Y COORDENADAS DE LLEGADA
-                if (resource.lugar_llegada) {
-                    const llegadaInput = document.getElementById('lugar_llegada');
-                    if (llegadaInput) {
-                        llegadaInput.value = resource.lugar_llegada;
-                        console.log('✅ Lugar llegada cargado:', resource.lugar_llegada);
-                    }
-                }
-                
-                if (resource.lat_llegada) {
-                    const latLlegadaInput = document.getElementById('lat_llegada');
-                    if (latLlegadaInput) latLlegadaInput.value = resource.lat_llegada;
-                }
-                
-                if (resource.lng_llegada) {
-                    const lngLlegadaInput = document.getElementById('lng_llegada');
-                    if (lngLlegadaInput) lngLlegadaInput.value = resource.lng_llegada;
-                }
-                
-                // 4. DURACIÓN Y DISTANCIA
-                if (resource.duracion) {
-                    const duracionInput = document.getElementById('duracion');
-                    if (duracionInput) {
-                        duracionInput.value = resource.duracion;
-                        console.log('✅ Duración cargada:', resource.duracion);
-                    }
-                }
-                
-                if (resource.distancia_km) {
-                    const distanciaInput = document.getElementById('distancia_km');
-                    if (distanciaInput) {
-                        distanciaInput.value = resource.distancia_km;
-                        console.log('✅ Distancia cargada:', resource.distancia_km);
-                    }
-                }
-                
-                // 5. ACTUALIZAR CONTADORES
-                setTimeout(() => {
-                    const tituloInput = document.getElementById('titulo');
-                    const tituloCounter = document.getElementById('titulo-counter');
-                    if (tituloInput && tituloCounter) {
-                        tituloCounter.textContent = `${tituloInput.value.length}/250`;
-                    }
-                    
-                    const descripcionInput = document.getElementById('descripcion');
-                    const descripcionCounter = document.getElementById('descripcion-counter');
-                    if (descripcionInput && descripcionCounter) {
-                        descripcionCounter.textContent = `${descripcionInput.value.length}/1500`;
-                    }
-                }, 600);
-                
+                setFieldValue('titulo', resource.titulo);
+                setFieldValue('medio', resource.medio);
+                setFieldValue('lugar_salida', resource.lugar_salida);
+                setFieldValue('lugar_llegada', resource.lugar_llegada);
+                setFieldValue('duracion', resource.duracion);
+                setFieldValue('distancia_km', resource.distancia_km);
+                setFieldValue('lat_salida', resource.lat_salida);
+                setFieldValue('lng_salida', resource.lng_salida);
+                setFieldValue('lat_llegada', resource.lat_llegada);
+                setFieldValue('lng_llegada', resource.lng_llegada);
                 break;
-                
-            // ========================================
-            // CASO POR DEFECTO
-            // ========================================
-            default:
-                console.warn(`⚠️ Tipo de recurso desconocido: ${currentTab}`);
         }
         
-        console.log('✅ Todos los datos cargados correctamente');
+        console.log('✅ Datos cargados correctamente');
         
-    } catch (error) {
-        console.error('❌ Error al cargar datos del recurso:', error);
-        console.error('Stack trace:', error.stack);
-        alert('Error al cargar los datos del recurso: ' + error.message);
-        closeModal();
+    } catch(error) {
+        console.error('❌ Error cargando datos:', error);
+        showToast('Error al cargar los datos del recurso', 'error');
     }
 }
 
-// ========================================
-// FUNCIÓN CORREGIDA - SIN LOOP INFINITO
-// ========================================
+// Función para configurar contadores de caracteres en biblioteca
+// Función para configurar contadores de caracteres en biblioteca
 function setupBibliotecaCharacterCounters() {
-    // ⭐ IMPORTANTE: Verificar si ya está configurado para evitar duplicados
-    if (window._charCountersConfigured) {
-        console.log('✅ Contadores ya configurados, saltando...');
-        return;
+    console.log('Configurando contadores de caracteres...');
+    
+    let intentos = 0;
+    const maxIntentos = 10;
+    
+    function intentarConfigurar() {
+    // Para días y transportes
+    const titulo = document.getElementById('titulo');
+    const descripcion = document.getElementById('descripcion');
+    
+    // Para actividades  
+    const nombre = document.getElementById('nombre');
+        
+        console.log('Intento', intentos + 1, '- Elementos encontrados:', {
+            titulo: !!titulo,
+            descripcion: !!descripcion,
+            nombre: !!nombre
+        });
+        
+        if (titulo || descripcion || nombre) {
+            configurarContadores();
+        } else if (intentos < maxIntentos) {
+            intentos++;
+            setTimeout(intentarConfigurar, 100);
+        } else {
+            console.log('No se encontraron elementos después de', maxIntentos, 'intentos');
+        }
     }
     
-    console.log('🔧 Configurando contadores de caracteres...');
-    
-    // Función auxiliar para configurar un contador individual
-    function configurarContador(inputId, counterId, maxLength) {
-        const input = document.getElementById(inputId);
-        const counter = document.getElementById(counterId);
+    function configurarContadores() {
+        // Configurar título (para días)
+        const titulo = document.getElementById('titulo');
+        const tituloCounter = document.getElementById('titulo-counter');
         
-        if (!input || !counter) {
-            console.log(`ℹ️ No se encontró ${inputId} o ${counterId}, saltando...`);
-            return false;
+        if (titulo && tituloCounter) {
+            configurarContador(titulo, tituloCounter, 250);
+            console.log('Contador de título configurado');
         }
         
-        // Función de actualización
+        // Configurar nombre (para actividades)
+        const nombre = document.getElementById('nombre');
+        const nombreCounter = document.getElementById('nombre-counter');
+        
+        if (nombre && nombreCounter) {
+            configurarContador(nombre, nombreCounter, 250);
+            console.log('Contador de nombre configurado');
+        }
+        
+        const sitioWeb = document.getElementById('sitio_web');
+        const sitioWebCounter = document.getElementById('sitio_web-counter');
+
+        if (sitioWeb && sitioWebCounter) {
+            configurarContador(sitioWeb, sitioWebCounter, 250);
+            console.log('Contador de sitio web configurado');
+        }
+
+        // Configurar descripción (para ambos)
+        const descripcion = document.getElementById('descripcion');
+        const descripcionCounter = document.getElementById('descripcion-counter');
+        
+        if (descripcion && descripcionCounter) {
+            configurarContador(descripcion, descripcionCounter, 1500);
+            console.log('Contador de descripción configurado');
+        }
+    }
+    
+    function configurarContador(elemento, contador, maximo) {
         function actualizarContador() {
-            const longitud = input.value.length;
-            counter.textContent = `${longitud}/${maxLength}`;
+            const longitud = elemento.value.length;
+            contador.textContent = `${longitud}/${maximo}`;
             
-            // Limpiar clases
-            counter.classList.remove('warning', 'danger');
+            contador.classList.remove('warning', 'danger');
             
-            // Agregar clase según porcentaje
-            const porcentaje = (longitud / maxLength) * 100;
+            const porcentaje = (longitud / maximo) * 100;
             if (porcentaje >= 100) {
-                counter.classList.add('danger');
+                contador.classList.add('danger');
             } else if (porcentaje >= 80) {
-                counter.classList.add('warning');
+                contador.classList.add('warning');
             }
         }
         
-        // ⭐ CRÍTICO: Solo agregar event listeners una vez
-        // Remover listeners antiguos antes de agregar nuevos
-        input.removeEventListener('input', actualizarContador);
-        input.removeEventListener('keyup', actualizarContador);
-        input.removeEventListener('change', actualizarContador);
+        elemento.addEventListener('input', actualizarContador);
+        elemento.addEventListener('keyup', actualizarContador);
+        elemento.addEventListener('paste', () => setTimeout(actualizarContador, 10));
         
-        // Agregar listeners
-        input.addEventListener('input', actualizarContador);
-        input.addEventListener('keyup', actualizarContador);
-        input.addEventListener('change', actualizarContador);
-        
-        // Inicializar
         actualizarContador();
-        
-        console.log(`✅ Contador configurado: ${inputId} (${maxLength} caracteres)`);
-        return true;
+    }
+    if (currentTab === 'dias' || currentTab === 'actividades' || currentTab === 'transportes' || currentTab === 'alojamientos') {
+        setTimeout(() => {
+            setupBibliotecaCharacterCounters();
+            setupImageValidation(); // AGREGAR ESTA LÍNEA
+        }, 100);
     }
     
-    // Configurar contadores para diferentes tipos
-    let configured = false;
-    
-    // Para DÍAS: titulo + descripcion
-    if (configurarContador('titulo', 'titulo-counter', 250)) {
-        configured = true;
-    }
-    
-    if (configurarContador('descripcion', 'descripcion-counter', 1500)) {
-        configured = true;
-    }
-    
-    // Para ACTIVIDADES: nombre + descripcion
-    if (configurarContador('nombre', 'nombre-counter', 250)) {
-        configured = true;
-    }
-    
-    // Para ALOJAMIENTOS: sitio_web
-    if (configurarContador('sitio_web', 'sitio_web-counter', 250)) {
-        configured = true;
-    }
-    
-    if (configured) {
-        // ⭐ MARCAR COMO CONFIGURADO PARA EVITAR DUPLICADOS
-        window._charCountersConfigured = true;
-        console.log('✅ Todos los contadores configurados exitosamente');
-    } else {
-        console.log('ℹ️ No se encontraron elementos para configurar contadores');
-    }
+    intentarConfigurar();
 }
 function setupImageValidation() {
     const imageInputs = document.querySelectorAll('input[type="file"][accept*="image"]');
@@ -5869,7 +5465,152 @@ function clearImagePreview(button) {
 // MANEJO DE MÚLTIPLES IMÁGENES PARA DÍAS
 // ====================================================================
 
+let selectedImages = []; // Array para almacenar las imágenes seleccionadas
 
+function handleMultipleImageSelect(input) {
+    const files = Array.from(input.files);
+    const maxImages = 3;
+    
+    console.log(`📸 ${files.length} imagen(es) seleccionada(s)`);
+    
+    // Limpiar array de imágenes anteriores
+    selectedImages = [];
+    
+    // Validar cantidad
+    if (files.length > maxImages) {
+        showAlert(`Solo puedes subir máximo ${maxImages} imágenes`, 'warning');
+        files.splice(maxImages); // Mantener solo las primeras 3
+    }
+    
+    // Validar cada archivo
+    files.forEach((file, index) => {
+        if (file.size > 5 * 1024 * 1024) {
+            showAlert(`La imagen "${file.name}" supera los 5MB`, 'error');
+            return;
+        }
+        
+        if (!file.type.startsWith('image/')) {
+            showAlert(`"${file.name}" no es una imagen válida`, 'error');
+            return;
+        }
+        
+        selectedImages.push({
+            file: file,
+            index: index,
+            preview: URL.createObjectURL(file)
+        });
+    });
+    
+    console.log(`✅ ${selectedImages.length} imágenes válidas agregadas`);
+    
+    // Mostrar previsualizaciones
+    displayImagePreviews();
+    
+    // Asignar archivos a los inputs ocultos para el backend
+    assignFilesToInputs();
+}
+
+function displayImagePreviews() {
+    const container = document.getElementById('imagesPreviewContainer');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (selectedImages.length === 0) {
+        return;
+    }
+    
+    selectedImages.forEach((imgData, index) => {
+        const previewCard = document.createElement('div');
+        previewCard.className = 'image-preview-card';
+        previewCard.style.cssText = `
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            background: white;
+        `;
+        
+        previewCard.innerHTML = `
+            <div style="position: relative;">
+                <img src="${imgData.preview}" 
+                     alt="Preview ${index + 1}"
+                     style="
+                        width: 100%;
+                        height: 200px;
+                        object-fit: cover;
+                        display: block;
+                     ">
+                
+                <!-- Badge de posición -->
+                <div style="
+                    position: absolute;
+                    top: 10px;
+                    left: 10px;
+                    background: ${index === 0 ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#48bb78'};
+                    color: white;
+                    padding: 5px 12px;
+                    border-radius: 20px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                ">
+                    ${index === 0 ? '⭐ Principal' : `#${index + 1}`}
+                </div>
+                
+                <!-- Botón de eliminar -->
+                <button type="button"
+                        onclick="removeImage(${index})"
+                        style="
+                            position: absolute;
+                            top: 10px;
+                            right: 10px;
+                            background: rgba(239, 68, 68, 0.95);
+                            color: white;
+                            border: none;
+                            border-radius: 50%;
+                            width: 32px;
+                            height: 32px;
+                            cursor: pointer;
+                            font-size: 16px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            transition: all 0.2s;
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                        "
+                        onmouseover="this.style.background='rgba(220, 38, 38, 0.95)'; this.style.transform='scale(1.1)'"
+                        onmouseout="this.style.background='rgba(239, 68, 68, 0.95)'; this.style.transform='scale(1)'">
+                    ✕
+                </button>
+            </div>
+            
+            <!-- Información del archivo -->
+            <div style="padding: 12px;">
+                <div style="
+                    font-size: 13px;
+                    color: #2d3748;
+                    font-weight: 600;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    margin-bottom: 5px;
+                ">
+                    ${imgData.file.name}
+                </div>
+                <div style="
+                    font-size: 11px;
+                    color: #718096;
+                ">
+                    ${(imgData.file.size / 1024).toFixed(0)} KB
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(previewCard);
+    });
+}
 
 function removeImage(index) {
     console.log(`🗑️ Eliminando imagen en posición ${index}`);
@@ -5896,7 +5637,33 @@ function removeImage(index) {
     console.log(`✅ Imagen eliminada. Quedan ${selectedImages.length} imágenes`);
 }
 
-
+function assignFilesToInputs() {
+    // Crear un DataTransfer para asignar archivos a los inputs
+    const dt1 = new DataTransfer();
+    const dt2 = new DataTransfer();
+    const dt3 = new DataTransfer();
+    
+    if (selectedImages[0]) {
+        dt1.items.add(selectedImages[0].file);
+        document.getElementById('imagenes').files = dt1.files;
+    }
+    
+    if (selectedImages[1]) {
+        dt2.items.add(selectedImages[1].file);
+        document.getElementById('imagen2').files = dt2.files;
+    }
+    
+    if (selectedImages[2]) {
+        dt3.items.add(selectedImages[2].file);
+        document.getElementById('imagen3').files = dt3.files;
+    }
+    
+    console.log('✅ Archivos asignados a inputs:', {
+        imagen1: selectedImages[0]?.file.name,
+        imagen2: selectedImages[1]?.file.name,
+        imagen3: selectedImages[2]?.file.name
+    });
+}
 
 // Drag & Drop handlers
 function handleDragOver(e) {
@@ -5949,7 +5716,14 @@ function limpiarImagenesPrevias() {
     if (input3) input3.value = '';
 }
 
-
+// Llamar a limpiarImagenesPrevias cuando se cierra el modal
+const originalCloseModal = window.closeModal;
+window.closeModal = function() {
+    limpiarImagenesPrevias();
+    if (originalCloseModal) {
+        originalCloseModal();
+    }
+};
 function setupCharCountersDirectly() {
     console.log('Configurando contadores directamente...');
     
@@ -6698,7 +6472,64 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 <script>
 
-
+// Función mejorada para actualizar mapa cuando se selecciona ubicación
+function updateMapWithSelectedLocation(location, coordinates) {
+    console.log('📍 Actualizando mapa con ubicación seleccionada:', location);
+    
+    if (!map) {
+        console.warn('⚠️ Mapa no disponible');
+        return;
+    }
+    
+    try {
+        const lat = coordinates.lat || coordinates.latitude || coordinates[0];
+        const lng = coordinates.lng || coordinates.longitude || coordinates[1];
+        
+        if (!lat || !lng) {
+            console.warn('⚠️ Coordenadas no válidas:', coordinates);
+            return;
+        }
+        
+        // Animar hacia la nueva ubicación
+        map.flyTo([lat, lng], 16, {
+            animate: true,
+            duration: 1.5
+        });
+        
+        // Remover marcador anterior
+        if (window.currentMarker) {
+            map.removeLayer(window.currentMarker);
+        }
+        
+        // Crear nuevo marcador
+        window.currentMarker = L.marker([lat, lng], {
+            draggable: true
+        }).addTo(map);
+        
+        // Popup informativo
+        window.currentMarker.bindPopup(`
+            <div style="text-align: center;">
+                <strong>📍 ${location}</strong><br>
+                <small>Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}</small>
+            </div>
+        `).openPopup();
+        
+        // Actualizar campos ocultos de coordenadas
+        updateCoordinateFields(lat, lng);
+        
+        // Event listener para arrastrar
+        window.currentMarker.on('dragend', function(e) {
+            const newCoords = e.target.getLatLng();
+            updateCoordinateFields(newCoords.lat, newCoords.lng);
+            reverseGeocodeOSM(newCoords.lat, newCoords.lng);
+        });
+        
+        console.log('✅ Mapa actualizado correctamente');
+        
+    } catch (error) {
+        console.error('❌ Error actualizando mapa:', error);
+    }
+}
 
 
 
@@ -7908,7 +7739,14 @@ window.removeExistingImageAtIndex = function(index) {
                     if (latField) latField.value = result.lat;
                     if (lngField) lngField.value = result.lon;
                     
-                   
+                    // Actualizar mapa
+                    if (window.map && window.L) {
+                        window.map.setView([result.lat, result.lon], 15);
+                        if (window.currentMarker) {
+                            window.map.removeLayer(window.currentMarker);
+                        }
+                        window.currentMarker = window.L.marker([result.lat, result.lon]).addTo(window.map);
+                    }
                 }
                 
                 clearSuggestions();
@@ -8068,421 +7906,6 @@ function clearSecondaryLocationSuggestions(input) {
     });
 }
 // ===== FIN SISTEMA DE CARGA MÚLTIPLE =====
-
-
-// ========================================
-// SISTEMA COMPLETO DE CARGA MÚLTIPLE DE IMÁGENES - V2 LIMPIO
-// ========================================
-
-(function() {
-    'use strict';
-    
-    // Variables globales
-    window.imageManager = {
-        files: [],
-        existing: [],
-        maxImages: 3
-    };
-    
-    /**
-     * Inicializar sistema
-     */
-window.initImageSystem = function() {
-    console.log('🖼️ Inicializando sistema de imágenes...');
-    
-    const dropZone = document.getElementById('multipleImageDropZone');
-    const fileInput = document.getElementById('multipleImageInput');
-    const loadButton = document.getElementById('loadImagesButton');
-    const previewContainer = document.getElementById('imagesPreviewContainer');
-    
-    if (!dropZone || !fileInput || !loadButton || !previewContainer) {
-        console.warn('⚠️ Elementos del sistema de imágenes no encontrados');
-        return;
-    }
-    
-    window.selectedImages = [];
-    
-    // ⭐ ESTO ES LO CRÍTICO - VINCULAR BOTÓN
-    loadButton.onclick = function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('🖱️ Click en botón cargar imágenes');
-        fileInput.click();
-    };
-    
-    // ⭐ Y ESTO TAMBIÉN - EVENTO CHANGE
-    fileInput.addEventListener('change', function(e) {
-        console.log('📁 Archivos seleccionados:', e.target.files.length);
-        const files = Array.from(e.target.files);
-        
-        if (files.length > 0) {
-            handleImageSelection(files, previewContainer);
-        }
-        
-        e.target.value = '';
-    });
-    
-    dropZone.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        dropZone.classList.add('drag-over');
-    });
-    
-    dropZone.addEventListener('dragleave', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        dropZone.classList.remove('drag-over');
-    });
-    
-    dropZone.addEventListener('drop', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        dropZone.classList.remove('drag-over');
-        
-        const files = Array.from(e.dataTransfer.files);
-        console.log('📥 Archivos arrastrados:', files.length);
-        
-        if (files.length > 0) {
-            handleImageSelection(files, previewContainer);
-        }
-    });
-    
-    dropZone.addEventListener('click', function(e) {
-        if (e.target === dropZone || e.target.closest('.drop-zone-content')) {
-            fileInput.click();
-        }
-    });
-    
-    console.log('✅ Sistema de imágenes inicializado correctamente');
-};
-    
-    /**
-     * Configurar eventos
-     */
-    function setupEvents(dropZone, fileInput) {
-        // Click en zona
-        dropZone.onclick = () => fileInput.click();
-        
-        // Drag & drop
-        dropZone.ondragover = (e) => {
-            e.preventDefault();
-            dropZone.style.borderColor = '#667eea';
-            dropZone.style.background = 'linear-gradient(135deg, #e6f3ff 0%, #f0f4ff 100%)';
-        };
-        
-        dropZone.ondragleave = (e) => {
-            e.preventDefault();
-            dropZone.style.borderColor = '#cbd5e0';
-            dropZone.style.background = 'linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%)';
-        };
-        
-        dropZone.ondrop = (e) => {
-            e.preventDefault();
-            dropZone.style.borderColor = '#cbd5e0';
-            dropZone.style.background = 'linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%)';
-            
-            const files = Array.from(e.dataTransfer.files);
-            processFiles(files);
-        };
-        
-        // Change input
-        fileInput.onchange = () => {
-            const files = Array.from(fileInput.files);
-            processFiles(files);
-        };
-    }
-    
-    /**
-     * Procesar archivos
-     */
-    function processFiles(files) {
-        console.log(`📁 ${files.length} archivo(s) seleccionado(s)`);
-        
-        const total = window.imageManager.files.length + window.imageManager.existing.length;
-        const available = window.imageManager.maxImages - total;
-        
-        if (available === 0) {
-            alert('Ya tienes 3 imágenes. Elimina alguna para agregar nuevas.');
-            return;
-        }
-        
-        const toAdd = files.slice(0, available);
-        
-        if (toAdd.length < files.length) {
-            alert(`Solo puedes agregar ${toAdd.length} imagen(es) más`);
-        }
-        
-        toAdd.forEach(file => {
-            if (validateFile(file)) {
-                window.imageManager.files.push(file);
-            }
-        });
-        
-        renderPreviews();
-        updateInputs();
-    }
-    
-    /**
-     * Validar archivo
-     */
-    function validateFile(file) {
-        if (!file.type.startsWith('image/')) {
-            alert(`"${file.name}" no es una imagen válida`);
-            return false;
-        }
-        
-        if (file.size > 5 * 1024 * 1024) {
-            alert(`"${file.name}" supera los 5MB`);
-            return false;
-        }
-        
-        return true;
-    }
-    
-    /**
-     * Renderizar previews
-     */
-    function renderPreviews() {
-        const container = document.getElementById('imagePreviewsGrid');
-        if (!container) return;
-        
-        container.innerHTML = '';
-        
-        // Existentes
-        window.imageManager.existing.forEach((img, i) => {
-            container.appendChild(createExistingCard(img, i));
-        });
-        
-        // Nuevas
-        window.imageManager.files.forEach((file, i) => {
-            container.appendChild(createNewCard(file, i));
-        });
-    }
-    
-    /**
-     * Crear card de imagen existente
-     */
-    function createExistingCard(img, index) {
-        const card = document.createElement('div');
-        card.className = 'image-preview-card';
-        
-        card.innerHTML = `
-            <img src="${img.url}" alt="${img.field}">
-            <div class="image-preview-badge existing-image-badge">
-                ✅ Guardada
-            </div>
-            <button type="button" class="image-preview-remove" onclick="window.removeExistingImage(${index})">
-                ✕
-            </button>
-            <div class="image-preview-info">
-                <div class="image-preview-name">${img.field}</div>
-                <div class="image-preview-size">Imagen existente</div>
-            </div>
-        `;
-        
-        return card;
-    }
-    
-    /**
-     * Crear card de imagen nueva
-     */
-    function createNewCard(file, index) {
-        const card = document.createElement('div');
-        card.className = 'image-preview-card';
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const isFirst = index === 0 && window.imageManager.existing.length === 0;
-            card.innerHTML = `
-                <img src="${e.target.result}" alt="${file.name}">
-                <div class="image-preview-badge ${isFirst ? '' : 'secondary'}">
-                    ${isFirst ? '⭐ Principal' : `#${index + 1}`}
-                </div>
-                <button type="button" class="image-preview-remove" onclick="window.removeNewImage(${index})">
-                    ✕
-                </button>
-                <div class="image-preview-info">
-                    <div class="image-preview-name">${file.name}</div>
-                    <div class="image-preview-size">${formatSize(file.size)}</div>
-                </div>
-            `;
-        };
-        reader.readAsDataURL(file);
-        
-        return card;
-    }
-    
-    /**
-     * Remover imagen existente
-     */
-    window.removeExistingImage = function(index) {
-        const img = window.imageManager.existing[index];
-        
-        // Marcar para eliminar
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = `delete_${img.field}`;
-        input.value = '1';
-        document.getElementById('resourceForm').appendChild(input);
-        
-        window.imageManager.existing.splice(index, 1);
-        renderPreviews();
-        
-        console.log(`🗑️ ${img.field} marcada para eliminar`);
-    };
-    
-    /**
-     * Remover imagen nueva
-     */
-    window.removeNewImage = function(index) {
-        window.imageManager.files.splice(index, 1);
-        renderPreviews();
-        updateInputs();
-        
-        console.log(`🗑️ Imagen ${index + 1} eliminada`);
-    };
-    
-    /**
-     * Actualizar inputs ocultos
-     */
-    function updateInputs() {
-        const inputs = [
-            document.getElementById('multiImageInput'),
-            document.getElementById('imagen2'),
-            document.getElementById('imagen3')
-        ];
-        
-        // Limpiar
-        inputs.forEach(inp => {
-            if (inp) {
-                const dt = new DataTransfer();
-                inp.files = dt.files;
-            }
-        });
-        
-        // Asignar
-        window.imageManager.files.forEach((file, i) => {
-            if (inputs[i]) {
-                const dt = new DataTransfer();
-                dt.items.add(file);
-                inputs[i].files = dt.files;
-            }
-        });
-    }
-    
-
-
-
-
-
-
-/**
- * 4. Función de verificación para debugging
- */
-window.debugImageSystem = function() {
-    console.log('🔍 === DEBUG DEL SISTEMA DE IMÁGENES ===');
-    console.log('Función loadExistingImages:', typeof window.loadExistingImages);
-    console.log('Función createImageCardForEdit:', typeof window.createImageCardForEdit);
-    console.log('Función removeExistingImageFromEdit:', typeof window.removeExistingImageFromEdit);
-    console.log('Contenedor imagePreviewsGrid:', !!document.getElementById('imagePreviewsGrid'));
-    console.log('Contenedor imagesPreviewContainer:', !!document.getElementById('imagesPreviewContainer'));
-    console.log('ImageManager:', window.imageManager);
-    console.log('=====================================');
-};
-
-// Auto-verificación al cargar
-console.log('✅ Funciones de carga de imágenes registradas');
-console.log('📋 Para verificar el sistema, ejecuta: debugImageSystem()');
-
-/**
- * Crear card visual para imagen existente
- */
-function createImageCardForEdit(imageData, index) {
-    const card = document.createElement('div');
-    card.className = 'image-preview-card';
-    card.setAttribute('data-field', imageData.field);
-    card.setAttribute('data-index', index);
-    
-    card.innerHTML = `
-        <img src="${imageData.url}" 
-             alt="${imageData.name}" 
-             onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22><rect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/><text x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2220%22>Sin imagen</text></svg>';">
-        
-        <div class="existing-image-badge">
-            ✓ Guardada
-        </div>
-        
-        <button type="button" 
-                class="image-preview-remove" 
-                onclick="removeExistingImageFromEdit('${imageData.field}', ${index})"
-                title="Eliminar imagen">
-            ×
-        </button>
-        
-        <div class="image-preview-info">
-            <div class="image-preview-name">${imageData.name}</div>
-            <div class="image-preview-size">Imagen existente</div>
-        </div>
-    `;
-    
-    return card;
-}
-
-/**
- * Eliminar imagen existente al editar
- */
-function removeExistingImageFromEdit(fieldName, index) {
-    console.log(`🗑️ Eliminando: ${fieldName}`);
-    
-    // Confirmar
-    if (!confirm('¿Eliminar esta imagen?')) {
-        return;
-    }
-    
-    // Obtener card
-    const container = document.getElementById('imagePreviewsGrid');
-    const card = container.querySelector(`[data-field="${fieldName}"]`);
-    
-    if (card) {
-        // Animación
-        card.style.transition = 'all 0.3s ease';
-        card.style.opacity = '0';
-        card.style.transform = 'scale(0.8)';
-        
-        setTimeout(() => card.remove(), 300);
-    }
-    
-    // Marcar para eliminación en servidor
-    const deleteInput = document.createElement('input');
-    deleteInput.type = 'hidden';
-    deleteInput.name = `delete_${fieldName}`;
-    deleteInput.value = '1';
-    document.getElementById('resourceForm').appendChild(deleteInput);
-    
-    // Actualizar manager
-    if (window.imageManager && window.imageManager.existing) {
-        window.imageManager.existing.splice(index, 1);
-    }
-    
-    console.log(`✅ ${fieldName} marcada para eliminación`);
-}
-
-// Exponer globalmente
-window.removeExistingImageFromEdit = removeExistingImageFromEdit;
-
-// Exponer globalmente
-window.createImageCardForEdit = createImageCardForEdit;
-    
-    /**
-     * Formatear tamaño
-     */
-    function formatSize(bytes) {
-        if (bytes < 1024) return bytes + ' B';
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-    }
-    
-})();
 </script>
 <!-- Agregar antes del cierre de </body> -->
 <a href="<?= APP_URL ?>/itinerarios" class="floating-itinerarios-btn" title="Ir a Itinerarios">
