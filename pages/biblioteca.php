@@ -4760,52 +4760,6 @@ function showSearchError(message) {
             }, 3000);
         }
 
-        // Función mejorada para mostrar mensajes de error
-        function showErrorMessage(message) {
-            const toast = document.createElement('div');
-            toast.className = 'error-toast';
-            toast.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: linear-gradient(135deg, #e53e3e 0%, #dc2626 100%);
-                color: white;
-                padding: 16px 20px;
-                border-radius: 12px;
-                box-shadow: 0 8px 25px rgba(229, 62, 62, 0.3);
-                z-index: 10000;
-                transform: translateX(100%);
-                transition: transform 0.3s ease;
-                max-width: 350px;
-            `;
-            
-            toast.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="font-size: 20px;">❌</div>
-                    <div>
-                        <div style="font-weight: 600; margin-bottom: 2px;">Error</div>
-                        <div style="font-size: 13px; opacity: 0.9;">${message}</div>
-                    </div>
-                </div>
-            `;
-            
-            document.body.appendChild(toast);
-            
-            // Animar entrada
-            setTimeout(() => {
-                toast.style.transform = 'translateX(0)';
-            }, 100);
-            
-            // Remover después de 4 segundos
-            setTimeout(() => {
-                toast.style.transform = 'translateX(100%)';
-                setTimeout(() => {
-                    if (document.body.contains(toast)) {
-                        document.body.removeChild(toast);
-                    }
-                }, 300);
-            }, 4000);
-        }
 
         async function deleteResource(id) {
             const confirmed = await showConfirmModal({
