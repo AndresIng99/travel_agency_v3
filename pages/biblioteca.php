@@ -25,7 +25,6 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Biblioteca - <?= htmlspecialchars($companyName) ?></title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/modern_image_upload.css">
     <script src="<?= APP_URL ?>/assets/js/modern_image_upload.js"></script>
 
@@ -855,37 +854,7 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
     font-style: italic;
 }
 
-/* Contenedor del mapa - Más elegante */
-.map-container {
-    height: 350px;
-    border-radius: 16px;
-    overflow: hidden;
-    margin-bottom: 30px;
-    border: 3px solid #e2e8f0;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-    position: relative;
-}
 
-.map-container::before {
-    content: '🗺️ Selecciona una ubicación en el mapa';
-    position: absolute;
-    top: 15px;
-    left: 20px;
-    background: rgba(255, 255, 255, 0.95);
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #4a5568;
-    z-index: 1000;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-#map {
-    width: 100%;
-    height: 100%;
-    border-radius: 13px;
-}
 
 /* Acciones del formulario - Botones mejorados */
 .form-actions {
@@ -1989,13 +1958,7 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
                 <!-- Campos específicos se cargan dinámicamente -->
                 <div id="specificFields"></div>
 
-                <!-- Mapa para ubicación -->
-                <div class="form-group" id="mapSection">
-                    <label>Seleccionar Ubicación en el Mapa</label>
-                    <div class="map-container">
-                        <div id="map"></div>
-                    </div>
-                </div>
+                
 
                 <!-- Botones de acción -->
                 <div class="form-actions">
@@ -2008,15 +1971,12 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
 
 
     <!-- Scripts -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // Configuración global - SIN API KEYS
         const APP_URL = '<?= APP_URL ?>';
         const DEFAULT_LANGUAGE = '<?= $defaultLanguage ?>';
 
         let currentTab = 'dias';
-        let map = null;
-        let currentMarker = null;
         let sidebarOpen = false;
         let resources = {
             dias: [],
@@ -2705,282 +2665,6 @@ function limpiarUbicacionesSecundarias() {
     console.log('✅ Ubicaciones secundarias limpiadas. Contador reseteado a 0');
 }
 
-        // Inicializar mapa con OpenStreetMap (GRATIS)
-function initializeMap() {
-    const mapContainer = document.getElementById('map');
-    
-    try {
-        // Limpiar contenedor
-        mapContainer.innerHTML = '';
-        
-        // Crear mapa con OpenStreetMap
-        map = L.map('map').setView([4.7110, -74.0721], 10); // Bogotá por defecto
-
-        // Agregar capa gratuita de OpenStreetMap
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 18,
-            minZoom: 2
-        }).addTo(map);
-
-        // Control de zoom
-        L.control.zoom({
-            position: 'topright'
-        }).addTo(map);
-
-        // 🎯 GRUPO DE MARCADORES PARA ORGANIZAR MEJOR
-        window.markersGroup = L.layerGroup().addTo(map);
-
-        // Click en el mapa para seleccionar ubicación PRINCIPAL
-        map.on('click', function(e) {
-            const coords = e.latlng;
-            updatePrimaryLocation(coords.lat, coords.lng);
-        });
-
-       
-        // Evento cuando el mapa se carga
-        map.whenReady(function() {
-            console.log('✅ Mapa con ubicaciones múltiples cargado');
-            
-            // Mensaje de bienvenida
-            setTimeout(() => {
-                if (window.markersGroup.getLayers().length === 0) {
-                    L.popup()
-                        .setLatLng([4.7110, -74.0721])
-                        .setContent(`
-                            <div style="text-align: center;">
-                                <strong>🗺️ Mapa Interactivo</strong><br>
-                                <small>Haz clic para ubicación principal<br>
-                                Las secundarias se mostrarán automáticamente</small>
-                            </div>
-                        `)
-                        .openOn(map);
-                }
-            }, 1000);
-        });
-
-        // Redimensionar mapa cuando se abre el modal
-        setTimeout(() => {
-            map.invalidateSize();
-        }, 100);
-
-    } catch (error) {
-        console.error('Error cargando mapa:', error);
-        initializeMapFallback();
-    }
-}
-
-        // Función de respaldo si falla el mapa
-        function initializeMapFallback() {
-            const mapContainer = document.getElementById('map');
-            mapContainer.innerHTML = `
-                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center; border-radius: 10px; padding: 20px;">
-                    <div style="font-size: 48px; margin-bottom: 20px;">📍</div>
-                    <h3 style="margin-bottom: 15px;">Seleccionar Ubicación</h3>
-                    <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 20px; width: 100%; max-width: 300px;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-                            <input type="number" id="manual-lat" placeholder="Latitud" step="any" style="padding: 10px; border: none; border-radius: 5px; text-align: center;">
-                            <input type="number" id="manual-lng" placeholder="Longitud" step="any" style="padding: 10px; border: none; border-radius: 5px; text-align: center;">
-                        </div>
-                        <button onclick="useCurrentLocation()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 25px; cursor: pointer; margin-right: 10px;">📱 Mi Ubicación</button>
-                        <button onclick="searchLocationPrompt()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 25px; cursor: pointer;">🔍 Buscar</button>
-                    </div>
-                </div>
-            `;
-            
-            setTimeout(() => {
-                const latInput = document.getElementById('manual-lat');
-                const lngInput = document.getElementById('manual-lng');
-                
-                if (latInput && lngInput) {
-                    latInput.addEventListener('change', updateLocationFromCoords);
-                    lngInput.addEventListener('change', updateLocationFromCoords);
-                }
-            }, 100);
-        }
-
-        // ============================================= 
-        // GEOCODIFICACIÓN GRATUITA CON NOMINATIM
-        // ============================================= 
-
-        function reverseGeocodeOSM(lat, lng) {
-            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=es`;
-            
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data && data.display_name) {
-                        const ubicacionField = document.getElementById('ubicacion');
-                        if (ubicacionField) {
-                            ubicacionField.value = data.display_name;
-                        }
-                        
-                        // Guardar coordenadas en campos ocultos
-                        updateCoordinateFields(lat, lng);
-                        
-                        console.log('📍 Ubicación encontrada:', data.display_name);
-                    } else {
-                        // Si no hay resultado, usar coordenadas
-                        const ubicacionField = document.getElementById('ubicacion');
-                        if (ubicacionField) {
-                            ubicacionField.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-                        }
-                        updateCoordinateFields(lat, lng);
-                    }
-                })
-                .catch(error => {
-                    console.warn('Geocodificación no disponible:', error);
-                    const ubicacionField = document.getElementById('ubicacion');
-                    if (ubicacionField) {
-                        ubicacionField.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-                    }
-                    updateCoordinateFields(lat, lng);
-                });
-        }
-
-       // ============================================= 
-        // FUNCIONES AUXILIARES
-        // ============================================= 
-
-        function updateCoordinateFields(lat, lng) {
-            // Buscar campos de latitud y longitud en el formulario
-            const latField = document.getElementById('latitud') || document.querySelector('input[name="latitud"]');
-            const lngField = document.getElementById('longitud') || document.querySelector('input[name="longitud"]');
-            
-            if (latField) latField.value = lat;
-            if (lngField) lngField.value = lng;
-
-            // Para transportes, también actualizar campos específicos si es el campo activo
-            const currentInput = document.activeElement;
-            if (currentInput && currentInput.name === 'lugar_salida') {
-                const latSalidaField = document.getElementById('lat_salida');
-                const lngSalidaField = document.getElementById('lng_salida');
-                if (latSalidaField) latSalidaField.value = lat;
-                if (lngSalidaField) lngSalidaField.value = lng;
-            } else if (currentInput && currentInput.name === 'lugar_llegada') {
-                const latLlegadaField = document.getElementById('lat_llegada');
-                const lngLlegadaField = document.getElementById('lng_llegada');
-                if (latLlegadaField) latLlegadaField.value = lat;
-                if (lngLlegadaField) lngLlegadaField.value = lng;
-            }
-        }
-
-        function updateLocationFromCoords() {
-            const latInput = document.getElementById('manual-lat');
-            const lngInput = document.getElementById('manual-lng');
-            
-            if (latInput && lngInput) {
-                const lat = parseFloat(latInput.value);
-                const lng = parseFloat(lngInput.value);
-                
-                if (!isNaN(lat) && !isNaN(lng)) {
-                    reverseGeocodeOSM(lat, lng);
-                }
-            }
-        }
-
-        function searchLocationOSM(query) {
-            if (!query || query.length < 3) return;
-            
-            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&accept-language=es`;
-            
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data && data.length > 0) {
-                        const result = data[0];
-                        const lat = parseFloat(result.lat);
-                        const lng = parseFloat(result.lon);
-                        
-                        if (map) {
-                            // Centrar mapa en el resultado
-                            map.setView([lat, lng], 15);
-                            
-                            // Agregar/mover marcador
-                            if (currentMarker) {
-                                map.removeLayer(currentMarker);
-                            }
-                            
-                            currentMarker = L.marker([lat, lng], {
-                                draggable: true
-                            }).addTo(map);
-                            
-                            currentMarker.bindPopup(`
-                                <div style="text-align: center;">
-                                    <strong>🔍 ${result.display_name}</strong><br>
-                                    <small>Lat: ${lat.toFixed(6)}<br>
-                                    Lng: ${lng.toFixed(6)}</small>
-                                </div>
-                            `).openPopup();
-                        }
-                        
-                        // Actualizar campos
-                        const ubicacionField = document.getElementById('ubicacion');
-                        if (ubicacionField) {
-                            ubicacionField.value = result.display_name;
-                        }
-                        
-                        updateCoordinateFields(lat, lng);
-                        console.log('🔍 Búsqueda exitosa:', result.display_name);
-                    } else {
-                        alert('No se encontraron resultados para: ' + query);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error en búsqueda:', error);
-                    alert('Error en la búsqueda. Verifica tu conexión a internet.');
-                });
-        }
-
-        function useCurrentLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    
-                    if (map) {
-                        map.setView([lat, lng], 15);
-                        
-                        if (currentMarker) {
-                            map.removeLayer(currentMarker);
-                        }
-                        
-                        currentMarker = L.marker([lat, lng], {
-                            draggable: true
-                        }).addTo(map);
-                        
-                        currentMarker.bindPopup(`
-                            <div style="text-align: center;">
-                                <strong>📱 Tu Ubicación Actual</strong><br>
-                                <small>Lat: ${lat.toFixed(6)}<br>
-                                Lng: ${lng.toFixed(6)}</small>
-                            </div>
-                        `).openPopup();
-                    } else {
-                        // Para modo fallback
-                        const latInput = document.getElementById('manual-lat');
-                        const lngInput = document.getElementById('manual-lng');
-                        if (latInput && lngInput) {
-                            latInput.value = lat.toFixed(6);
-                            lngInput.value = lng.toFixed(6);
-                        }
-                    }
-                    
-                    reverseGeocodeOSM(lat, lng);
-                }, function(error) {
-                    alert('No se pudo obtener la ubicación: ' + error.message);
-                });
-            } else {
-                alert('La geolocalización no es compatible con este navegador');
-            }
-        }
-
-        function searchLocationPrompt() {
-            const query = prompt('Ingresa el nombre del lugar que quieres buscar:\n(Ejemplo: "Torre Eiffel, París" o "Medellín, Colombia")');
-            if (query && query.trim()) {
-                searchLocationOSM(query.trim());
-            }
-        }
 
         // Configuración de tabs
         function initializeTabs() {
@@ -3234,16 +2918,7 @@ function escapeHtml(text) {
             
             // Mostrar modal
             modal.classList.add('show');
-            
-            // Inicializar mapa después de mostrar modal
-            setTimeout(() => {
-                initializeMap();
-            }, 200);
-
-           // Inicializar mapa después de mostrar modal
-            setTimeout(() => {
-                initializeMap();
-            }, 200);
+         
 
             // ✅ AGREGAR ESTAS LÍNEAS AQUÍ:
             // Inicializar sistema de imágenes si es días o actividades
@@ -3282,13 +2957,7 @@ function escapeHtml(text) {
             
             // AGREGAR ESTA LÍNEA:
             limpiarUbicacionesSecundarias();
-            
-            // Destruir mapa
-            if (map) {
-                map.remove();
-                map = null;
-                currentMarker = null;
-            }
+          
             // AGREGAR ESTA LÍNEA:
             limpiarSistemaCargaMultiple();
             // Limpiar sistema de imágenes moderno
@@ -3296,19 +2965,7 @@ function escapeHtml(text) {
                 cleanupImageSystem();
                 console.log('✅ Sistema de imágenes moderno limpiado');
             }
-            
-            // Destruir mapa
-            if (map) {
-                map.remove();
-                map = null;
-                currentMarker = null;
-            }
-            // Destruir mapa
-            if (map) {
-                map.remove();
-                map = null;
-                currentMarker = null;
-            }
+           
         }
         // NUEVA FUNCIÓN: Limpiar sistema de carga múltiple
 function limpiarSistemaCargaMultiple() {
@@ -6499,69 +6156,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <script>
-
-// Función mejorada para actualizar mapa cuando se selecciona ubicación
-function updateMapWithSelectedLocation(location, coordinates) {
-    console.log('📍 Actualizando mapa con ubicación seleccionada:', location);
-    
-    if (!map) {
-        console.warn('⚠️ Mapa no disponible');
-        return;
-    }
-    
-    try {
-        const lat = coordinates.lat || coordinates.latitude || coordinates[0];
-        const lng = coordinates.lng || coordinates.longitude || coordinates[1];
-        
-        if (!lat || !lng) {
-            console.warn('⚠️ Coordenadas no válidas:', coordinates);
-            return;
-        }
-        
-        // Animar hacia la nueva ubicación
-        map.flyTo([lat, lng], 16, {
-            animate: true,
-            duration: 1.5
-        });
-        
-        // Remover marcador anterior
-        if (window.currentMarker) {
-            map.removeLayer(window.currentMarker);
-        }
-        
-        // Crear nuevo marcador
-        window.currentMarker = L.marker([lat, lng], {
-            draggable: true
-        }).addTo(map);
-        
-        // Popup informativo
-        window.currentMarker.bindPopup(`
-            <div style="text-align: center;">
-                <strong>📍 ${location}</strong><br>
-                <small>Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}</small>
-            </div>
-        `).openPopup();
-        
-        // Actualizar campos ocultos de coordenadas
-        updateCoordinateFields(lat, lng);
-        
-        // Event listener para arrastrar
-        window.currentMarker.on('dragend', function(e) {
-            const newCoords = e.target.getLatLng();
-            updateCoordinateFields(newCoords.lat, newCoords.lng);
-            reverseGeocodeOSM(newCoords.lat, newCoords.lng);
-        });
-        
-        console.log('✅ Mapa actualizado correctamente');
-        
-    } catch (error) {
-        console.error('❌ Error actualizando mapa:', error);
-    }
-}
-
-
-
-
 
 function showSuggestionsForInput(locations, inputElement, latInput, lngInput, preview) {
     console.log('📋 Mostrando', locations.length, 'sugerencias mejoradas para:', inputElement.id);
