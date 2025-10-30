@@ -435,44 +435,43 @@ private function processImages($type, $resourceId) {
     return $imageUrls;
 }
     
-    private function uploadImage($file, $type, $resourceId, $field) {
-        try {
-            error_log("=== UPLOADING IMAGE ===");
-            error_log("File: " . print_r($file, true));
-            error_log("Type: $type, ResourceId: $resourceId, Field: $field");
-            
-            // Validar archivo
-            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-            if (!in_array($file['type'], $allowedTypes)) {
-                throw new Exception('Tipo de archivo no permitido: ' . $file['type']);
-            }
-            
-            if ($file['size'] > 10 * 1024 * 1024) { // 10MB máximo
-                throw new Exception('Archivo demasiado grande (máx 10MB)');
-            }
-            
-            // Obtener agencia_id de la sesión
-            $agencia_id = $_SESSION['agencia_id'] ?? null;
-            if (!$agencia_id) {
-                throw new Exception('Usuario sin agencia asignada');
-            }
-
-            error_log("Agencia ID: " . $agencia_id);
-
-            // Usar la nueva función helper
-            $url = uploadAgenciaImageBiblioteca($file, $agencia_id, $type, $resourceId, $field);
-
-            error_log("Image uploaded successfully: " . $url);
-            
-    
-            
-            return $url;
-            
-        } catch (Exception $e) {
-            error_log("Upload error: " . $e->getMessage());
-            throw $e;
+private function uploadImage($file, $type, $resourceId, $field) {
+    try {
+        error_log("=== UPLOADING IMAGE ===");
+        error_log("File: " . print_r($file, true));
+        error_log("Type: $type, ResourceId: $resourceId, Field: $field");
+        
+        // Validar archivo
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!in_array($file['type'], $allowedTypes)) {
+            throw new Exception('Tipo de archivo no permitido: ' . $file['type']);
         }
+        
+        // ✅ CAMBIO: Límite de 2MB (antes era 10MB)
+        if ($file['size'] > 2 * 1024 * 1024) { // 2MB máximo
+            throw new Exception('Archivo demasiado grande (máx 2MB)');
+        }
+        
+        // Obtener agencia_id de la sesión
+        $agencia_id = $_SESSION['agencia_id'] ?? null;
+        if (!$agencia_id) {
+            throw new Exception('Usuario sin agencia asignada');
+        }
+
+        error_log("Agencia ID: " . $agencia_id);
+
+        // Usar la nueva función helper
+        $url = uploadAgenciaImageBiblioteca($file, $agencia_id, $type, $resourceId, $field);
+
+        error_log("Image uploaded successfully: " . $url);
+        
+        return $url;
+        
+    } catch (Exception $e) {
+        error_log("Upload error: " . $e->getMessage());
+        throw $e;
     }
+}
     
     // ✅ FUNCIONES FALTANTES QUE NECESITAS AGREGAR:
     

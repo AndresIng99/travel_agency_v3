@@ -322,14 +322,15 @@ function getAgenciaUploadUrl($agencia_id, $tipo, $subtipo, $filename) {
  * Valida y procesa la subida de una imagen para una agencia (BIBLIOTECA)
  */
 function uploadAgenciaImageBiblioteca($file, $agencia_id, $tipo, $resourceId, $field) {
-    // Validar archivo (MANTENER VALIDACIONES ACTUALES)
+    // Validar archivo
     $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!in_array($file['type'], $allowedTypes)) {
         throw new Exception('Tipo de archivo no permitido: ' . $file['type']);
     }
     
-    if ($file['size'] > 10 * 1024 * 1024) { // 10MB máximo (ACTUAL)
-        throw new Exception('Archivo demasiado grande (máx 10MB)');
+    // ✅ CAMBIO: Límite de 2MB (antes era 10MB)
+    if ($file['size'] > 2 * 1024 * 1024) { // 2MB máximo
+        throw new Exception('Archivo demasiado grande (máx 2MB)');
     }
     
     // Obtener ruta física

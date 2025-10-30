@@ -26,6 +26,9 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Biblioteca - <?= htmlspecialchars($companyName) ?></title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/modern_image_upload.css">
+    <script src="<?= APP_URL ?>/assets/js/modern_image_upload.js"></script>
+
     
     <!-- Incluir estilos de componentes -->
     <?= UIComponents::getComponentStyles() ?>
@@ -3237,11 +3240,36 @@ function escapeHtml(text) {
                 initializeMap();
             }, 200);
 
-           
+           // Inicializar mapa después de mostrar modal
+            setTimeout(() => {
+                initializeMap();
+            }, 200);
+
+            // ✅ AGREGAR ESTAS LÍNEAS AQUÍ:
+            // Inicializar sistema de imágenes si es días o actividades
+            if (currentTab === 'dias' || currentTab === 'actividades') {
+                setTimeout(() => {
+                    if (mode === 'create') {
+                        // Modo crear: sin imágenes existentes
+                        initImageUploadSystem(currentTab, null, []);
+                        console.log('✅ Sistema de imágenes inicializado para CREAR');
+                    }
+                }, 300);
+            }
+
+            // Si es edición, cargar datos
+            if (mode === 'edit' && id) {
+                loadResourceData(id);
+            }
             
             // Si es edición, cargar datos
             if (mode === 'edit' && id) {
                 loadResourceData(id);
+            }
+            if (type === 'dias' || type === 'actividades') {
+                setTimeout(() => {
+                    initImageUploadSystem(type, null, []); // null = crear nuevo, [] = sin imágenes existentes
+                }, 100);
             }
         }
 
@@ -3263,7 +3291,18 @@ function escapeHtml(text) {
             }
             // AGREGAR ESTA LÍNEA:
             limpiarSistemaCargaMultiple();
+            // Limpiar sistema de imágenes moderno
+            if (typeof cleanupImageSystem === 'function') {
+                cleanupImageSystem();
+                console.log('✅ Sistema de imágenes moderno limpiado');
+            }
             
+            // Destruir mapa
+            if (map) {
+                map.remove();
+                map = null;
+                currentMarker = null;
+            }
             // Destruir mapa
             if (map) {
                 map.remove();
@@ -3315,6 +3354,26 @@ document.getElementById('resourceForm').addEventListener('submit', async functio
         }
         
         formData.append('type', type);
+        
+        // ✅ AGREGAR ESTAS LÍNEAS AQUÍ:
+        // Si es días o actividades, aplicar orden y obtener archivos
+        if (type === 'dias' || type === 'actividades') {
+            // Aplicar orden de imágenes si se reordenaron
+            if (typeof applyImageOrder === 'function') {
+                applyImageOrder();
+            }
+            
+            // Obtener archivos del sistema de imágenes
+            if (typeof getFilesForSubmit === 'function') {
+                const imageFiles = getFilesForSubmit();
+                
+                // Agregar archivos al FormData
+                Object.keys(imageFiles).forEach(fieldName => {
+                    formData.append(fieldName, imageFiles[fieldName]);
+                    console.log(`📤 Agregando archivo ${fieldName} al FormData`);
+                });
+            }
+        }
         
         // Realizar petición
         const response = await fetch(`${APP_URL}/biblioteca/api`, {
@@ -3495,34 +3554,11 @@ function loadSpecificFields() {
                 </div>
             </div>
 
-            <!-- IMÁGENES -->
-            <div class="form-group" style="grid-column: 1 / -1;">
-                <label>
-                    📷 Imágenes del Día
-                    <small style="display: block; color: #666; font-weight: normal; margin-top: 4px;">
-                        Selecciona hasta 3 imágenes a la vez (Ctrl/Cmd + clic para múltiple selección)
-                    </small>
-                </label>
-                
-                <div class="image-upload-area" 
-                    onclick="document.getElementById('imagenes').click()"
-                    ondrop="handleDrop(event)" 
-                    ondragover="handleDragOver(event)"
-                    ondragleave="handleDragLeave(event)"
-                    style="border: 3px dashed #cbd5e0; border-radius: 16px; padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.3s ease; background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%); min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                    <div style="font-size: 48px; margin-bottom: 10px;">📸</div>
-                    <div style="font-weight: 600; color: #2d3748; margin-bottom: 5px;">
-                        Haz clic o arrastra las imágenes aquí
-                    </div>
-                    <div style="font-size: 13px; color: #718096;">
-                        Máximo 3 imágenes • PNG, JPG, WEBP • Máx. 5MB cada una
-                    </div>
+            <div class="form-group">
+                <label>📸 Imágenes del Día (máximo 3)</label>
+                <div id="imageUploadContainer">
+                    <!-- El sistema de imágenes se renderizará aquí -->
                 </div>
-                
-                <input type="file" id="imagenes" name="imagen1" accept="image/*" multiple style="display: none;" onchange="handleMultipleImageSelect(this)">
-                <div id="imagesPreviewContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;"></div>
-                <input type="file" id="imagen2" name="imagen2" accept="image/*" style="display: none;">
-                <input type="file" id="imagen3" name="imagen3" accept="image/*" style="display: none;">
             </div>
 
             <!-- CAMPOS OCULTOS -->
@@ -3661,47 +3697,9 @@ function loadSpecificFields() {
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Imágenes (máximo 3)</label>
-                    <div class="images-grid">
-                        <div class="image-upload" onclick="document.getElementById('imagen1').click()">
-                            <input type="file" id="imagen1" name="imagen1" 
-                                accept=".jpeg,.jpg,.png,.webp,image/jpeg,image/jpg,image/png,image/webp" 
-                                style="display: none;" 
-                                data-max-size="20971520">
-                            <div class="upload-content">
-                                <div style="font-size: 24px; margin-bottom: 8px;">📷</div>
-                                <div>Imagen 1</div>
-                                <div style="font-size: 12px; color: #718096;">
-                                    JPEG, PNG, JPG, WebP | Máximo 20MB
-                                </div>
-                            </div>
-                        </div>
-                        <div class="image-upload" onclick="document.getElementById('imagen2').click()">
-                            <input type="file" id="imagen2" name="imagen2" 
-                                accept=".jpeg,.jpg,.png,.webp,image/jpeg,image/jpg,image/png,image/webp" 
-                                style="display: none;" 
-                                data-max-size="20971520">
-                            <div class="upload-content">
-                                <div style="font-size: 24px; margin-bottom: 8px;">📷</div>
-                                <div>Imagen 2</div>
-                                <div style="font-size: 12px; color: #718096;">
-                                    JPEG, PNG, JPG, WebP | Máximo 20MB
-                                </div>
-                            </div>
-                        </div>
-                        <div class="image-upload" onclick="document.getElementById('imagen3').click()">
-                            <input type="file" id="imagen3" name="imagen3" 
-                                accept=".jpeg,.jpg,.png,.webp,image/jpeg,image/jpg,image/png,image/webp" 
-                                style="display: none;" 
-                                data-max-size="20971520">
-                            <div class="upload-content">
-                                <div style="font-size: 24px; margin-bottom: 8px;">📷</div>
-                                <div>Imagen 3</div>
-                                <div style="font-size: 12px; color: #718096;">
-                                    JPEG, PNG, JPG, WebP | Máximo 20MB
-                                </div>
-                            </div>
-                        </div>
+                    <label>📸 Imágenes de la Actividad (máximo 3)</label>
+                    <div id="imageUploadContainer">
+                        <!-- El sistema de imágenes se renderizará aquí -->
                     </div>
                 </div>
                 <input type="hidden" id="latitud" name="latitud">
@@ -4723,6 +4721,36 @@ case 'dias':
         }
         
         console.log('✅ Datos cargados correctamente');
+        // Inicializar sistema de imágenes para editar
+        if (currentTab === 'dias' || currentTab === 'actividades') {
+            // Preparar array de imágenes existentes
+            const existingImages = [];
+            
+            if (resource.imagen1) {
+                existingImages.push({ 
+                    url: resource.imagen1, 
+                    field: 'imagen1' 
+                });
+            }
+            if (resource.imagen2) {
+                existingImages.push({ 
+                    url: resource.imagen2, 
+                    field: 'imagen2' 
+                });
+            }
+            if (resource.imagen3) {
+                existingImages.push({ 
+                    url: resource.imagen3, 
+                    field: 'imagen3' 
+                });
+            }
+            
+            // Inicializar sistema con imágenes existentes
+            setTimeout(() => {
+                initImageUploadSystem(currentTab, id, existingImages);
+                console.log('✅ Sistema de imágenes inicializado para EDITAR con', existingImages.length, 'imágenes');
+            }, 400);
+        }
         
     } catch(error) {
         console.error('❌ Error cargando datos:', error);
