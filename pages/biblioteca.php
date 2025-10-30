@@ -1278,21 +1278,7 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
             color: #4a5568;
         }
 
-        .image-preview.existing {
-            border-color: #10b981 !important;
-        }
 
-        .image-preview.new {
-            border-color: #3b82f6 !important;
-        }
-
-        .existing-image-indicator {
-            background: #10b981 !important;
-        }
-
-        .new-image-indicator {
-            background: #3b82f6 !important;
-        }
 
         /* Hover effect para cards con imágenes */
         .item-card:hover .card-image img {
@@ -1907,6 +1893,12 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
 .btn-add-ubicacion:active {
     transform: scale(0.98);
 }
+
+
+
+
+
+/* ========== FIN DE LOS ESTILOS ========== */
     </style>
     <script src="<?= APP_URL ?>/assets/js/ubicacion-search-widget.js"></script>
 </head>
@@ -4536,156 +4528,221 @@ async function loadResourceData(id) {
         
         // Cargar campos específicos por tipo
         switch(currentTab) {
-case 'dias':
-    console.log('📥 Cargando datos de día:', resource);
-    
-    // Cargar título y descripción
-    setFieldValue('titulo', resource.titulo);
-    setFieldValue('descripcion', resource.descripcion);
-    
-    // Esperar a que los campos del widget estén en el DOM
-    setTimeout(() => {
-        // Cargar ubicación principal en el WIDGET
-        const ubicacionPrincipal = document.getElementById('ubicacion-principal');
-        if (ubicacionPrincipal && resource.ubicacion) {
-            ubicacionPrincipal.value = resource.ubicacion;
-            console.log('✅ Ubicación principal cargada:', resource.ubicacion);
+        case 'dias':
+            console.log('📥 Cargando datos de día:', resource);
             
-            // Mostrar preview
-            const preview = document.getElementById('preview-ubicacion-principal');
-            if (preview) {
-                preview.innerHTML = `
-                    <div style="margin-top: 8px; padding: 10px; background: #f0fdf4; border-radius: 8px; border-left: 3px solid #10b981; font-size: 12px;">
-                        <div style="font-weight: 600; color: #065f46;">${resource.ubicacion}</div>
-                        ${resource.latitud && resource.longitud ? 
-                            `<div style="color: #059669; font-size: 11px; margin-top: 2px;">
-                                ${parseFloat(resource.latitud).toFixed(6)}, ${parseFloat(resource.longitud).toFixed(6)}
-                            </div>` : ''
-                        }
-                    </div>
-                `;
-            }
-        }
-        
-        // Cargar coordenadas en campos ocultos
-        const latPrincipal = document.getElementById('latitud-principal');
-        const lngPrincipal = document.getElementById('longitud-principal');
-        if (latPrincipal && resource.latitud) latPrincipal.value = resource.latitud;
-        if (lngPrincipal && resource.longitud) lngPrincipal.value = resource.longitud;
-        
-        setFieldValue('latitud', resource.latitud);
-        setFieldValue('longitud', resource.longitud);
-        setFieldValue('ubicacion', resource.ubicacion);
-        
-        // Reinicializar widget principal
-        if (typeof initUbicacionWidgetDias === 'function') {
-            initUbicacionWidgetDias();
-        }
-    }, 600);
-    
-    // Cargar ubicaciones secundarias
-    if (resource.ubicaciones_secundarias && resource.ubicaciones_secundarias.length > 0) {
-        console.log('📍 Cargando ' + resource.ubicaciones_secundarias.length + ' ubicaciones secundarias');
-        
-        setTimeout(() => {
-            const container = document.getElementById('ubicaciones-secundarias-container');
-            if (!container) {
-                console.error('❌ Container de ubicaciones secundarias NO encontrado');
-                return;
-            }
+            // Cargar título y descripción
+            setFieldValue('titulo', resource.titulo);
+            setFieldValue('descripcion', resource.descripcion);
             
-            console.log('✅ Container encontrado, limpiando...');
-            container.innerHTML = '';
-            
-            // Destruir widgets antiguos
-            if (window.widgetsUbicacionesSecundarias) {
-                widgetsUbicacionesSecundarias.forEach(w => {
-                    if (w.widget && w.widget.destroy) w.widget.destroy();
-                });
-            }
-            window.widgetsUbicacionesSecundarias = [];
-            
-            // Agregar cada ubicación
-            resource.ubicaciones_secundarias.forEach((ubic, idx) => {
-                console.log(`➕ Agregando ubicación ${idx + 1}:`, ubic.ubicacion);
-                
-                const index = Date.now() + idx;
-                const div = document.createElement('div');
-                div.className = 'ubicacion-item';
-                div.dataset.index = index;
-                div.style.cssText = 'display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start; width: 100%;';
-                
-                div.innerHTML = `
-                    <div class="ubicacion-input-wrapper" style="width: 100%;">
-                        <input type="text" 
-                               name="ubicaciones_secundarias[]" 
-                               id="ubicacion-${index}"
-                               class="form-control"
-                               value="${ubic.ubicacion || ''}"
-                               placeholder="🔍 Buscar otra ubicación..."
-                               style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px;">
-                        <input type="hidden" name="ubicaciones_secundarias_lat[]" id="latitud-${index}" value="${ubic.latitud || ''}">
-                        <input type="hidden" name="ubicaciones_secundarias_lng[]" id="longitud-${index}" value="${ubic.longitud || ''}">
-                        <div id="preview-ubicacion-${index}">
-                            ${ubic.ubicacion ? `
-                                <div style="margin-top: 8px; padding: 8px; background: #f0fdf4; border-radius: 6px; border-left: 3px solid #10b981; font-size: 11px;">
-                                    <div style="font-weight: 600; color: #065f46;">${ubic.ubicacion}</div>
-                                    ${ubic.latitud && ubic.longitud ? 
-                                        `<div style="color: #059669; font-size: 10px; margin-top: 2px;">
-                                            ${parseFloat(ubic.latitud).toFixed(6)}, ${parseFloat(ubic.longitud).toFixed(6)}
-                                        </div>` : ''
-                                    }
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                    <button type="button" 
-                            onclick="removerUbicacionSecundaria(${index})"
-                            style="background: #e53e3e; color: white; border: none; border-radius: 8px; width: 40px; height: 40px; cursor: pointer; font-size: 18px;">
-                        ✕
-                    </button>
-                `;
-                
-                container.appendChild(div);
-                
-                // Inicializar widget después de agregar al DOM
-                setTimeout(() => {
-                    const input = document.getElementById(`ubicacion-${index}`);
-                    if (input && typeof UbicacionSearchWidget !== 'undefined') {
-                        const widget = new UbicacionSearchWidget(input, {
-                            apiUrl: '<?= APP_URL ?>/modules/ubicaciones/ubicaciones_api.php',
-                            latInputId: `latitud-${index}`,
-                            lngInputId: `longitud-${index}`,
-                            placeholder: '🔍 Buscar otra ubicación...',
-                            showPreview: true,
-                            previewContainerId: `preview-ubicacion-${index}`,
-                            autoSave: true
-                        });
-                        
-                        if (!window.widgetsUbicacionesSecundarias) {
-                            window.widgetsUbicacionesSecundarias = [];
-                        }
-                        widgetsUbicacionesSecundarias.push({ index, widget });
-                        console.log(`✅ Widget ${idx + 1} inicializado`);
+            // Esperar a que los campos del widget estén en el DOM
+            setTimeout(() => {
+                // Cargar ubicación principal en el WIDGET
+                const ubicacionPrincipal = document.getElementById('ubicacion-principal');
+                if (ubicacionPrincipal && resource.ubicacion) {
+                    ubicacionPrincipal.value = resource.ubicacion;
+                    console.log('✅ Ubicación principal cargada:', resource.ubicacion);
+                    
+                    // Mostrar preview
+                    const preview = document.getElementById('preview-ubicacion-principal');
+                    if (preview) {
+                        preview.innerHTML = `
+                            <div style="margin-top: 8px; padding: 10px; background: #f0fdf4; border-radius: 8px; border-left: 3px solid #10b981; font-size: 12px;">
+                                <div style="font-weight: 600; color: #065f46;">${resource.ubicacion}</div>
+                                ${resource.latitud && resource.longitud ? 
+                                    `<div style="color: #059669; font-size: 11px; margin-top: 2px;">
+                                        ${parseFloat(resource.latitud).toFixed(6)}, ${parseFloat(resource.longitud).toFixed(6)}
+                                    </div>` : ''
+                                }
+                            </div>
+                        `;
                     }
-                }, 150 * (idx + 1));
-            });
+                }
+                
+                // Cargar coordenadas en campos ocultos
+                const latPrincipal = document.getElementById('latitud-principal');
+                const lngPrincipal = document.getElementById('longitud-principal');
+                if (latPrincipal && resource.latitud) latPrincipal.value = resource.latitud;
+                if (lngPrincipal && resource.longitud) lngPrincipal.value = resource.longitud;
+                
+                setFieldValue('latitud', resource.latitud);
+                setFieldValue('longitud', resource.longitud);
+                setFieldValue('ubicacion', resource.ubicacion);
+                
+                // Reinicializar widget principal
+                if (typeof initUbicacionWidgetDias === 'function') {
+                    initUbicacionWidgetDias();
+                }
+            }, 600);
             
-            console.log(`✅ ${resource.ubicaciones_secundarias.length} ubicaciones secundarias agregadas al DOM`);
-        }, 1000);
-    } else {
-        console.log('ℹ️ No hay ubicaciones secundarias para este día');
-    }
+            // Cargar ubicaciones secundarias
+            if (resource.ubicaciones_secundarias && resource.ubicaciones_secundarias.length > 0) {
+                console.log('📍 Cargando ' + resource.ubicaciones_secundarias.length + ' ubicaciones secundarias');
+                
+                setTimeout(() => {
+                    const container = document.getElementById('ubicaciones-secundarias-container');
+                    if (!container) {
+                        console.error('❌ Container de ubicaciones secundarias NO encontrado');
+                        return;
+                    }
+                    
+                    console.log('✅ Container encontrado, limpiando...');
+                    container.innerHTML = '';
+                    
+                    // Destruir widgets antiguos
+                    if (window.widgetsUbicacionesSecundarias) {
+                        widgetsUbicacionesSecundarias.forEach(w => {
+                            if (w.widget && w.widget.destroy) w.widget.destroy();
+                        });
+                    }
+                    window.widgetsUbicacionesSecundarias = [];
+                    
+                    // Agregar cada ubicación
+                    resource.ubicaciones_secundarias.forEach((ubic, idx) => {
+                        console.log(`➕ Agregando ubicación ${idx + 1}:`, ubic.ubicacion);
+                        
+                        const index = Date.now() + idx;
+                        const div = document.createElement('div');
+                        div.className = 'ubicacion-item';
+                        div.dataset.index = index;
+                        div.style.cssText = 'display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start; width: 100%;';
+                        
+                        div.innerHTML = `
+                            <div class="ubicacion-input-wrapper" style="width: 100%;">
+                                <input type="text" 
+                                    name="ubicaciones_secundarias[]" 
+                                    id="ubicacion-${index}"
+                                    class="form-control"
+                                    value="${ubic.ubicacion || ''}"
+                                    placeholder="🔍 Buscar otra ubicación..."
+                                    style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px;">
+                                <input type="hidden" name="ubicaciones_secundarias_lat[]" id="latitud-${index}" value="${ubic.latitud || ''}">
+                                <input type="hidden" name="ubicaciones_secundarias_lng[]" id="longitud-${index}" value="${ubic.longitud || ''}">
+                                <div id="preview-ubicacion-${index}">
+                                    ${ubic.ubicacion ? `
+                                        <div style="margin-top: 8px; padding: 8px; background: #f0fdf4; border-radius: 6px; border-left: 3px solid #10b981; font-size: 11px;">
+                                            <div style="font-weight: 600; color: #065f46;">${ubic.ubicacion}</div>
+                                            ${ubic.latitud && ubic.longitud ? 
+                                                `<div style="color: #059669; font-size: 10px; margin-top: 2px;">
+                                                    ${parseFloat(ubic.latitud).toFixed(6)}, ${parseFloat(ubic.longitud).toFixed(6)}
+                                                </div>` : ''
+                                            }
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                            <button type="button" 
+                                    onclick="removerUbicacionSecundaria(${index})"
+                                    style="background: #e53e3e; color: white; border: none; border-radius: 8px; width: 40px; height: 40px; cursor: pointer; font-size: 18px;">
+                                ✕
+                            </button>
+                        `;
+                        
+                        container.appendChild(div);
+                        
+                        // Inicializar widget después de agregar al DOM
+                        setTimeout(() => {
+                            const input = document.getElementById(`ubicacion-${index}`);
+                            if (input && typeof UbicacionSearchWidget !== 'undefined') {
+                                const widget = new UbicacionSearchWidget(input, {
+                                    apiUrl: '<?= APP_URL ?>/modules/ubicaciones/ubicaciones_api.php',
+                                    latInputId: `latitud-${index}`,
+                                    lngInputId: `longitud-${index}`,
+                                    placeholder: '🔍 Buscar otra ubicación...',
+                                    showPreview: true,
+                                    previewContainerId: `preview-ubicacion-${index}`,
+                                    autoSave: true
+                                });
+                                
+                                if (!window.widgetsUbicacionesSecundarias) {
+                                    window.widgetsUbicacionesSecundarias = [];
+                                }
+                                widgetsUbicacionesSecundarias.push({ index, widget });
+                                console.log(`✅ Widget ${idx + 1} inicializado`);
+                            }
+                        }, 150 * (idx + 1));
+                    });
+                    
+                    console.log(`✅ ${resource.ubicaciones_secundarias.length} ubicaciones secundarias agregadas al DOM`);
+                }, 1000);
+            } else {
+                console.log('ℹ️ No hay ubicaciones secundarias para este día');
+            }
+            
+            // Cargar imágenes
+             setTimeout(() => {
+                loadExistingImagesInMultipleSystem(resource);
+            }, 400);
     
-    // Cargar imágenes
-    loadImagePreviews(['imagen1', 'imagen2', 'imagen3'], resource);
-    setTimeout(() => {
-        if (document.getElementById('dropZoneMultiple')) {
-            loadExistingImagesInMultipleSystem(resource);
-        }
-    }, 300);
-    
-    break;
+
+            // ========== AGREGAR AQUÍ: MOSTRAR IMÁGENES EXISTENTES ==========
+            console.log('🖼️ Procesando imágenes existentes del día...');
+
+            const previewContainer = document.getElementById('imagesPreviewContainer');
+            if (previewContainer) {
+                previewContainer.innerHTML = ''; // Limpiar contenedor
+                
+                // Procesar las 3 imágenes posibles
+                const imagenes = [
+                    { field: 'imagen1', url: resource.imagen1 },
+                    { field: 'imagen2', url: resource.imagen2 },
+                    { field: 'imagen3', url: resource.imagen3 }
+                ];
+                
+                imagenes.forEach((img, index) => {
+                    if (img.url) {
+                        console.log(`✅ Imagen ${index + 1} encontrada:`, img.url);
+                        
+                        const imageCard = document.createElement('div');
+                        imageCard.className = 'existing-image';
+                        imageCard.style.cssText = `
+                            position: relative;
+                            width: 120px;
+                            height: 120px;
+                            border-radius: 12px;
+                            overflow: hidden;
+                            border: 3px solid #10b981;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                        `;
+                        
+                        imageCard.innerHTML = `
+                            <img src="${img.url}" 
+                                alt="Imagen ${index + 1}" 
+                                style="width: 100%; height: 100%; object-fit: cover;">
+                            
+                            <button type="button" 
+                                    onclick="removeExistingImage('${img.field}')" 
+                                    style="position: absolute; top: 5px; right: 5px; 
+                                        background: #ef4444; color: white; border: none; 
+                                        border-radius: 50%; width: 28px; height: 28px; 
+                                        cursor: pointer; display: flex; align-items: center; 
+                                        justify-content: center; font-size: 16px; 
+                                        box-shadow: 0 2px 8px rgba(0,0,0,0.3); 
+                                        transition: all 0.2s ease;">
+                                ×
+                            </button>
+                            
+                            <div style="position: absolute; bottom: 0; left: 0; right: 0; 
+                                        background: rgba(16, 185, 129, 0.95); color: white; 
+                                        padding: 4px 8px; font-size: 11px; font-weight: 600; 
+                                        text-align: center;">
+                                📷 Imagen ${index + 1}
+                            </div>
+                        `;
+                        
+                        previewContainer.appendChild(imageCard);
+                    }
+                });
+                
+                // Actualizar info del dropzone
+                const existingCount = previewContainer.querySelectorAll('.existing-image').length;
+                updateDropZoneInfo(existingCount);
+                
+                console.log(`✅ ${existingCount} imágenes existentes mostradas`);
+            }
+            // ========== FIN DEL CÓDIGO A AGREGAR ==========
+            
+            break;
                 
             case 'alojamientos':
                 setFieldValue('nombre', resource.nombre);
@@ -4968,63 +5025,6 @@ function showMessage(message, type = 'info') {
             }
         }
 
-            // Función mejorada para manejar la vista previa de imágenes existentes
-            function loadImagePreviews(imageFields, resource) {
-                imageFields.forEach(field => {
-                    if (resource[field]) {
-                        const input = document.getElementById(field);
-                        if (input) {
-                            const container = input.closest('.image-upload') || input.parentElement;
-                            
-                            // Remover vista previa anterior
-                            const existingPreview = container.querySelector('.image-preview');
-                            const existingIndicator = container.querySelector('.existing-image-indicator');
-                            if (existingPreview) existingPreview.remove();
-                            if (existingIndicator) existingIndicator.remove();
-                            
-                            // Crear vista previa de imagen existente
-                            const preview = document.createElement('img');
-                            preview.src = resource[field];
-                            preview.className = 'image-preview existing';
-                            preview.style.cssText = `
-                                max-width: 100%;
-                                max-height: 150px;
-                                border-radius: 8px;
-                                margin-top: 10px;
-                                object-fit: cover;
-                                border: 2px solid #10b981;
-                                cursor: pointer;
-                            `;
-                            
-                            // Agregar funcionalidad para ver imagen en grande
-                            preview.addEventListener('click', function() {
-                                showImageModal(resource[field], resource.titulo || resource.nombre || 'Imagen');
-                            });
-                            
-                            // Agregar indicador de imagen existente
-                            const indicator = document.createElement('div');
-                            indicator.className = 'existing-image-indicator';
-                            indicator.style.cssText = `
-                                background: #10b981;
-                                color: white;
-                                padding: 4px 8px;
-                                border-radius: 4px;
-                                font-size: 10px;
-                                margin-top: 5px;
-                                text-align: center;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                gap: 4px;
-                            `;
-                            indicator.innerHTML = '✅ Imagen actual <span style="cursor: pointer;" onclick="removeExistingImage(\'' + field + '\')">🗑️</span>';
-                            
-                            container.appendChild(preview);
-                            container.appendChild(indicator);
-                        }
-                    }
-                });
-            }
 
         // Submit del formulario
         document.getElementById('resourceForm').addEventListener('submit', function(e) {
@@ -7424,51 +7424,71 @@ function updateHiddenInputs(selectedImages) {
 }
 
 // 10. Actualizar información de la zona de arrastre
-function updateDropZoneInfo(totalCount) {
+function updateDropZoneInfo(existingCount) {
     const dropZone = document.getElementById('dropZoneMultiple');
-    const content = dropZone?.querySelector('.drop-zone-content');
+    if (!dropZone) return;
     
-    if (content) {
-        if (totalCount === 0) {
-            content.innerHTML = `
-                <div style="font-size: 48px; margin-bottom: 15px;">📸</div>
-                <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">
-                    Arrastra hasta 3 imágenes aquí
-                </div>
-                <div style="font-size: 14px; color: #718096; margin-bottom: 15px;">
-                    o haz clic para seleccionar archivos
-                </div>
-                <button type="button" class="btn-select-images">
-                    📂 Seleccionar Imágenes
-                </button>
-            `;
-        } else if (totalCount < 3) {
-            content.innerHTML = `
-                <div style="font-size: 36px; margin-bottom: 10px;">✅</div>
-                <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">
-                    ${totalCount} imagen(es) total
-                </div>
-                <div style="font-size: 14px; color: #718096; margin-bottom: 15px;">
-                    Puedes agregar ${3 - totalCount} más
-                </div>
-                <button type="button" class="btn-select-images">
-                    📂 Agregar Más Imágenes
-                </button>
-            `;
-        } else {
-            content.innerHTML = `
-                <div style="font-size: 36px; margin-bottom: 10px;">🎉</div>
-                <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">
-                    3 imágenes completas
-                </div>
-                <div style="font-size: 14px; color: #718096;">
-                    Límite alcanzado. Elimina alguna para cambiar.
-                </div>
-            `;
-        }
+    const availableSlots = 3 - existingCount;
+    
+    if (availableSlots === 0) {
+        dropZone.innerHTML = `
+            <div style="font-size: 32px; margin-bottom: 8px;">✅</div>
+            <div style="font-weight: 600; color: #059669; margin-bottom: 3px;">
+                Máximo de imágenes alcanzado
+            </div>
+            <div style="font-size: 12px; color: #6b7280;">
+                Elimina una imagen existente para agregar nuevas
+            </div>
+        `;
+        dropZone.style.cursor = 'not-allowed';
+        dropZone.style.opacity = '0.6';
+    } else {
+        dropZone.innerHTML = `
+            <div style="font-size: 48px; margin-bottom: 10px;">📸</div>
+            <div style="font-weight: 600; color: #2d3748; margin-bottom: 5px;">
+                Haz clic o arrastra las imágenes aquí
+            </div>
+            <div style="font-size: 13px; color: #718096;">
+                Puedes agregar ${availableSlots} imagen${availableSlots > 1 ? 'es' : ''} más • PNG, JPG, WEBP • Máx. 10MB c/u
+            </div>
+        `;
+        dropZone.style.cursor = 'pointer';
+        dropZone.style.opacity = '1';
     }
 }
-
+// ========== FIN DE LA FUNCIÓN ==========
+// ========== VERIFICAR QUE ESTA FUNCIÓN EXISTA ==========
+window.removeExistingImage = function(fieldName) {
+    console.log('🗑️ Eliminando imagen existente:', fieldName);
+    
+    const confirmed = confirm('¿Estás seguro de que quieres eliminar esta imagen?');
+    if (!confirmed) return;
+    
+    const previewContainer = document.getElementById('imagesPreviewContainer');
+    const imageItems = previewContainer.querySelectorAll('.existing-image');
+    
+    // Buscar y eliminar el elemento visual
+    imageItems.forEach(item => {
+        const img = item.querySelector('img');
+        if (img && img.alt.includes(fieldName.replace('imagen', ''))) {
+            item.remove();
+        }
+    });
+    
+    // Marcar para eliminación en el servidor
+    const deleteInput = document.createElement('input');
+    deleteInput.type = 'hidden';
+    deleteInput.name = `delete_${fieldName}`;
+    deleteInput.value = '1';
+    document.getElementById('resourceForm').appendChild(deleteInput);
+    
+    // Actualizar contador
+    const remainingCount = previewContainer.querySelectorAll('.existing-image').length;
+    updateDropZoneInfo(remainingCount);
+    
+    console.log(`✅ ${fieldName} marcada para eliminación`);
+};
+// ========== FIN DE LA FUNCIÓN ==========
 // 11. Función auxiliar para formatear tamaño de archivo
 function formatFileSize(bytes) {
     if (bytes === 0) return '0 Bytes';
@@ -7510,7 +7530,10 @@ function loadExistingImagesInMultipleSystem(resource) {
     console.log('📄 Cargando imágenes existentes...', resource);
     
     const previewContainer = document.getElementById('imagesPreviewContainer');
-    if (!previewContainer) return;
+    if (!previewContainer) {
+        console.error('❌ No se encontró imagesPreviewContainer');
+        return;
+    }
     
     // Limpiar COMPLETAMENTE el contenedor
     previewContainer.innerHTML = '';
@@ -7522,16 +7545,18 @@ function loadExistingImagesInMultipleSystem(resource) {
     if (resource.imagen1 && resource.imagen1.trim()) {
         existingImages.push({ 
             url: resource.imagen1.trim(), 
-            name: 'Imagen 1 existente',
-            field: 'imagen1'
+            name: 'Imagen Principal',
+            field: 'imagen1',
+            isPrimary: true
         });
     }
     
     if (resource.imagen2 && resource.imagen2.trim() && resource.imagen2 !== resource.imagen1) {
         existingImages.push({ 
             url: resource.imagen2.trim(), 
-            name: 'Imagen 2 existente',
-            field: 'imagen2'
+            name: 'Imagen Secundaria',
+            field: 'imagen2',
+            isPrimary: false
         });
     }
     
@@ -7540,21 +7565,70 @@ function loadExistingImagesInMultipleSystem(resource) {
         resource.imagen3 !== resource.imagen2) {
         existingImages.push({ 
             url: resource.imagen3.trim(), 
-            name: 'Imagen 3 existente',
-            field: 'imagen3'
+            name: 'Imagen Adicional',
+            field: 'imagen3',
+            isPrimary: false
         });
     }
     
-    console.log('📸 Imágenes únicas encontradas:', existingImages.length);
+    console.log(`📸 ${existingImages.length} imágenes únicas encontradas`);
     
-    // Crear previews SOLO para imágenes únicas
+    // Crear previews estéticos
     existingImages.forEach((img, index) => {
-        createExistingImagePreviewFixed(img.url, img.name, img.field, index, previewContainer);
+        const imageCard = document.createElement('div');
+        imageCard.className = 'existing-image-card';
+        imageCard.setAttribute('data-field', img.field);
+        
+        // Gradiente diferente para imagen principal
+        const gradient = img.isPrimary 
+            ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+            : 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+        
+        imageCard.innerHTML = `
+            <div class="image-card-inner">
+                <!-- Imagen principal -->
+                <div class="image-wrapper">
+                    <img src="${img.url}" 
+                         alt="${img.name}" 
+                         class="preview-image">
+                </div>
+                
+                <!-- Badge de tipo de imagen -->
+                <div class="image-badge" style="background: ${gradient}">
+                    <span class="badge-icon">${img.isPrimary ? '⭐' : '📷'}</span>
+                    <span class="badge-text">${img.name}</span>
+                </div>
+                
+                <!-- Botón eliminar -->
+                <button type="button" 
+                        class="btn-delete-image" 
+                        onclick="removeExistingImage('${img.field}')"
+                        title="Eliminar imagen">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                        <line x1="10" y1="11" x2="10" y2="17"/>
+                        <line x1="14" y1="11" x2="14" y2="17"/>
+                    </svg>
+                </button>
+                
+                <!-- Indicador de número -->
+                <div class="image-number">
+                    ${index + 1}
+                </div>
+            </div>
+        `;
+        
+        previewContainer.appendChild(imageCard);
     });
     
-    // Actualizar información
-    updateDropZoneInfo(existingImages.length);
+    // Actualizar info del dropzone
+    const existingCount = existingImages.length;
+    updateDropZoneInfo(existingCount);
+    
+    console.log(`✅ ${existingCount} imágenes mostradas correctamente`);
 }
+
+
 
 // Crear preview de imagen existente - VERSIÓN CORREGIDA
 function createExistingImagePreviewFixed(imageUrl, imageName, fieldName, displayIndex, previewContainer) {
