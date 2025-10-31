@@ -1977,6 +1977,7 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
         const DEFAULT_LANGUAGE = '<?= $defaultLanguage ?>';
 
         let currentTab = 'dias';
+        let caracteresConfigurados = false;
         let sidebarOpen = false;
         let resources = {
             dias: [],
@@ -2936,6 +2937,9 @@ function escapeHtml(text) {
             if (mode === 'edit' && id) {
                 loadResourceData(id);
             }
+
+            // ✅ RESETEAR FLAG DE CONTADORES
+            caracteresConfigurados = false;
             
             // Si es edición, cargar datos
             if (mode === 'edit' && id) {
@@ -2949,6 +2953,7 @@ function escapeHtml(text) {
         }
 
         function closeModal() {
+            caracteresConfigurados = false;
             const modal = document.getElementById('resourceModal');
             modal.classList.remove('show');
             
@@ -4416,22 +4421,24 @@ case 'dias':
 }
 
 // Función para configurar contadores de caracteres en biblioteca
-// Función para configurar contadores de caracteres en biblioteca
 function setupBibliotecaCharacterCounters() {
-    console.log('Configurando contadores de caracteres...');
+    // ✅ PREVENIR MÚLTIPLES LLAMADAS
+    if (caracteresConfigurados) {
+        console.log('⚠️ Contadores ya configurados, omitiendo...');
+        return;
+    }
+    
+    console.log('🔧 Configurando contadores de caracteres...');
     
     let intentos = 0;
     const maxIntentos = 10;
     
     function intentarConfigurar() {
-    // Para días y transportes
-    const titulo = document.getElementById('titulo');
-    const descripcion = document.getElementById('descripcion');
-    
-    // Para actividades  
-    const nombre = document.getElementById('nombre');
+        const titulo = document.getElementById('titulo');
+        const descripcion = document.getElementById('descripcion');
+        const nombre = document.getElementById('nombre');
         
-        console.log('Intento', intentos + 1, '- Elementos encontrados:', {
+        console.log(`📊 Intento ${intentos + 1} - Elementos:`, {
             titulo: !!titulo,
             descripcion: !!descripcion,
             nombre: !!nombre
@@ -4439,11 +4446,13 @@ function setupBibliotecaCharacterCounters() {
         
         if (titulo || descripcion || nombre) {
             configurarContadores();
+            caracteresConfigurados = true; // ✅ MARCAR COMO CONFIGURADO
+            console.log('✅ Contadores configurados exitosamente');
         } else if (intentos < maxIntentos) {
             intentos++;
             setTimeout(intentarConfigurar, 100);
         } else {
-            console.log('No se encontraron elementos después de', maxIntentos, 'intentos');
+            console.log('❌ No se encontraron elementos después de', maxIntentos, 'intentos');
         }
     }
     
@@ -4454,7 +4463,7 @@ function setupBibliotecaCharacterCounters() {
         
         if (titulo && tituloCounter) {
             configurarContador(titulo, tituloCounter, 250);
-            console.log('Contador de título configurado');
+            console.log('✓ Contador de título configurado');
         }
         
         // Configurar nombre (para actividades)
@@ -4463,25 +4472,33 @@ function setupBibliotecaCharacterCounters() {
         
         if (nombre && nombreCounter) {
             configurarContador(nombre, nombreCounter, 250);
-            console.log('Contador de nombre configurado');
+            console.log('✓ Contador de nombre configurado');
         }
         
+        // Configurar sitio web (para alojamientos)
         const sitioWeb = document.getElementById('sitio_web');
         const sitioWebCounter = document.getElementById('sitio_web-counter');
-
+        
         if (sitioWeb && sitioWebCounter) {
             configurarContador(sitioWeb, sitioWebCounter, 250);
-            console.log('Contador de sitio web configurado');
+            console.log('✓ Contador de sitio web configurado');
         }
-
-        // Configurar descripción (para ambos)
+        
+        // Configurar descripción (para todos)
         const descripcion = document.getElementById('descripcion');
         const descripcionCounter = document.getElementById('descripcion-counter');
         
         if (descripcion && descripcionCounter) {
             configurarContador(descripcion, descripcionCounter, 1500);
-            console.log('Contador de descripción configurado');
+            console.log('✓ Contador de descripción configurado');
         }
+        
+        // ✅ ELIMINAR COMPLETAMENTE ESTAS LÍNEAS SI EXISTEN:
+        // if (currentTab === 'dias' || currentTab === 'actividades' || ...) {
+        //     setTimeout(() => {
+        //         setupBibliotecaCharacterCounters();
+        //     }, 100);
+        // }
     }
     
     function configurarContador(elemento, contador, maximo) {
@@ -4499,21 +4516,23 @@ function setupBibliotecaCharacterCounters() {
             }
         }
         
-        elemento.addEventListener('input', actualizarContador);
-        elemento.addEventListener('keyup', actualizarContador);
-        elemento.addEventListener('paste', () => setTimeout(actualizarContador, 10));
+        // ✅ LIMPIAR LISTENERS ANTERIORES
+        const nuevoElemento = elemento.cloneNode(true);
+        elemento.parentNode.replaceChild(nuevoElemento, elemento);
+        const elementoLimpio = document.getElementById(elemento.id);
         
-        actualizarContador();
-    }
-    if (currentTab === 'dias' || currentTab === 'actividades' || currentTab === 'transportes' || currentTab === 'alojamientos') {
-        setTimeout(() => {
-            setupBibliotecaCharacterCounters();
-            setupImageValidation(); // AGREGAR ESTA LÍNEA
-        }, 100);
+        // Agregar listeners al elemento limpio
+        elementoLimpio.addEventListener('input', actualizarContador);
+        elementoLimpio.addEventListener('keyup', actualizarContador);
+        elementoLimpio.addEventListener('paste', () => setTimeout(actualizarContador, 10));
+        
+        actualizarContador.call(elementoLimpio);
     }
     
     intentarConfigurar();
 }
+
+
 function setupImageValidation() {
     const imageInputs = document.querySelectorAll('input[type="file"][accept*="image"]');
     
