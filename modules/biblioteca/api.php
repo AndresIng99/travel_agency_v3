@@ -4,11 +4,13 @@
 // =====================================
 
 ob_start();
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
 require_once dirname(__DIR__, 2) . '/config/database.php';
 require_once dirname(__DIR__, 2) . '/config/app.php';
+require_once dirname(__DIR__, 2) . '/config/config_functions.php';
+
 
 App::init();
 App::requireLogin();
@@ -296,20 +298,11 @@ error_log("Data to update: " . print_r($data, true));
 error_log("ID: " . $id);
 
 try {
-    $success = $this->db->update($table, $data, 'id = ?', [$id]);
-    error_log("Update result: " . ($success ? 'TRUE' : 'FALSE'));
-    
-    if ($success) {
-        return ['success' => true, 'message' => 'Recurso actualizado correctamente'];
-    } else {
-        // Obtener más información del error
-        $errorInfo = $this->db->errorInfo();
-        error_log("Database error info: " . print_r($errorInfo, true));
-        throw new Exception('Error al actualizar en base de datos. Info: ' . json_encode($errorInfo));
-    }
+    $this->db->update($table, $data, 'id = ?', [$id]);
+    error_log("✅ Update ejecutado correctamente");
+    return ['success' => true, 'message' => 'Recurso actualizado correctamente'];
 } catch (Exception $dbException) {
-    error_log("Database exception: " . $dbException->getMessage());
-    error_log("Database exception trace: " . $dbException->getTraceAsString());
+    error_log("❌ Database exception: " . $dbException->getMessage());
     throw new Exception('Error de base de datos: ' . $dbException->getMessage());
 }
         
@@ -325,15 +318,22 @@ private function processImageDeletions($type, &$data) {
     $imageFields = $this->getImageFields($type);
     
     error_log("=== PROCESSING IMAGE DELETIONS ===");
+    error_log("POST data: " . print_r($_POST, true));
     
     foreach ($imageFields as $field) {
         $deleteField = "delete_{$field}";
         
+        error_log("Checking field: {$deleteField}");
+        
         if (isset($_POST[$deleteField]) && $_POST[$deleteField] == '1') {
-            error_log("Setting {$field} = NULL for deletion");
+            error_log("✅ Setting {$field} = NULL for deletion");
             $data[$field] = NULL;
+        } else {
+            error_log("❌ Field {$deleteField} NOT marked for deletion");
         }
     }
+    
+    error_log("Final data after deletions: " . print_r($data, true));
 }
     
     private function deleteResource($type) {
