@@ -26,7 +26,9 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Biblioteca - <?= htmlspecialchars($companyName) ?></title>
     <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/modern_image_upload.css">
+    <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/biblioteca_carousel.css">
     <script src="<?= APP_URL ?>/assets/js/modern_image_upload.js"></script>
+    <script src="<?= APP_URL ?>/assets/js/biblioteca_carousel.js"></script>
     
 
     
@@ -2790,6 +2792,7 @@ function limpiarUbicacionesSecundarias() {
                 grid.innerHTML = resources[currentTab].map(item => {
                     return createResourceCard(item);
                 }).join('');
+                reinitCarousels();
                 
             } catch (error) {
                 console.error('Error al renderizar recursos:', error);
@@ -2848,6 +2851,7 @@ function escapeHtml(text) {
 }
 
         // Crear card de recurso
+        // Crear card de recurso
         function createResourceCard(item) {
             const icons = {
                 dias: '📅',
@@ -2859,11 +2863,23 @@ function escapeHtml(text) {
             const title = item.titulo || item.nombre || 'Sin título';
             const location = item.ubicacion || `${item.lugar_salida} → ${item.lugar_llegada}` || '';
             
-            // Obtener la primera imagen disponible
-            const primaryImage = getPrimaryImage(item, currentTab);
-            
-            return `
-                <div class="item-card" onclick="editResource(${item.id})">
+            // ✅ NUEVO: Crear carrusel para días y actividades
+            let imageHTML = '';
+            if (currentTab === 'dias' || currentTab === 'actividades') {
+                const images = [];
+                if (item.imagen1) images.push(item.imagen1);
+                if (item.imagen2) images.push(item.imagen2);
+                if (item.imagen3) images.push(item.imagen3);
+                
+                if (images.length > 0) {
+                    imageHTML = createCarouselHTML(images);
+                } else {
+                    imageHTML = `<div class="card-image">${icons[currentTab]}</div>`;
+                }
+            } else {
+                // Para alojamientos y transportes, usar lógica anterior
+                const primaryImage = getPrimaryImage(item, currentTab);
+                imageHTML = `
                     <div class="card-image">
                         ${primaryImage ? 
                             `<img src="${primaryImage}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover;">` : 
@@ -2871,6 +2887,12 @@ function escapeHtml(text) {
                         }
                         ${getImageCount(item, currentTab) > 0 ? `<div class="image-count">📷 ${getImageCount(item, currentTab)}</div>` : ''}
                     </div>
+                `;
+            }
+            
+            return `
+                <div class="item-card" onclick="editResource(${item.id})">
+                    ${imageHTML}
                     <div class="card-content">
                         <h3 class="card-title">${escapeHtml(title)}</h3>
                         <p class="card-description">${escapeHtml(item.descripcion || 'Sin descripción')}</p>
