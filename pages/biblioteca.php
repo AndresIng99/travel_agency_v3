@@ -27,6 +27,7 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
     <title>Biblioteca - <?= htmlspecialchars($companyName) ?></title>
     <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/modern_image_upload.css">
     <script src="<?= APP_URL ?>/assets/js/modern_image_upload.js"></script>
+    
 
     
     <!-- Incluir estilos de componentes -->
