@@ -3100,6 +3100,54 @@ function setupImagePreviews() {
             handleImagePreview(this);
         });
     });
+    // ✅ CONFIGURAR DRAG & DROP PARA ALOJAMIENTOS
+const alojamientoUpload = document.getElementById('alojamiento-image-upload');
+const alojamientoInput = document.getElementById('imagen');
+
+if (alojamientoUpload && alojamientoInput) {
+    // Click en el área
+    alojamientoUpload.addEventListener('click', function(e) {
+        if (e.target.classList.contains('btn-remove-preview')) return;
+        alojamientoInput.click();
+    });
+    
+    // Drag & Drop
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        alojamientoUpload.addEventListener(eventName, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+    });
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        alojamientoUpload.addEventListener(eventName, function() {
+            this.style.borderColor = '#667eea';
+            this.style.background = 'linear-gradient(135deg, #f0f4ff 0%, #e6f3ff 100%)';
+            this.style.transform = 'scale(1.02)';
+        });
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        alojamientoUpload.addEventListener(eventName, function() {
+            this.style.borderColor = '';
+            this.style.background = '';
+            this.style.transform = '';
+        });
+    });
+    
+    alojamientoUpload.addEventListener('drop', function(e) {
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            alojamientoInput.files = files;
+            handleImagePreview(alojamientoInput);
+        }
+    });
+    
+    // Change event
+    alojamientoInput.addEventListener('change', function() {
+        handleImagePreview(this);
+    });
+}
     setTimeout(() => {
     if (document.getElementById('dropZoneMultiple')) {
         initializeMultipleImageUpload();
@@ -3260,41 +3308,42 @@ function loadSpecificFields() {
                         <label for="nombre">Nombre del Alojamiento</label>
                         <div class="input-with-counter">
                             <input type="text" id="nombre" name="nombre" required 
-                                placeholder="Ej: Hotel París Centro"
+                                placeholder="Ej: Hotel Decameron" 
                                 maxlength="250">
                             <div class="char-counter" id="nombre-counter">0/250</div>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="ubicacion">📍 Ubicación del Alojamiento</label>
+                        <label for="ubicacion">📍 Ubicación</label>
                         <div class="ubicacion-input-wrapper">
                             <input type="text" 
                                 id="ubicacion" 
                                 name="ubicacion" 
                                 class="form-control"
                                 required 
-                                placeholder="🔍 Buscar hotel, ciudad, dirección...">
+                                placeholder="🔍 Buscar ubicación del alojamiento...">
                             <input type="hidden" name="latitud" id="latitud">
                             <input type="hidden" name="longitud" id="longitud">
                             <div id="preview-ubicacion-principal"></div>
                         </div>
                     </div>
+                </div>
+                <div class="form-grid">
                     <div class="form-group">
                         <label for="tipo">Tipo de Alojamiento</label>
-                        <select id="tipo" name="tipo" required onchange="updateCategoryField()">
-                            <option value="">Seleccionar tipo</option>
-                            <option value="hotel">Hotel</option>
-                            <option value="camping">Camping</option>
-                            <option value="casa_huespedes">Casa de Huéspedes</option>
-                            <option value="crucero">Crucero</option>
-                            <option value="lodge">Lodge</option>
-                            <option value="atipico">Atípico</option>
-                            <option value="campamento">Campamento</option>
-                            <option value="camping_car">Camping Car</option>
-                            <option value="tren">Tren</option>
+                        <select id="tipo" name="tipo" required>
+                            <option value="hotel">🏨 Hotel</option>
+                            <option value="camping">⛺ Camping</option>
+                            <option value="casa_huespedes">🏠 Casa de Huéspedes</option>
+                            <option value="crucero">🚢 Crucero</option>
+                            <option value="lodge">🏔️ Lodge</option>
+                            <option value="atipico">✨ Atípico</option>
+                            <option value="campamento">🏕️ Campamento</option>
+                            <option value="camping_car">🚐 Camping Car</option>
+                            <option value="tren">🚂 Tren</option>
                         </select>
                     </div>
-                    <div class="form-group" id="categoryGroup" style="display: none;">
+                    <div class="form-group">
                         <label for="categoria">Categoría (Estrellas)</label>
                         <select id="categoria" name="categoria">
                             <option value="">Sin categoría</option>
@@ -3325,66 +3374,19 @@ function loadSpecificFields() {
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Imagen Representativa</label>
-                    <div class="image-upload" onclick="document.getElementById('imagen').click()">
+                    <label>🏨 Imagen del Alojamiento</label>
+                    <div class="image-upload" id="alojamiento-image-upload">
                         <input type="file" id="imagen" name="imagen" 
                             accept=".jpeg,.jpg,.png,.webp,image/jpeg,image/jpg,image/png,image/webp" 
-                            style="display: none;" 
-                            data-max-size="20971520">
+                            style="display: none;">
                         <div class="upload-content">
-                            <div style="font-size: 32px; margin-bottom: 8px;">📷</div>
-                            <div>Subir Imagen</div>
-                            <div style="font-size: 12px; color: #718096;">
-                                JPEG, PNG, JPG, WebP | Máximo 20MB
+                            <div style="font-size: 32px; margin-bottom: 8px;">🏨</div>
+                            <div>Arrastra tu imagen aquí</div>
+                            <div style="font-size: 12px; color: #718096; margin-top: 8px;">
+                                o haz clic para seleccionar<br>
+                                JPEG, PNG, WebP | Máximo 2MB
                             </div>
                         </div>
-                    </div>
-                </div>
-                <input type="hidden" id="latitud" name="latitud">
-                <input type="hidden" id="longitud" name="longitud">
-            `;
-            break;
-            
-        case 'actividades':
-            fieldsHTML = `
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="nombre">Nombre de la Actividad</label>
-                        <div class="input-with-counter">
-                            <input type="text" id="nombre" name="nombre" required 
-                                placeholder="Ej: Tour Eiffel" 
-                                maxlength="250">
-                            <div class="char-counter" id="nombre-counter">0/250</div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="ubicacion">📍 Ubicación de la Actividad</label>
-                        <div class="ubicacion-input-wrapper">
-                            <input type="text" 
-                                id="ubicacion" 
-                                name="ubicacion" 
-                                class="form-control"
-                                required 
-                                placeholder="🔍 Buscar lugar, monumento, parque...">
-                            <input type="hidden" name="latitud" id="latitud">
-                            <input type="hidden" name="longitud" id="longitud">
-                            <div id="preview-ubicacion-principal"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="descripcion">Descripción</label>
-                    <div class="textarea-with-counter">
-                        <textarea id="descripcion" name="descripcion" required 
-                                placeholder="Describe la actividad..."
-                                maxlength="1500"></textarea>
-                        <div class="char-counter" id="descripcion-counter">0/1500</div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>📸 Imágenes de la Actividad (máximo 3)</label>
-                    <div id="imageUploadContainer">
-                        <!-- El sistema de imágenes se renderizará aquí -->
                     </div>
                 </div>
                 <input type="hidden" id="latitud" name="latitud">
