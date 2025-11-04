@@ -749,7 +749,7 @@ $page_title = $is_editing ? 'Editar Programa' : 'Nuevo Programa';
 .dias-layout {
     display: flex;
     gap: 20px;
-    height: calc(100vh - 200px);
+    min-height: 500px; 
 }
 
 /* Barra lateral de días */
@@ -760,7 +760,8 @@ $page_title = $is_editing ? 'Editar Programa' : 'Nuevo Programa';
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     display: flex;
     flex-direction: column;
-    max-height: 100%;
+    height: fit-content; /* Ajustar al contenido */
+    max-height: calc(100vh - 200px); /* Scroll solo si hay muchos días */
 }
 
 
@@ -935,7 +936,7 @@ $page_title = $is_editing ? 'Editar Programa' : 'Nuevo Programa';
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     display: flex;
     flex-direction: column;
-    max-height: 100%;
+    height: fit-content; /* Ajustar al contenido del día */
 }
 
 .day-detail-header {
@@ -967,7 +968,7 @@ $page_title = $is_editing ? 'Editar Programa' : 'Nuevo Programa';
 
 .day-detail-body {
     flex: 1;
-    overflow-y: auto;
+    overflow-y: visible; 
     padding: 24px;
 }
 
@@ -1025,12 +1026,17 @@ $page_title = $is_editing ? 'Editar Programa' : 'Nuevo Programa';
 @media (max-width: 1024px) {
     .dias-layout {
         flex-direction: column;
-        height: auto;
+        min-height: auto; /* Sin altura mínima en mobile */
     }
     
     .days-sidebar {
         width: 100%;
         max-height: 300px;
+        overflow-y: auto; /* Mantener scroll en mobile */
+    }
+    
+    .day-detail-container {
+        height: auto; /* Altura automática en mobile */
     }
     
     .days-list {
