@@ -593,6 +593,7 @@ private function uploadImage($file, $type, $resourceId, $field) {
                 return [];
         }
     }
+    
     private function getUbicacionesSecundarias($diaId) {
         try {
             if (!$diaId) {
