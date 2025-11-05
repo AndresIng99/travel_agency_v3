@@ -655,46 +655,47 @@ try {
             
             <?php if ($agenciaData && $user['role'] === 'admin'): ?>
             <div style="
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                padding: 20px 30px;
-                border-radius: 12px;
-                margin: 20px 0;
-                color: white;
+                background: #ffffff;
+                padding: 25px 35px;
+                border-radius: 16px;
+                margin: 25px 0;
+                color: #2d3748;
                 display: flex;
                 justify-content: space-between;
                 flex-wrap: wrap;
-                gap: 20px;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                gap: 25px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
+                border: 1px solid #e2e8f0;
             ">
                 <div style="flex: 1; min-width: 200px;">
-                    <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">🏢 Agencia</div>
-                    <div style="font-size: 18px; font-weight: 600;"><?= htmlspecialchars($agenciaData['nombre']) ?></div>
+                    <div style="font-size: 13px; color: #718096; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">🏢 Agencia</div>
+                    <div style="font-size: 20px; font-weight: 700; color: #1a202c;"><?= htmlspecialchars($agenciaData['nombre']) ?></div>
                 </div>
                 
                 <div style="flex: 1; min-width: 200px;">
-                    <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">📅 Suscripción</div>
-                    <div style="font-size: 16px; font-weight: 600;">
+                    <div style="font-size: 13px; color: #718096; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">📅 Suscripción</div>
+                    <div style="font-size: 16px; font-weight: 600; color: #2d3748;">
                         <?= date('d/m/Y', strtotime($agenciaData['fecha_inicio_suscripcion'])) ?> - 
                         <?= date('d/m/Y', strtotime($agenciaData['fecha_fin_suscripcion'])) ?>
                     </div>
-                    <div style="font-size: 12px; opacity: 0.8; margin-top: 3px;">
+                    <div style="font-size: 13px; color: #718096; margin-top: 5px;">
                         <?php 
                         $diasRestantes = ceil((strtotime($agenciaData['fecha_fin_suscripcion']) - time()) / 86400);
                         if ($diasRestantes > 0) {
                             echo "⏱️ " . $diasRestantes . " días restantes";
                         } else {
-                            echo "⚠️ Suscripción vencida";
+                            echo "<span style='color: #e53e3e;'>⚠️ Suscripción vencida</span>";
                         }
                         ?>
                     </div>
                 </div>
                 
                 <div style="flex: 1; min-width: 150px;">
-                    <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">👥 Usuarios</div>
-                    <div style="font-size: 18px; font-weight: 600;">
+                    <div style="font-size: 13px; color: #718096; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">👥 Usuarios</div>
+                    <div style="font-size: 20px; font-weight: 700; color: #1a202c;">
                         <?= $agenciaData['usuarios_actuales'] ?> / <?= $agenciaData['max_usuarios'] ?>
                     </div>
-                    <div style="font-size: 12px; opacity: 0.8; margin-top: 3px;">
+                    <div style="font-size: 13px; color: #718096; margin-top: 5px;">
                         <?= $agenciaData['max_usuarios'] - $agenciaData['usuarios_actuales'] ?> disponibles
                     </div>
                 </div>

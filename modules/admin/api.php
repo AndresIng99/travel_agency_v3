@@ -524,56 +524,106 @@ private function getUsers() {
     // MÉTODOS DE CONFIGURACIÓN (EXISTENTES)
     // ============================================
     
-    private function saveConfiguration() {
-        try {
-            // Verificar que la tabla existe
-            $this->ensureConfigTable();
-            
-            // Preparar datos
-            $configData = $this->prepareConfigData($_POST);
-            
-            if (empty($configData)) {
-                throw new Exception('No hay datos válidos para guardar');
-            }
-            
-            // Validar datos
-            $this->validateConfigData($configData);
-            
-            // Buscar configuración existente
-            $existing = $this->db->fetch("SELECT id FROM company_settings ORDER BY id DESC LIMIT 1");
-            
-            if ($existing) {
-                // Actualizar
-                $this->updateConfig($existing['id'], $configData);
-            } else {
-                // Crear nuevo
-                $this->createConfig($configData);
-            }
-            
-            return [
-                'success' => true,
-                'message' => 'Configuración guardada correctamente'
-            ];
-            
-        } catch(Exception $e) {
-            error_log("Save config error: " . $e->getMessage());
-            throw new Exception('Error al guardar: ' . $e->getMessage());
+private function saveConfiguration() {
+    try {
+        // Obtener agencia_id del admin actual
+        $agencia_id = $_SESSION['agencia_id'] ?? null;
+        
+        if (!$agencia_id) {
+            throw new Exception('Usuario sin agencia asignada');
         }
+        
+        // Preparar datos para actualizar en tabla agencias
+        $data = [];
+        
+        // Nombre de la empresa
+        if (isset($_POST['company_name'])) {
+            $data['nombre'] = trim($_POST['company_name']);
+        }
+        
+        // Logo
+        if (isset($_POST['logo_url']) && !empty($_POST['logo_url'])) {
+            $data['logo_url'] = $_POST['logo_url'];
+        }
+        
+        // Colores admin
+        if (isset($_POST['admin_primary_color'])) {
+            $data['admin_primary_color'] = $_POST['admin_primary_color'];
+        }
+        if (isset($_POST['admin_secondary_color'])) {
+            $data['admin_secondary_color'] = $_POST['admin_secondary_color'];
+        }
+        
+        // Colores agent
+        if (isset($_POST['agent_primary_color'])) {
+            $data['agent_primary_color'] = $_POST['agent_primary_color'];
+        }
+        if (isset($_POST['agent_secondary_color'])) {
+            $data['agent_secondary_color'] = $_POST['agent_secondary_color'];
+        }
+        
+        if (empty($data)) {
+            throw new Exception('No hay datos para actualizar');
+        }
+        
+        // Validar colores
+        $colorFields = ['admin_primary_color', 'admin_secondary_color', 'agent_primary_color', 'agent_secondary_color'];
+        foreach ($colorFields as $field) {
+            if (isset($data[$field]) && !preg_match('/^#[0-9A-Fa-f]{6}$/', $data[$field])) {
+                throw new Exception("Color {$field} no válido");
+            }
+        }
+        
+        // Actualizar tabla agencias
+        $this->db->update('agencias', $data, 'id = ?', [$agencia_id]);
+        
+        return [
+            'success' => true,
+            'message' => 'Configuración guardada correctamente'
+        ];
+        
+    } catch(Exception $e) {
+        error_log("Save config error: " . $e->getMessage());
+        throw new Exception('Error al guardar: ' . $e->getMessage());
     }
+}
     
-    private function getConfiguration() {
-        try {
-            ConfigManager::init();
-            $config = ConfigManager::get();
-            
-            return [
-                'success' => true,
-                'data' => $config ?: []
-            ];
-        } catch(Exception $e) {
-            throw new Exception('Error obteniendo configuración: ' . $e->getMessage());
+private function getConfiguration() {
+    try {
+        // Obtener agencia_id del admin actual
+        $agencia_id = $_SESSION['agencia_id'] ?? null;
+        
+        if (!$agencia_id) {
+            throw new Exception('Usuario sin agencia asignada');
         }
+        
+        // Obtener configuración de la agencia
+        $agencia = $this->db->fetch(
+            "SELECT 
+                nombre as company_name,
+                logo_url,
+                admin_primary_color,
+                admin_secondary_color,
+                agent_primary_color,
+                agent_secondary_color
+             FROM agencias 
+             WHERE id = ?",
+            [$agencia_id]
+        );
+        
+        if (!$agencia) {
+            throw new Exception('Agencia no encontrada');
+        }
+        
+        return [
+            'success' => true,
+            'data' => $agencia
+        ];
+        
+    } catch(Exception $e) {
+        throw new Exception('Error obteniendo configuración: ' . $e->getMessage());
     }
+}
     
     private function uploadConfigImage() {
         try {

@@ -1,96 +1,78 @@
 <?php
 // =====================================
 // ARCHIVO: config/config_functions.php - Funciones de Configuración Mejoradas
+// ✅ CORREGIDO: Carga correcta del nombre y logo de la agencia
 // =====================================
 
 class ConfigManager {
     private static $config = null;
     private static $db = null;
+    private static $agenciaData = null; // ✅ NUEVO: Almacenar datos de la agencia
     
-public static function init() {
-    try {
-        self::$db = Database::getInstance();
-        self::loadConfig();
-    } catch(Exception $e) {
-        error_log("ConfigManager init error: " . $e->getMessage());
-        self::$config = self::getDefaultConfig();
-    }
-}
-
-private static function loadConfig() {
-    try {
-        // Obtener agencia_id del usuario logueado
-        $agencia_id = null;
-        if (isset($_SESSION['user']) && isset($_SESSION['user']['agencia_id'])) {
-            $agencia_id = $_SESSION['user']['agencia_id'];
-        }
-        
-        if (!$agencia_id) {
-            // Si no hay usuario logueado, usar configuración por defecto
-            self::$config = self::getDefaultConfig();
-            return;
-        }
-        
-        // Cargar configuración desde la tabla agencias
-        self::$config = self::$db->fetch(
-            "SELECT 
-                nombre as company_name,
-                logo_url,
-                admin_primary_color,
-                admin_secondary_color,
-                agent_primary_color,
-                agent_secondary_color
-             FROM agencias 
-             WHERE id = ?",
-            [$agencia_id]
-        );
-        
-        if (!self::$config) {
-            self::$config = self::getDefaultConfig();
-        }
-        
-        // Agregar valores por defecto para mantener compatibilidad
-        self::$config['default_language'] = 'es';
-        self::$config['session_timeout'] = 120;
-        self::$config['max_file_size'] = 10;
-        
-    } catch(Exception $e) {
-        error_log("Error loading config: " . $e->getMessage());
-        self::$config = self::getDefaultConfig();
-    }
-}
-    
-    private static function createDefaultConfig() {
+    public static function init() {
         try {
-            // Crear tabla si no existe
-            $sql = "CREATE TABLE IF NOT EXISTS `company_settings` (
-                `id` INT AUTO_INCREMENT PRIMARY KEY,
-                `company_name` VARCHAR(100) DEFAULT 'Travel Agency',
-                `logo_url` VARCHAR(255) NULL,
-                `background_image` VARCHAR(255) NULL,
-                `admin_primary_color` VARCHAR(7) DEFAULT '#e53e3e',
-                `admin_secondary_color` VARCHAR(7) DEFAULT '#fd746c',
-                `agent_primary_color` VARCHAR(7) DEFAULT '#667eea',
-                `agent_secondary_color` VARCHAR(7) DEFAULT '#764ba2',
-                `login_bg_color` VARCHAR(7) DEFAULT '#667eea',
-                `login_secondary_color` VARCHAR(7) DEFAULT '#764ba2',
-                `default_language` VARCHAR(5) DEFAULT 'es',
-                `session_timeout` INT DEFAULT 60,
-                `max_file_size` INT DEFAULT 10,
-                `backup_frequency` ENUM('daily','weekly','monthly','never') DEFAULT 'weekly',
-                `maintenance_mode` TINYINT(1) DEFAULT 0,
-                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+            self::$db = Database::getInstance();
+            self::loadConfig();
+        } catch(Exception $e) {
+            error_log("ConfigManager init error: " . $e->getMessage());
+            self::$config = self::getDefaultConfig();
+        }
+    }
+
+    private static function loadConfig() {
+        try {
+            // ✅ Obtener agencia_id del usuario logueado
+            $agencia_id = null;
+            if (isset($_SESSION['agencia_id'])) {
+                $agencia_id = $_SESSION['agencia_id'];
+            }
             
-            self::$db->query($sql);
+            if (!$agencia_id) {
+                // Si no hay usuario logueado, usar configuración por defecto
+                self::$config = self::getDefaultConfig();
+                return;
+            }
             
-            // Insertar configuración por defecto
-            $defaultConfig = self::getDefaultConfig();
-            self::$db->insert('company_settings', $defaultConfig);
+            // ✅ Cargar configuración desde la tabla agencias
+            self::$agenciaData = self::$db->fetch(
+                "SELECT 
+                    id,
+                    nombre as company_name,
+                    logo_url,
+                    admin_primary_color,
+                    admin_secondary_color,
+                    agent_primary_color,
+                    agent_secondary_color
+                 FROM agencias 
+                 WHERE id = ? AND activa = 1",
+                [$agencia_id]
+            );
+            
+            if (!self::$agenciaData) {
+                error_log("No se encontró agencia con ID: $agencia_id");
+                self::$config = self::getDefaultConfig();
+                return;
+            }
+            
+            // ✅ Asignar valores de la agencia a la configuración
+            self::$config = [
+                'company_name' => self::$agenciaData['company_name'] ?? 'Travel Agency',
+                'logo_url' => self::$agenciaData['logo_url'] ?? '',
+                'admin_primary_color' => self::$agenciaData['admin_primary_color'] ?? '#e53e3e',
+                'admin_secondary_color' => self::$agenciaData['admin_secondary_color'] ?? '#fd746c',
+                'agent_primary_color' => self::$agenciaData['agent_primary_color'] ?? '#667eea',
+                'agent_secondary_color' => self::$agenciaData['agent_secondary_color'] ?? '#764ba2',
+                'default_language' => 'es',
+                'session_timeout' => 120,
+                'max_file_size' => 10
+            ];
+            
+            // Debug log
+            error_log("✅ ConfigManager cargado - Agencia: " . self::$config['company_name'] . " | Logo: " . self::$config['logo_url']);
             
         } catch(Exception $e) {
-            error_log("Error creating default config: " . $e->getMessage());
+            error_log("Error loading config: " . $e->getMessage());
+            self::$config = self::getDefaultConfig();
         }
     }
     
@@ -125,12 +107,24 @@ private static function loadConfig() {
         return self::$config[$key] ?? null;
     }
     
+    // ✅ MÉTODOS PRINCIPALES CORREGIDOS
+    
     public static function getCompanyName() {
-        return self::get('company_name') ?: 'Travel Agency';
+        if (!self::$config) {
+            self::init();
+        }
+        $nombre = self::$config['company_name'] ?? 'Travel Agency';
+        error_log("🏢 getCompanyName() retorna: " . $nombre);
+        return $nombre;
     }
     
     public static function getLogo() {
-        return self::get('logo_url') ?: '';
+        if (!self::$config) {
+            self::init();
+        }
+        $logo = self::$config['logo_url'] ?? '';
+        error_log("🖼️ getLogo() retorna: " . ($logo ?: '(vacío - se usarán iniciales)'));
+        return $logo;
     }
     
     public static function getDefaultLanguage() {
@@ -142,7 +136,11 @@ private static function loadConfig() {
     }
     
     public static function getColorsForRole($role) {
-        $config = self::get();
+        if (!self::$config) {
+            self::init();
+        }
+        
+        $config = self::$config;
         
         if ($role === 'admin') {
             return [
@@ -165,6 +163,14 @@ private static function loadConfig() {
         ];
     }
     
+    // ✅ NUEVO: Método para obtener datos completos de la agencia
+    public static function getAgenciaData() {
+        if (!self::$agenciaData) {
+            self::init();
+        }
+        return self::$agenciaData;
+    }
+    
     public static function update($data) {
         try {
             if (!self::$db) {
@@ -185,137 +191,40 @@ private static function loadConfig() {
                     $params[] = $value;
                 }
                 
-                if (!empty($setParts)) {
-                    $params[] = $currentConfig['id'];
-                    $sql = "UPDATE company_settings SET " . implode(', ', $setParts) . " WHERE id = ?";
-                    self::$db->query($sql, $params);
-                }
+                $params[] = $currentConfig['id'];
+                $sql = "UPDATE company_settings SET " . implode(', ', $setParts) . " WHERE id = ?";
+                
+                self::$db->query($sql, $params);
             }
             
-            self::loadConfig(); // Recargar configuración
+            // Recargar configuración
+            self::$config = null;
+            self::init();
+            
             return true;
         } catch(Exception $e) {
             error_log("Error updating config: " . $e->getMessage());
             return false;
         }
     }
-    
-    public static function uploadFile($file, $type = 'general') {
-        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp'];
-        $maxSize = (self::get('max_file_size') ?: 10) * 1024 * 1024; // MB to bytes
-        
-        // Validar archivo
-        if (!in_array($file['type'], $allowedTypes)) {
-            throw new Exception('Tipo de archivo no permitido. Solo se permiten: JPG, PNG, GIF, SVG, WebP');
-        }
-        
-        if ($file['size'] > $maxSize) {
-            $maxMB = $maxSize / (1024 * 1024);
-            throw new Exception("El archivo es demasiado grande. Máximo {$maxMB}MB permitido");
-        }
-        
-        // Crear directorio si no existe
-        $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/assets/uploads/config/';
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
-        
-        // Generar nombre único
-        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $filename = $type . '_' . uniqid() . '_' . time() . '.' . $extension;
-        $filePath = $uploadDir . $filename;
-        
-        if (move_uploaded_file($file['tmp_name'], $filePath)) {
-            $url = APP_URL . '/assets/uploads/config/' . $filename;
-            return $url;
-        } else {
-            throw new Exception('Error al subir el archivo');
-        }
-    }
-    
-    public static function generateCSS($role = null) {
-        $config = self::get();
-        
-        if ($role === 'admin') {
-            $primary = $config['admin_primary_color'] ?? '#e53e3e';
-            $secondary = $config['admin_secondary_color'] ?? '#fd746c';
-        } elseif ($role === 'agent') {
-            $primary = $config['agent_primary_color'] ?? '#667eea';
-            $secondary = $config['agent_secondary_color'] ?? '#764ba2';
-        } else {
-            // Para login
-            $primary = $config['login_bg_color'] ?? '#667eea';
-            $secondary = $config['login_secondary_color'] ?? '#764ba2';
-        }
-        
-        return "
-        :root {
-            --primary-color: {$primary};
-            --secondary-color: {$secondary};
-            --primary-gradient: linear-gradient(135deg, {$primary} 0%, {$secondary} 100%);
-        }
-        
-        .header {
-            background: var(--primary-gradient) !important;
-        }
-        
-        .role-badge,
-        .add-btn,
-        .btn-primary,
-        .save-btn,
-        .login-btn {
-            background: var(--primary-gradient) !important;
-        }
-        
-        .action-card:hover {
-            border-color: {$primary} !important;
-        }
-        
-        input:focus,
-        select:focus,
-        textarea:focus {
-            border-color: {$primary} !important;
-        }
-        
-        .stat-number {
-            color: {$primary} !important;
-        }
-        ";
-    }
 }
 
-// Función helper para obtener configuración
-function getConfig($key = null) {
-    return ConfigManager::get($key);
-}
-
-// Función helper para obtener colores según rol
-function getThemeColors($role = null) {
-    if ($role) {
-        return ConfigManager::getColorsForRole($role);
-    }
-    return ConfigManager::getLoginColors();
-}
 // =====================================
-// FUNCIONES PARA MANEJO DE UPLOADS POR AGENCIA (GRUPO 7)
+// FUNCIONES GLOBALES DE UTILIDAD
 // =====================================
 
 /**
- * Obtiene la ruta física completa para uploads de una agencia
+ * Obtiene la ruta física para uploads de una agencia
  */
 function getAgenciaUploadPath($agencia_id, $tipo, $subtipo = null) {
-    $basePath = dirname(__DIR__) . '/assets/uploads';
-    $agenciaPath = $basePath . '/agencia_' . $agencia_id;
-    
-    // Construir ruta completa
-    $fullPath = $agenciaPath . '/' . $tipo;
+    $basePath = dirname(__DIR__) . '/assets/uploads/agencia_' . $agencia_id . '/' . $tipo;
     
     if ($subtipo) {
-        $fullPath .= '/' . $subtipo;
+        $basePath .= '/' . $subtipo;
     }
     
-    // Agregar año/mes actual
-    $fullPath .= '/' . date('Y') . '/' . date('m');
+    // Agregar año y mes
+    $fullPath = $basePath . '/' . date('Y') . '/' . date('m');
     
     // Crear directorio si no existe
     if (!is_dir($fullPath)) {
@@ -350,15 +259,15 @@ function uploadAgenciaImageBiblioteca($file, $agencia_id, $tipo, $resourceId, $f
         throw new Exception('Tipo de archivo no permitido: ' . $file['type']);
     }
     
-    // ✅ CAMBIO: Límite de 2MB (antes era 10MB)
-    if ($file['size'] > 2 * 1024 * 1024) { // 2MB máximo
+    // Límite de 2MB
+    if ($file['size'] > 2 * 1024 * 1024) {
         throw new Exception('Archivo demasiado grande (máx 2MB)');
     }
     
     // Obtener ruta física
     $uploadPath = getAgenciaUploadPath($agencia_id, 'biblioteca', $tipo);
     
-    // Generar nombre único (MANTENER FORMATO ACTUAL)
+    // Generar nombre único
     $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     $fileName = $tipo . '_' . $resourceId . '_' . $field . '_' . time() . '.' . $extension;
     $filePath = $uploadPath . '/' . $fileName;
@@ -381,9 +290,9 @@ function uploadAgenciaImageBiblioteca($file, $agencia_id, $tipo, $resourceId, $f
  * Valida y procesa la subida de portada de programa
  */
 function uploadAgenciaImagePrograma($file, $agencia_id, $programa_id) {
-    // Validar archivo (MANTENER VALIDACIONES ACTUALES)
+    // Validar archivo
     $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    $maxSize = 5 * 1024 * 1024; // 5MB (ACTUAL BACKEND)
+    $maxSize = 5 * 1024 * 1024; // 5MB
     
     if (!in_array($file['type'], $allowedTypes)) {
         throw new Exception('Tipo de archivo no permitido: ' . $file['type']);
@@ -396,22 +305,97 @@ function uploadAgenciaImagePrograma($file, $agencia_id, $programa_id) {
     // Obtener ruta física
     $uploadPath = getAgenciaUploadPath($agencia_id, 'programa', 'portadas');
     
-    // Generar nombre único (MANTENER FORMATO ACTUAL)
+    // Generar nombre único
     $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     $fileName = 'programa_' . $programa_id . '_cover_' . time() . '.' . $extension;
     $filePath = $uploadPath . '/' . $fileName;
     
     // Mover archivo
     if (!move_uploaded_file($file['tmp_name'], $filePath)) {
-        throw new Exception('No se pudo subir el archivo');
-    }
-    
-    // Verificar
-    if (!file_exists($filePath)) {
-        throw new Exception('El archivo no se creó correctamente');
+        throw new Exception('Error al subir el archivo');
     }
     
     // Retornar URL
     return getAgenciaUploadUrl($agencia_id, 'programa', 'portadas', $fileName);
 }
-?>
+
+/**
+ * Elimina un archivo de uploads
+ */
+function deleteAgenciaFile($fileUrl) {
+    try {
+        // Convertir URL a ruta física
+        $filePath = str_replace(APP_URL, dirname(__DIR__), $fileUrl);
+        
+        if (file_exists($filePath)) {
+            unlink($filePath);
+            return true;
+        }
+        return false;
+    } catch(Exception $e) {
+        error_log("Error eliminando archivo: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Convierte color hexadecimal a RGB
+ */
+function hex2rgb($hex) {
+    $hex = str_replace("#", "", $hex);
+    
+    if (strlen($hex) == 3) {
+        $r = hexdec(substr($hex, 0, 1) . substr($hex, 0, 1));
+        $g = hexdec(substr($hex, 1, 1) . substr($hex, 1, 1));
+        $b = hexdec(substr($hex, 2, 1) . substr($hex, 2, 1));
+    } else {
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+    }
+    
+    return "$r, $g, $b";
+}
+
+/**
+ * Verifica si un archivo existe (útil para logos)
+ */
+function fileExists($filePath) {
+    if (empty($filePath)) {
+        return false;
+    }
+    
+    // Si es una URL, convertir a ruta física
+    if (strpos($filePath, 'http') === 0) {
+        $filePath = str_replace(APP_URL, dirname(__DIR__), $filePath);
+    }
+    
+    return file_exists($filePath);
+}
+
+/**
+ * Convierte ruta física a URL pública
+ */
+function getPublicUrl($filePath) {
+    if (strpos($filePath, 'http') === 0) {
+        return $filePath; // Ya es una URL
+    }
+    
+    // Si es una ruta relativa, convertir a URL
+    if (strpos($filePath, '/assets/') === 0) {
+        return APP_URL . $filePath;
+    }
+    
+    return $filePath;
+}
+
+/**
+ * Genera iniciales del nombre de la empresa
+ */
+function getCompanyInitials($companyName) {
+    $words = explode(' ', $companyName);
+    if (count($words) >= 2) {
+        return strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
+    }
+    return strtoupper(substr($companyName, 0, 2));
+}

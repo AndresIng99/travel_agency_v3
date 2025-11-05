@@ -61,6 +61,7 @@ try {
     $_SESSION['user_name'] = $user['full_name'];
     $_SESSION['user_role'] = $user['role'];
     $_SESSION['session_token'] = $sessionToken;
+    $_SESSION['agencia_id'] = $user['agencia_id'];
     
     // Agregar agencia_id si no es superadmin
     if ($user['role'] !== 'superadmin') {
