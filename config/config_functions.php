@@ -7,36 +7,58 @@ class ConfigManager {
     private static $config = null;
     private static $db = null;
     
-    public static function init() {
-        try {
-            self::$db = Database::getInstance();
-            self::loadConfig();
-        } catch(Exception $e) {
-            error_log("ConfigManager init error: " . $e->getMessage());
+public static function init() {
+    try {
+        self::$db = Database::getInstance();
+        self::loadConfig();
+    } catch(Exception $e) {
+        error_log("ConfigManager init error: " . $e->getMessage());
+        self::$config = self::getDefaultConfig();
+    }
+}
+
+private static function loadConfig() {
+    try {
+        // Obtener agencia_id del usuario logueado
+        $agencia_id = null;
+        if (isset($_SESSION['user']) && isset($_SESSION['user']['agencia_id'])) {
+            $agencia_id = $_SESSION['user']['agencia_id'];
+        }
+        
+        if (!$agencia_id) {
+            // Si no hay usuario logueado, usar configuración por defecto
+            self::$config = self::getDefaultConfig();
+            return;
+        }
+        
+        // Cargar configuración desde la tabla agencias
+        self::$config = self::$db->fetch(
+            "SELECT 
+                nombre as company_name,
+                logo_url,
+                admin_primary_color,
+                admin_secondary_color,
+                agent_primary_color,
+                agent_secondary_color
+             FROM agencias 
+             WHERE id = ?",
+            [$agencia_id]
+        );
+        
+        if (!self::$config) {
             self::$config = self::getDefaultConfig();
         }
+        
+        // Agregar valores por defecto para mantener compatibilidad
+        self::$config['default_language'] = 'es';
+        self::$config['session_timeout'] = 120;
+        self::$config['max_file_size'] = 10;
+        
+    } catch(Exception $e) {
+        error_log("Error loading config: " . $e->getMessage());
+        self::$config = self::getDefaultConfig();
     }
-    
-    private static function loadConfig() {
-        try {
-            // Verificar si la tabla existe
-            $tableExists = self::$db->fetch("SHOW TABLES LIKE 'company_settings'");
-            
-            if (!$tableExists) {
-                self::createDefaultConfig();
-            }
-            
-            self::$config = self::$db->fetch("SELECT * FROM company_settings ORDER BY id DESC LIMIT 1");
-            
-            if (!self::$config) {
-                self::createDefaultConfig();
-                self::$config = self::$db->fetch("SELECT * FROM company_settings ORDER BY id DESC LIMIT 1");
-            }
-        } catch(Exception $e) {
-            error_log("Error loading config: " . $e->getMessage());
-            self::$config = self::getDefaultConfig();
-        }
-    }
+}
     
     private static function createDefaultConfig() {
         try {

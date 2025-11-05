@@ -689,7 +689,6 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
             <div class="preview-tabs">
                 <div class="preview-tab active" onclick="switchPreview('admin')">👑 Vista Admin</div>
                 <div class="preview-tab" onclick="switchPreview('agent')">✈️ Vista Agente</div>
-                <div class="preview-tab" onclick="switchPreview('login')">🔑 Vista Login</div>
             </div>
 
             <!-- Admin Preview -->
@@ -702,12 +701,6 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
             <div class="preview-header" id="agentPreview" style="background: linear-gradient(135deg, <?= $config['agent_primary_color'] ?> 0%, <?= $config['agent_secondary_color'] ?> 100%); display: none;">
                 <div class="preview-company" id="companyPreviewAgent"><?= htmlspecialchars($config['company_name']) ?></div>
                 <div class="preview-tagline">Sistema de Gestión de Viajes</div>
-            </div>
-
-            <!-- Login Preview -->
-            <div class="preview-header" id="loginPreview" style="background: linear-gradient(135deg, <?= $config['login_bg_color'] ?> 0%, <?= $config['login_secondary_color'] ?> 100%); display: none;">
-                <div class="preview-company" id="companyPreviewLogin"><?= htmlspecialchars($config['company_name']) ?></div>
-                <div class="preview-tagline">Acceso al Sistema</div>
             </div>
         </div>
 
@@ -726,22 +719,15 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
                 
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="company_name">Nombre de la Empresa</label>
-                        <input type="text" id="company_name" name="company_name" 
-                               value="<?= htmlspecialchars($config['company_name']) ?>" 
-                               placeholder="Travel Agency" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="default_language">Idioma por Defecto del Sistema</label>
-                        <select id="default_language" name="default_language">
-                            <option value="es" <?= $config['default_language'] === 'es' ? 'selected' : '' ?>>Español</option>
-                            <option value="en" <?= $config['default_language'] === 'en' ? 'selected' : '' ?>>English</option>
-                            <option value="fr" <?= $config['default_language'] === 'fr' ? 'selected' : '' ?>>Français</option>
-                            <option value="pt" <?= $config['default_language'] === 'pt' ? 'selected' : '' ?>>Português</option>
-                        </select>
-                        <small style="color: #718096;">Este será el idioma inicial cuando los usuarios accedan al sistema</small>
-                    </div>
+                    <label for="company_name">Nombre de la Agencia</label>
+                    <input type="text" id="company_name" name="company_name" 
+                        value="<?= htmlspecialchars($config['company_name']) ?>" 
+                        placeholder="Travel Agency" readonly 
+                        style="background-color: #f1f5f9; cursor: not-allowed; color: #64748b;">
+                    <small style="color: #64748b; font-size: 12px; display: block; margin-top: 5px;">
+                        ℹ️ El nombre de la agencia solo puede ser modificado por el Superadmin desde la gestión de agencias
+                    </small>
+                </div>
                 </div>
 
                 <div class="form-grid" style="margin-top: 25px;">
@@ -762,25 +748,6 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
                             <?php endif; ?>
                         </div>
                         <input type="hidden" id="logo_url" name="logo_url" value="<?= htmlspecialchars($config['logo_url'] ?? '') ?>">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="background_image">Imagen de Fondo (Opcional)</label>
-                        <div class="image-upload" onclick="document.getElementById('backgroundInput').click()">
-                            <input type="file" id="backgroundInput" accept="image/*">
-                            <div class="upload-content">
-                                <div class="upload-icon">🖼️</div>
-                                <div>
-                                    <strong>Subir Fondo</strong><br>
-                                    <small>PNG, JPG (máx. <?= $config['max_file_size'] ?>MB)</small>
-                                </div>
-                            </div>
-                            <?php if ($config['background_image']): ?>
-                            <img src="<?= htmlspecialchars($config['background_image']) ?>" 
-                                 class="image-preview" id="backgroundPreview">
-                            <?php endif; ?>
-                        </div>
-                        <input type="hidden" id="background_image" name="background_image" value="<?= htmlspecialchars($config['background_image'] ?? '') ?>">
                     </div>
                 </div>
             </div>
@@ -839,37 +806,8 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
                         </div>
                     </div>
                 </div>
-
-                <!-- Login Colors -->
-                <h3 style="margin: 25px 0 15px 0; color: #667eea;">🔑 Colores de Pantalla de Login</h3>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="login_bg_color">Color Primario Login</label>
-                        <div class="color-input">
-                            <input type="color" id="login_bg_color" name="login_bg_color" 
-                                   class="color-picker" value="<?= $config['login_bg_color'] ?>">
-                            <input type="text" class="color-text" 
-                                   value="<?= $config['login_bg_color'] ?>" readonly>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="login_secondary_color">Color Secundario Login</label>
-                        <div class="color-input">
-                            <input type="color" id="login_secondary_color" name="login_secondary_color" 
-                                   class="color-picker" value="<?= $config['login_secondary_color'] ?>">
-                            <input type="text" class="color-text" 
-                                   value="<?= $config['login_secondary_color'] ?>" readonly>
-                        </div>
-                    </div>
-                </div>
             </div>
 
-            <!-- Advanced Settings Toggle -->
-            <div class="advanced-toggle" onclick="toggleAdvanced()">
-                <strong>⚡ Configuración Avanzada</strong>
-                <span style="float: right;" id="advancedIcon">▼</span>
-            </div>
 
             <div class="advanced-content" id="advancedContent">
                 <div class="config-section">
@@ -975,8 +913,7 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
         function initializeColorPickers() {
             const colorInputs = [
                 'admin_primary_color', 'admin_secondary_color',
-                'agent_primary_color', 'agent_secondary_color',
-                'login_bg_color', 'login_secondary_color'
+                'agent_primary_color', 'agent_secondary_color'
             ];
 
             colorInputs.forEach(inputId => {
@@ -1006,7 +943,6 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
             // Mostrar/ocultar previews
             document.getElementById('adminPreview').style.display = type === 'admin' ? 'block' : 'none';
             document.getElementById('agentPreview').style.display = type === 'agent' ? 'block' : 'none';
-            document.getElementById('loginPreview').style.display = type === 'login' ? 'block' : 'none';
         }
 
         // Actualizar vista previa
@@ -1018,27 +954,21 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
             const adminSecondary = document.getElementById('admin_secondary_color').value;
             const agentPrimary = document.getElementById('agent_primary_color').value;
             const agentSecondary = document.getElementById('agent_secondary_color').value;
-            const loginPrimary = document.getElementById('login_bg_color').value;
-            const loginSecondary = document.getElementById('login_secondary_color').value;
 
             // Actualizar nombres
             document.getElementById('companyPreviewAdmin').textContent = companyName;
             document.getElementById('companyPreviewAgent').textContent = companyName;
-            document.getElementById('companyPreviewLogin').textContent = companyName;
 
             // Actualizar fondos
             document.getElementById('adminPreview').style.background = 
                 `linear-gradient(135deg, ${adminPrimary} 0%, ${adminSecondary} 100%)`;
             document.getElementById('agentPreview').style.background = 
                 `linear-gradient(135deg, ${agentPrimary} 0%, ${agentSecondary} 100%)`;
-            document.getElementById('loginPreview').style.background = 
-                `linear-gradient(135deg, ${loginPrimary} 0%, ${loginSecondary} 100%)`;
         }
 
         // Configurar subida de imágenes
         function initializeImageUploads() {
             setupImageUpload('logoInput', 'logo_url', 'logoPreview');
-            setupImageUpload('backgroundInput', 'background_image', 'backgroundPreview');
         }
 
         function setupImageUpload(inputId, hiddenId, previewId) {
@@ -1195,22 +1125,6 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
             }
         }
 
-        // Toggle configuración avanzada
-        function toggleAdvanced() {
-            const content = document.getElementById('advancedContent');
-            const icon = document.getElementById('advancedIcon');
-            
-            if (content.classList.contains('show')) {
-                content.classList.remove('show');
-                icon.textContent = '▼';
-            } else {
-                content.classList.add('show');
-                icon.textContent = '▲';
-            }
-        }
-
-        // Mostrar mensajes
-        
 // Usar el sistema de notificaciones de UIComponents (igual que admin.php)
 function showMessage(message, type = 'info') {
     const toast = document.createElement('div');

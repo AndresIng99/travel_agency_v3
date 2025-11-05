@@ -253,7 +253,8 @@ public static function getUser() {
         'username' => $_SESSION['username'] ?? '',
         'email' => $_SESSION['email'] ?? '', 
         'name' => $_SESSION['user_name'] ?? '',
-        'role' => $_SESSION['user_role'] ?? 'agent'
+        'role' => $_SESSION['user_role'] ?? 'agent',
+        'agencia_id' => $_SESSION['agencia_id'] ?? null
     ];
 }
 

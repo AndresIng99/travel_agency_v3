@@ -86,7 +86,9 @@ class UIComponents {
      * @return string HTML de la sidebar
      */
     public static function renderSidebar($user, $currentPage = '') {
-        $companyName = App::getCompanyName();
+        ConfigManager::init();
+        $companyName = ConfigManager::getCompanyName();
+        $logo = ConfigManager::getLogo();
         $userColors = App::getColorsForRole($user['role']);
         
         $sidebarHtml = '
@@ -771,7 +773,9 @@ class UIComponents {
      * @return string HTML del header
      */
     public static function renderHeader($user) {
-        $companyName = App::getCompanyName();
+        ConfigManager::init();
+        $companyName = ConfigManager::getCompanyName();
+        $logo = ConfigManager::getLogo();
         $defaultLanguage = App::getDefaultLanguage();
         
         return '
