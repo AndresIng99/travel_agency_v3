@@ -1989,6 +1989,24 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
             transportes: []
         };
 
+        // Función para obtener icono correcto del medio de transporte
+function getTransportIcon(medio) {
+    const transportIcons = {
+        'bus': '🚌',
+        'avion': '✈️',
+        'coche': '🚗',
+        'barco': '🚢',
+        'tren': '🚂',
+        'metro': '🚇',
+        'taxi': '🚕',
+        'bicicleta': '🚲',
+        'moto': '🏍️',
+        'walking': '🚶'
+    };
+    
+    return transportIcons[medio] || '🚗';
+}
+
         // Inicialización
         document.addEventListener('DOMContentLoaded', function() {
             initializeTabs();
@@ -2877,18 +2895,30 @@ function escapeHtml(text) {
                     imageHTML = `<div class="card-image">${icons[currentTab]}</div>`;
                 }
             } else {
-                // Para alojamientos y transportes, usar lógica anterior
-                const primaryImage = getPrimaryImage(item, currentTab);
-                imageHTML = `
-                    <div class="card-image">
-                        ${primaryImage ? 
-                            `<img src="${primaryImage}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover;">` : 
-                            icons[currentTab]
-                        }
-                        ${getImageCount(item, currentTab) > 0 ? `<div class="image-count">📷 ${getImageCount(item, currentTab)}</div>` : ''}
-                    </div>
-                `;
-            }
+    // Para alojamientos y transportes, usar lógica específica
+    if (currentTab === 'transportes') {
+        // ✅ Usar icono específico del medio de transporte
+        const transportIcon = getTransportIcon(item.medio);
+        imageHTML = `
+            <div class="card-image transport-image" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 20px;">
+                <div style="font-size: 36px; margin-bottom: 8px;">${transportIcon}</div>
+                <div style="font-size: 14px; font-weight: 600; text-transform: capitalize;">${item.medio || 'Transporte'}</div>
+            </div>
+        `;
+        } else {
+            // Para alojamientos
+            const primaryImage = getPrimaryImage(item, currentTab);
+            imageHTML = `
+                <div class="card-image">
+                    ${primaryImage ? 
+                        `<img src="${primaryImage}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover;">` : 
+                        icons[currentTab]
+                    }
+                    ${getImageCount(item, currentTab) > 0 ? `<div class="image-count">📷 ${getImageCount(item, currentTab)}</div>` : ''}
+                </div>
+            `;
+        }
+    }
             
             return `
                 <div class="item-card" onclick="editResource(${item.id})">
@@ -2897,7 +2927,7 @@ function escapeHtml(text) {
                         <h3 class="card-title">${escapeHtml(title)}</h3>
                         <p class="card-description">${escapeHtml(item.descripcion || 'Sin descripción')}</p>
                         <div class="card-location">
-                            📍 ${escapeHtml(location)}
+                            ${currentTab === 'transportes' ? getTransportIcon(item.medio) : '📍'} ${escapeHtml(location)}
                             ${item.ubicaciones_secundarias && item.ubicaciones_secundarias.length > 0 ? 
                                 `<div style="font-size: 11px; color: #10b981; margin-top: 4px; font-weight: 600;">
                                     + ${item.ubicaciones_secundarias.length} ubicación(es) más
@@ -2906,7 +2936,7 @@ function escapeHtml(text) {
                         </div>
                         ${item.categoria ? `<div class="card-category">⭐ ${item.categoria} estrellas</div>` : ''}
                         ${item.tipo ? `<div class="card-type">🏷️ ${item.tipo}</div>` : ''}
-                        ${item.medio ? `<div class="card-transport">🚗 ${item.medio}</div>` : ''}
+                        ${item.medio ? `<div class="card-transport">${getTransportIcon(item.medio)} ${item.medio}</div>` : ''}
                     </div>
                     <div class="card-actions">
                         <button class="action-btn edit" onclick="event.stopPropagation(); editResource(${item.id})">
@@ -2921,59 +2951,57 @@ function escapeHtml(text) {
         }
 
         // Funciones del modal
-        function openModal(mode, id = null) {
-            const modal = document.getElementById('resourceModal');
-            const title = document.getElementById('modalTitle');
-            
-            // Configurar título
-            const titles = {
-                dias: mode === 'create' ? 'Agregar Nuevo Día' : 'Editar Día',
-                alojamientos: mode === 'create' ? 'Agregar Nuevo Alojamiento' : 'Editar Alojamiento',
-                actividades: mode === 'create' ? 'Agregar Nueva Actividad' : 'Editar Actividad',
-                transportes: mode === 'create' ? 'Agregar Nuevo Transporte' : 'Editar Transporte'
-            };
-            
-            title.textContent = titles[currentTab];
-            document.getElementById('resourceType').value = currentTab;
-            document.getElementById('resourceId').value = id || '';
-            
-            // Cargar campos específicos
-            loadSpecificFields();
-            
-            // Mostrar modal
-            modal.classList.add('show');
-         
-
-            // ✅ AGREGAR ESTAS LÍNEAS AQUÍ:
-            // Inicializar sistema de imágenes si es días o actividades
-            if (currentTab === 'dias' || currentTab === 'actividades') {
-                setTimeout(() => {
-                    if (mode === 'create') {
-                        // Modo crear: sin imágenes existentes
-                        initImageUploadSystem(currentTab, null, []);
-                        console.log('✅ Sistema de imágenes inicializado para CREAR');
-                    }
-                }, 300);
+        
+// Funciones del modal
+function openModal(mode, id = null) {
+    console.log('🎬 OpenModal:', { mode, id, currentTab });
+    
+    const modal = document.getElementById('resourceModal');
+    const title = document.getElementById('modalTitle');
+    
+    if (!modal || !title) {
+        console.error('❌ Modal o título no encontrado');
+        return;
+    }
+    
+    // Configurar título según el tab activo y el modo
+    const titles = {
+        dias: mode === 'create' ? 'Agregar Nuevo Día' : 'Editar Día',
+        alojamientos: mode === 'create' ? 'Agregar Nuevo Alojamiento' : 'Editar Alojamiento',
+        actividades: mode === 'create' ? 'Agregar Nueva Actividad' : 'Editar Actividad',
+        transportes: mode === 'create' ? 'Agregar Nuevo Transporte' : 'Editar Transporte'
+    };
+    
+    title.textContent = titles[currentTab] || 'Agregar Recurso';
+    document.getElementById('resourceType').value = currentTab;
+    document.getElementById('resourceId').value = id || '';
+    
+    // Resetear flag de contadores ANTES de cargar campos
+    caracteresConfigurados = false;
+    
+    // Cargar campos específicos del tipo de recurso
+    loadSpecificFields();
+    
+    // Mostrar el modal
+    modal.classList.add('show');
+    console.log('✅ Modal mostrado');
+    
+    // Inicializar sistema de imágenes para días y actividades
+    if (currentTab === 'dias' || currentTab === 'actividades') {
+        setTimeout(() => {
+            if (mode === 'create') {
+                console.log(`🖼️ Inicializando imágenes para ${currentTab}`);
+                initImageUploadSystem(currentTab, null, []);
             }
-
-            // Si es edición, cargar datos
-            if (mode === 'edit' && id) {
-                loadResourceData(id);
-            }
-
-            // ✅ RESETEAR FLAG DE CONTADORES
-            caracteresConfigurados = false;
-            
-            // Si es edición, cargar datos
-            if (mode === 'edit' && id) {
-                loadResourceData(id);
-            }
-            if (type === 'dias' || type === 'actividades') {
-                setTimeout(() => {
-                    initImageUploadSystem(type, null, []); // null = crear nuevo, [] = sin imágenes existentes
-                }, 100);
-            }
-        }
+        }, 300);
+    }
+    
+    // Si es modo edición, cargar los datos del recurso
+    if (mode === 'edit' && id) {
+        console.log(`📝 Cargando datos del recurso ID: ${id}`);
+        loadResourceData(id);
+    }
+}
 
         function closeModal() {
             caracteresConfigurados = false;
@@ -3300,6 +3328,8 @@ function loadSpecificFields() {
             <input type="hidden" id="longitud" name="longitud">
         `;
         break;
+
+        
             
         case 'alojamientos':
             fieldsHTML = `
@@ -3394,6 +3424,54 @@ function loadSpecificFields() {
             `;
             break;
             
+         case 'actividades':
+            fieldsHTML = `
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="nombre">Nombre de la Actividad</label>
+                        <div class="input-with-counter">
+                            <input type="text" id="nombre" name="nombre" required 
+                                placeholder="Ej: Tour Eiffel" 
+                                maxlength="250">
+                            <div class="char-counter" id="nombre-counter">0/250</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="ubicacion">📍 Ubicación de la Actividad</label>
+                        <div class="ubicacion-input-wrapper">
+                            <input type="text" 
+                                id="ubicacion" 
+                                name="ubicacion" 
+                                class="form-control"
+                                required 
+                                placeholder="🔍 Buscar lugar, monumento, parque...">
+                            <input type="hidden" name="latitud" id="latitud">
+                            <input type="hidden" name="longitud" id="longitud">
+                            <div id="preview-ubicacion-principal"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="descripcion">Descripción</label>
+                    <div class="textarea-with-counter">
+                        <textarea id="descripcion" name="descripcion" required 
+                                placeholder="Describe la actividad..."
+                                maxlength="1500"></textarea>
+                        <div class="char-counter" id="descripcion-counter">0/1500</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>📸 Imágenes de la Actividad (máximo 3)</label>
+                    <div id="imageUploadContainer">
+                        <!-- El sistema de imágenes se renderizará aquí -->
+                    </div>
+                </div>
+                <input type="hidden" id="latitud" name="latitud">
+                <input type="hidden" id="longitud" name="longitud">
+            `;
+            break;
+                
+
         case 'transportes':
             fieldsHTML = `
                 <div class="form-grid">
@@ -6381,25 +6459,6 @@ function showLocationPreviewEnhanced(preview, location) {
     preview.classList.add('show');
 }
 
-// ===== CORRECCIÓN 2: IMAGEN CORRECTA PARA TRANSPORTES =====
-
-// Función para obtener icono correcto del medio de transporte
-function getTransportIcon(medio) {
-    const transportIcons = {
-        'bus': '🚌',
-        'avion': '✈️',
-        'coche': '🚗',
-        'barco': '🚢',
-        'tren': '🚂',
-        'metro': '🚇',
-        'taxi': '🚕',
-        'bicicleta': '🚲',
-        'moto': '🏍️',
-        'walking': '🚶'
-    };
-    
-    return transportIcons[medio] || '🚗';
-}
 
 // Función mejorada para crear card de transporte
 function createTransportCard(item) {
