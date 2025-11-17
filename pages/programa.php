@@ -5390,11 +5390,21 @@ async function cargarPreciosPrograma() {
                 
                 form.querySelector('[name="precio_total"]').value = data.precio_total || '';
                 form.querySelector('[name="noches_incluidas"]').value = data.noches_incluidas || '';
+
+                // CARGAR TEXTAREAS CON PLANTILLA O DATOS GUARDADOS
                 form.querySelector('[name="precio_incluye"]').value = data.precio_incluye || '';
                 form.querySelector('[name="precio_no_incluye"]').value = data.precio_no_incluye || '';
                 form.querySelector('[name="condiciones_generales"]').value = data.condiciones_generales || '';
                 form.querySelector('[name="info_pasaporte"]').value = data.info_pasaporte || '';
                 form.querySelector('[name="info_seguros"]').value = data.info_seguros || '';
+                
+                // ACTUALIZAR CONTADORES DE CARACTERES
+                actualizarContadorTexto('precio_incluye');
+                actualizarContadorTexto('precio_no_incluye');
+                actualizarContadorTexto('condiciones_generales');
+                actualizarContadorTexto('info_pasaporte');
+                actualizarContadorTexto('info_seguros')
+
                 form.querySelector('[name="movilidad_reducida"]').checked = data.movilidad_reducida == 1;
                 
                 // Actualizar íconos y calcular total
@@ -5408,6 +5418,29 @@ async function cargarPreciosPrograma() {
         }
     } catch (error) {
         console.error('Error cargando precios:', error);
+    }
+}
+
+// Función para actualizar contadores de caracteres de textareas
+function actualizarContadorTexto(fieldName) {
+    const textarea = document.querySelector(`textarea[name="${fieldName}"]`);
+    if (!textarea) return;
+    
+    const counter = document.getElementById(`${fieldName}-counter`);
+    if (!counter) return;
+    
+    const currentLength = textarea.value.length;
+    const maxChars = textarea.getAttribute('data-max-chars') || 3000;
+    
+    counter.textContent = `${currentLength}/${maxChars}`;
+    
+    // Cambiar color según uso
+    if (currentLength > maxChars * 0.9) {
+        counter.style.color = '#e53e3e';
+    } else if (currentLength > maxChars * 0.7) {
+        counter.style.color = '#d69e2e';
+    } else {
+        counter.style.color = '#718096';
     }
 }
 

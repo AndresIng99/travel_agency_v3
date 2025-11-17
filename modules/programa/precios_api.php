@@ -178,7 +178,30 @@ class ProgramaPreciosAPI {
                 "SELECT * FROM programa_precios WHERE solicitud_id = ?", 
                 [$programaId]
             );
-            
+
+            // Si NO existen precios guardados, cargar plantilla de la agencia
+            if (!$precios) {
+                $plantilla = $this->db->fetch(
+                    "SELECT precio_incluye, precio_no_incluye, condiciones_generales, info_pasaporte, info_seguros 
+                    FROM biblioteca_plantillas_precios 
+                    WHERE agencia_id = ?", 
+                    [$agencia_id]
+                );
+                
+                if ($plantilla) {
+                    // Crear estructura de precios vacía pero con plantilla pre-cargada
+                    $precios = [
+                        'precio_incluye' => $plantilla['precio_incluye'],
+                        'precio_no_incluye' => $plantilla['precio_no_incluye'],
+                        'condiciones_generales' => $plantilla['condiciones_generales'],
+                        'info_pasaporte' => $plantilla['info_pasaporte'],
+                        'info_seguros' => $plantilla['info_seguros']
+                    ];
+                    
+                    error_log("✅ Plantilla de precios cargada para programa $programaId");
+                }
+            }
+
             return [
                 'success' => true,
                 'data' => $precios
