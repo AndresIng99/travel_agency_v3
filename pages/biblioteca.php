@@ -1904,6 +1904,7 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
                 <button class="tab-btn" data-tab="alojamientos">Alojamientos</button>
                 <button class="tab-btn" data-tab="actividades">Actividades</button>
                 <button class="tab-btn" data-tab="transportes">Transportes</button>
+                <button class="tab-btn" data-tab="plantilla-precios">💰 Plantilla Precios</button>
             </div>
 
             <!-- Filters Section -->
@@ -1972,7 +1973,369 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
         </div>
     </div>
 
+<script>
+    // ====================================================================
+// FUNCIONES PARA PLANTILLA DE PRECIOS
+// ====================================================================
 
+async function loadPlantillaPrecios() {
+    const grid = document.getElementById('contentGrid');
+    const emptyState = document.getElementById('emptyState');
+    const filtersSection = document.querySelector('.filters-section');
+    
+    // Ocultar filtros y empty state
+    if (filtersSection) filtersSection.style.display = 'none';
+    if (emptyState) emptyState.style.display = 'none';
+    
+    try {
+        // Mostrar loading
+        grid.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
+                <div style="display: inline-flex; align-items: center; gap: 10px; background: white; padding: 15px 25px; border-radius: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                    <div style="width: 16px; height: 16px; border: 2px solid #e2e8f0; border-top: 2px solid var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                    <span>Cargando plantilla de precios...</span>
+                </div>
+            </div>
+        `;
+        
+        // Llamar al API
+        const response = await fetch(`${APP_URL}/biblioteca/api?action=get_plantilla_precios`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            renderPlantillaPrecios(result.data, result.exists);
+        } else {
+            showMessage('Error cargando plantilla: ' + result.error, 'error');
+        }
+        
+    } catch(error) {
+        console.error('Error:', error);
+        grid.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
+                <p style="color: #e53e3e;">Error al cargar la plantilla de precios</p>
+                <button class="btn-primary" onclick="loadPlantillaPrecios()" style="margin-top: 15px;">
+                    Reintentar
+                </button>
+            </div>
+        `;
+    }
+}
+
+function renderPlantillaPrecios(data, exists) {
+    const grid = document.getElementById('contentGrid');
+    
+    grid.innerHTML = `
+        <div class="plantilla-precios-container" style="grid-column: 1/-1; padding: 30px 40px;">
+            
+            <!-- Encabezado minimalista -->
+            <div style="background: white; padding: 30px 35px; border-radius: 16px; margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); border: 1px solid #e2e8f0;">
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <div style="width: 60px; height: 60px; background: #f7fafc; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 32px; border: 2px solid #e2e8f0;">
+                        💰
+                    </div>
+                    <div style="flex: 1;">
+                        <h2 style="margin: 0 0 6px 0; font-size: 24px; font-weight: 700; color: #1a202c;">
+                            Plantilla de Información de Precios
+                        </h2>
+                        <p style="margin: 0; font-size: 14px; color: #718096; line-height: 1.5;">
+                            Define una vez la información que se precargará automáticamente en todos tus programas nuevos
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Formulario -->
+            <form id="plantilla-precios-form" style="background: white; padding: 40px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); border: 1px solid #e2e8f0;">
+                
+                <!-- Campo: Precio Incluye -->
+                <div class="form-group" style="margin-bottom: 32px;">
+                    <label class="form-label" style="font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: #2d3748; font-size: 15px;">
+                        <span style="font-size: 18px;">✅</span>
+                        ¿Qué incluye el precio?
+                    </label>
+                    <div style="position: relative;">
+                        <textarea 
+                            name="precio_incluye" 
+                            class="form-control plantilla-textarea" 
+                            rows="7"
+                            maxlength="3000"
+                            data-counter="counter-1"
+                            placeholder="Ejemplo:&#10;• Alojamiento en hotel 4 estrellas con desayuno incluido&#10;• Guía turístico certificado en español&#10;• Transporte terrestre en vehículo con aire acondicionado&#10;• Entradas a todos los sitios turísticos mencionados&#10;• Seguro de viaje básico"
+                            style="width: 100%; padding: 16px 20px; padding-bottom: 45px; border: 2px solid #e2e8f0; border-radius: 12px; font-family: inherit; resize: vertical; font-size: 14px; line-height: 1.6; background: #fafbfc; transition: all 0.3s ease;"
+                        >${data?.precio_incluye || ''}</textarea>
+                        <div id="counter-1" style="position: absolute; bottom: 14px; right: 18px; font-size: 11px; color: #a0aec0; font-weight: 500;">
+                            ${data?.precio_incluye?.length || 0}/3000
+                        </div>
+                    </div>
+                    <small style="color: #718096; font-size: 12px; display: block; margin-top: 8px; padding-left: 4px;">
+                        💡 Describe todos los servicios incluidos en el precio del programa
+                    </small>
+                </div>
+                
+                <!-- Campo: Precio NO Incluye -->
+                <div class="form-group" style="margin-bottom: 32px;">
+                    <label class="form-label" style="font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: #2d3748; font-size: 15px;">
+                        <span style="font-size: 18px;">❌</span>
+                        ¿Qué NO incluye el precio?
+                    </label>
+                    <div style="position: relative;">
+                        <textarea 
+                            name="precio_no_incluye" 
+                            class="form-control plantilla-textarea" 
+                            rows="7"
+                            maxlength="3000"
+                            data-counter="counter-2"
+                            placeholder="Ejemplo:&#10;• Vuelos internacionales y nacionales&#10;• Comidas no especificadas en el itinerario&#10;• Propinas para guías y conductores&#10;• Gastos personales (compras, lavandería, teléfono)&#10;• Bebidas alcohólicas"
+                            style="width: 100%; padding: 16px 20px; padding-bottom: 45px; border: 2px solid #e2e8f0; border-radius: 12px; font-family: inherit; resize: vertical; font-size: 14px; line-height: 1.6; background: #fafbfc; transition: all 0.3s ease;"
+                        >${data?.precio_no_incluye || ''}</textarea>
+                        <div id="counter-2" style="position: absolute; bottom: 14px; right: 18px; font-size: 11px; color: #a0aec0; font-weight: 500;">
+                            ${data?.precio_no_incluye?.length || 0}/3000
+                        </div>
+                    </div>
+                    <small style="color: #718096; font-size: 12px; display: block; margin-top: 8px; padding-left: 4px;">
+                        💡 Especifica claramente qué gastos NO están cubiertos
+                    </small>
+                </div>
+                
+                <!-- Campo: Condiciones Generales -->
+                <div class="form-group" style="margin-bottom: 32px;">
+                    <label class="form-label" style="font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: #2d3748; font-size: 15px;">
+                        <span style="font-size: 18px;">📋</span>
+                        Condiciones Generales
+                    </label>
+                    <div style="position: relative;">
+                        <textarea 
+                            name="condiciones_generales" 
+                            class="form-control plantilla-textarea" 
+                            rows="7"
+                            maxlength="3000"
+                            data-counter="counter-3"
+                            placeholder="Ejemplo:&#10;• Reserva con 30% de anticipo al momento de confirmar&#10;• Saldo restante 15 días antes del inicio del viaje&#10;• Cancelación gratuita hasta 30 días antes de la salida&#10;• Cambios de fecha sujetos a disponibilidad y cargos del 10%&#10;• Mínimo 4 pasajeros para garantizar la salida del tour"
+                            style="width: 100%; padding: 16px 20px; padding-bottom: 45px; border: 2px solid #e2e8f0; border-radius: 12px; font-family: inherit; resize: vertical; font-size: 14px; line-height: 1.6; background: #fafbfc; transition: all 0.3s ease;"
+                        >${data?.condiciones_generales || ''}</textarea>
+                        <div id="counter-3" style="position: absolute; bottom: 14px; right: 18px; font-size: 11px; color: #a0aec0; font-weight: 500;">
+                            ${data?.condiciones_generales?.length || 0}/3000
+                        </div>
+                    </div>
+                    <small style="color: #718096; font-size: 12px; display: block; margin-top: 8px; padding-left: 4px;">
+                        💡 Políticas de reserva, pago y cancelación
+                    </small>
+                </div>
+                
+                <!-- Campo: Info Pasaporte -->
+                <div class="form-group" style="margin-bottom: 32px;">
+                    <label class="form-label" style="font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: #2d3748; font-size: 15px;">
+                        <span style="font-size: 18px;">🛂</span>
+                        Información de Pasaporte
+                    </label>
+                    <div style="position: relative;">
+                        <textarea 
+                            name="info_pasaporte" 
+                            class="form-control plantilla-textarea" 
+                            rows="6"
+                            maxlength="3000"
+                            data-counter="counter-4"
+                            placeholder="Ejemplo:&#10;• Pasaporte vigente por mínimo 6 meses desde la fecha de salida del viaje&#10;• Mínimo 2 páginas en blanco para estampillas&#10;• Visa requerida para ciudadanos de ciertos países (consultar)&#10;• Fotocopia del pasaporte requerida para la reserva"
+                            style="width: 100%; padding: 16px 20px; padding-bottom: 45px; border: 2px solid #e2e8f0; border-radius: 12px; font-family: inherit; resize: vertical; font-size: 14px; line-height: 1.6; background: #fafbfc; transition: all 0.3s ease;"
+                        >${data?.info_pasaporte || ''}</textarea>
+                        <div id="counter-4" style="position: absolute; bottom: 14px; right: 18px; font-size: 11px; color: #a0aec0; font-weight: 500;">
+                            ${data?.info_pasaporte?.length || 0}/3000
+                        </div>
+                    </div>
+                    <small style="color: #718096; font-size: 12px; display: block; margin-top: 8px; padding-left: 4px;">
+                        💡 Requisitos de documentación para viajar
+                    </small>
+                </div>
+                
+                <!-- Campo: Info Seguros -->
+                <div class="form-group" style="margin-bottom: 32px;">
+                    <label class="form-label" style="font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: #2d3748; font-size: 15px;">
+                        <span style="font-size: 18px;">🏥</span>
+                        Información de Seguros
+                    </label>
+                    <div style="position: relative;">
+                        <textarea 
+                            name="info_seguros" 
+                            class="form-control plantilla-textarea" 
+                            rows="6"
+                            maxlength="3000"
+                            data-counter="counter-5"
+                            placeholder="Ejemplo:&#10;• Seguro de viaje obligatorio con cobertura mínima USD 50,000&#10;• Debe incluir asistencia médica, hospitalización y repatriación&#10;• Cobertura para cancelación de viaje recomendada&#10;• Línea de emergencias 24/7 disponible durante todo el viaje"
+                            style="width: 100%; padding: 16px 20px; padding-bottom: 45px; border: 2px solid #e2e8f0; border-radius: 12px; font-family: inherit; resize: vertical; font-size: 14px; line-height: 1.6; background: #fafbfc; transition: all 0.3s ease;"
+                        >${data?.info_seguros || ''}</textarea>
+                        <div id="counter-5" style="position: absolute; bottom: 14px; right: 18px; font-size: 11px; color: #a0aec0; font-weight: 500;">
+                            ${data?.info_seguros?.length || 0}/3000
+                        </div>
+                    </div>
+                    <small style="color: #718096; font-size: 12px; display: block; margin-top: 8px; padding-left: 4px;">
+                        💡 Requisitos y detalles del seguro de viaje
+                    </small>
+                </div>
+                
+                <!-- Botón Guardar -->
+                <div style="text-align: center; padding-top: 25px; border-top: 1px solid #e2e8f0; margin-top: 15px;">
+                    <button type="submit" class="btn-primary" style="
+                        padding: 16px 50px; 
+                        font-size: 15px; 
+                        font-weight: 600; 
+                        background: var(--primary-gradient); 
+                        border: none; 
+                        border-radius: 10px; 
+                        color: white; 
+                        cursor: pointer; 
+                        box-shadow: 0 3px 15px rgba(102, 126, 234, 0.3); 
+                        transition: all 0.2s ease;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 10px;
+                    "
+                    onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 5px 20px rgba(102, 126, 234, 0.4)';"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 3px 15px rgba(102, 126, 234, 0.3)';">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        <span>${exists ? 'Actualizar' : 'Guardar'} Plantilla</span>
+                    </button>
+                    
+                    ${exists ? `
+                        <p style="margin-top: 12px; font-size: 12px; color: #a0aec0;">
+                            ℹ️ Los cambios se aplicarán solo a nuevos programas
+                        </p>
+                    ` : ''}
+                </div>
+            </form>
+        </div>
+        
+        <style>
+            /* Estilos para los textareas */
+            .plantilla-textarea:focus {
+                border-color: var(--primary-color) !important;
+                background: white !important;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+                outline: none !important;
+            }
+            
+            /* Ocultar resize handle en mobile */
+            @media (max-width: 768px) {
+                .plantilla-textarea {
+                    resize: none;
+                }
+                
+                .plantilla-precios-container {
+                    padding: 20px !important;
+                }
+                
+                #plantilla-precios-form {
+                    padding: 25px 20px !important;
+                }
+            }
+        </style>
+    `;
+    
+    // Inicializar contadores de caracteres MEJORADOS
+    setupCharacterCountersForPlantilla();
+    
+    // Agregar evento de submit
+    document.getElementById('plantilla-precios-form').addEventListener('submit', savePlantillaPrecios);
+}
+
+// Función mejorada para contadores (más simple y eficiente)
+function setupCharacterCountersForPlantilla() {
+    const textareas = document.querySelectorAll('.plantilla-textarea');
+    
+    textareas.forEach(textarea => {
+        const counterId = textarea.getAttribute('data-counter');
+        const counter = document.getElementById(counterId);
+        
+        if (!counter) return;
+        
+        // Actualizar contador
+        const updateCounter = () => {
+            const currentLength = textarea.value.length;
+            const maxLength = textarea.getAttribute('maxlength');
+            counter.textContent = `${currentLength}/${maxLength}`;
+            
+            // Cambiar color si está cerca del límite
+            if (currentLength > maxLength * 0.9) {
+                counter.style.color = '#e53e3e';
+                counter.style.fontWeight = '600';
+            } else {
+                counter.style.color = '#a0aec0';
+                counter.style.fontWeight = '500';
+            }
+        };
+        
+        // Inicializar
+        updateCounter();
+        
+        // Escuchar cambios
+        textarea.addEventListener('input', updateCounter);
+    });
+}
+
+async function savePlantillaPrecios(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    try {
+        // Deshabilitar botón y mostrar loading
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        
+        const formData = new FormData(form);
+        formData.append('action', 'save_plantilla_precios');
+        
+        const response = await fetch(`${APP_URL}/biblioteca/api`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showMessage(result.message || 'Plantilla guardada exitosamente', 'success');
+            
+            // Actualizar el texto del botón si era crear y ahora es actualizar
+            setTimeout(() => {
+                const newBtn = document.querySelector('#plantilla-precios-form button[type="submit"]');
+                if (newBtn) {
+                    newBtn.innerHTML = '<i class="fas fa-save"></i> Actualizar Plantilla';
+                }
+            }, 2000);
+        } else {
+            showMessage('Error: ' + (result.error || 'Error desconocido'), 'error');
+        }
+        
+    } catch(error) {
+        console.error('Error:', error);
+        showMessage('Error guardando plantilla: ' + error.message, 'error');
+    } finally {
+        // Restaurar botón
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    }
+}
+</script>
     <!-- Scripts -->
     <script>
         // Configuración global - SIN API KEYS
@@ -2698,7 +3061,13 @@ function limpiarUbicacionesSecundarias() {
                     
                     // Cambiar contenido
                     currentTab = this.dataset.tab;
-                    loadResources();
+                    
+                    // ⭐ NUEVO: Verificar si es plantilla de precios
+                    if (currentTab === 'plantilla-precios') {
+                        loadPlantillaPrecios();
+                    } else {
+                        loadResources();
+                    }
                 });
             });
         }
@@ -7631,6 +8000,7 @@ function clearSecondaryLocationSuggestions(input) {
     });
 }
 // ===== FIN SISTEMA DE CARGA MÚLTIPLE =====
+
 </script>
 <!-- Agregar antes del cierre de </body> -->
 <a href="<?= APP_URL ?>/itinerarios" class="floating-itinerarios-btn" title="Ir a Itinerarios">

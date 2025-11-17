@@ -72,9 +72,16 @@ class BibliotecaAPI {
                         error_log("Ubicaciones secundarias cargadas: " . count($ubicaciones_secundarias));
                     }
                     break;
-                // AGREGAR ESTE NUEVO CASE:
+
                 case 'get_ubicaciones_secundarias':
                     $result = $this->getUbicacionesSecundarias($_GET['dia_id']);
+                    break;
+                case 'get_plantilla_precios':
+                    $result = $this->getPlantillaPrecios();
+                    break;
+                    
+                case 'save_plantilla_precios':
+                    $result = $this->savePlantillaPrecios();
                     break;
                 default:
                     throw new Exception('Acción no válida: ' . $action);
@@ -670,6 +677,118 @@ private function uploadImage($file, $type, $resourceId, $field) {
             error_log("❌ Error procesando ubicaciones secundarias: " . $e->getMessage());
             error_log("Stack trace: " . $e->getTraceAsString());
             // No lanzamos excepción para no interrumpir el flujo principal
+        }
+    }
+/**
+     * Obtener la plantilla de precios de la agencia
+     */
+    private function getPlantillaPrecios() {
+        try {
+            $agencia_id = $_SESSION['agencia_id'] ?? null;
+            
+            if (!$agencia_id) {
+                throw new Exception('Usuario sin agencia asignada');
+            }
+            
+            error_log("=== GET PLANTILLA PRECIOS ===");
+            error_log("Agencia ID: " . $agencia_id);
+            
+            // Buscar plantilla existente
+            $plantilla = $this->db->fetch(
+                "SELECT * FROM biblioteca_plantillas_precios WHERE agencia_id = ?",
+                [$agencia_id]
+            );
+            
+            if ($plantilla) {
+                error_log("✅ Plantilla encontrada con ID: " . $plantilla['id']);
+                return [
+                    'success' => true,
+                    'data' => $plantilla,
+                    'exists' => true
+                ];
+            } else {
+                error_log("ℹ️ No existe plantilla para esta agencia");
+                return [
+                    'success' => true,
+                    'data' => null,
+                    'exists' => false,
+                    'message' => 'No existe plantilla para esta agencia'
+                ];
+            }
+            
+        } catch(Exception $e) {
+            error_log("❌ Error en getPlantillaPrecios: " . $e->getMessage());
+            throw new Exception('Error obteniendo plantilla: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Guardar o actualizar la plantilla de precios
+     */
+    private function savePlantillaPrecios() {
+        try {
+            $agencia_id = $_SESSION['agencia_id'] ?? null;
+            $user_id = $_SESSION['user_id'] ?? null;
+            
+            if (!$agencia_id) {
+                throw new Exception('Usuario sin agencia asignada');
+            }
+            
+            error_log("=== SAVE PLANTILLA PRECIOS ===");
+            error_log("Agencia ID: " . $agencia_id);
+            error_log("User ID: " . $user_id);
+            
+            // Preparar datos
+            $data = [
+                'precio_incluye' => $_POST['precio_incluye'] ?? null,
+                'precio_no_incluye' => $_POST['precio_no_incluye'] ?? null,
+                'condiciones_generales' => $_POST['condiciones_generales'] ?? null,
+                'info_pasaporte' => $_POST['info_pasaporte'] ?? null,
+                'info_seguros' => $_POST['info_seguros'] ?? null,
+                'user_id' => $user_id
+            ];
+            
+            // Verificar si existe plantilla
+            $existe = $this->db->fetch(
+                "SELECT id FROM biblioteca_plantillas_precios WHERE agencia_id = ?",
+                [$agencia_id]
+            );
+            
+            if ($existe) {
+                // UPDATE - La plantilla ya existe
+                error_log("🔄 Actualizando plantilla existente ID: " . $existe['id']);
+                
+                $this->db->update(
+                    'biblioteca_plantillas_precios',
+                    $data,
+                    'agencia_id = ?',
+                    [$agencia_id]
+                );
+                
+                return [
+                    'success' => true,
+                    'message' => 'Plantilla actualizada exitosamente'
+                ];
+                
+            } else {
+                // INSERT - Primera vez que se crea la plantilla
+                error_log("➕ Creando nueva plantilla");
+                
+                $data['agencia_id'] = $agencia_id;
+                
+                $id = $this->db->insert('biblioteca_plantillas_precios', $data);
+                
+                return [
+                    'success' => true,
+                    'message' => 'Plantilla creada exitosamente',
+                    'id' => $id
+                ];
+            }
+            
+        } catch(Exception $e) {
+            error_log("❌ Error en savePlantillaPrecios: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+            throw new Exception('Error guardando plantilla: ' . $e->getMessage());
         }
     }
 }
