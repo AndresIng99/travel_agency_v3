@@ -424,75 +424,124 @@ class ProgramaServiciosAPI {
         }
     }
     
-    private function listServices($diaId) {
-        if (!$diaId) {
-            throw new Exception('ID de día requerido');
+private function listServices($diaId) {
+    if (!$diaId) {
+        throw new Exception('ID de día requerido');
+    }
+    
+    try {
+        $user_id = $_SESSION['user_id'];
+        $agencia_id = $_SESSION['agencia_id'] ?? null;
+
+        if (!$agencia_id) {
+            throw new Exception('Usuario sin agencia asignada');
         }
         
-        try {
-            $user_id = $_SESSION['user_id'];
-            $agencia_id = $_SESSION['agencia_id'] ?? null;
-
-            if (!$agencia_id) {
-                throw new Exception('Usuario sin agencia asignada');
-            }
-            
-            // Verificar permisos
-            $dia = $this->db->fetch(
-                "SELECT pd.*, ps.user_id 
-                FROM programa_dias pd 
-                JOIN programa_solicitudes ps ON pd.solicitud_id = ps.id 
-                WHERE pd.id = ? AND ps.user_id = ? AND ps.agencia_id = ?", 
-                [$diaId, $user_id, $agencia_id]
-            );
-            
-            if (!$dia) {
-                throw new Exception('Día no encontrado o sin permisos');
-            }
-            
-            // ⭐ AHORA OBTENEMOS LOS DATOS COPIADOS, NO DE BIBLIOTECA
-            $servicios = $this->db->fetchAll(
-                "SELECT 
-                    pds.*,
-                    pds.nombre_servicio as nombre,
-                    pds.nombre_servicio as titulo,
-                    pds.descripcion_servicio as descripcion,
-                    pds.ubicacion_servicio as ubicacion,
-                    pds.latitud,
-                    pds.longitud,
-                    
-                    -- Campos de actividad
-                    pds.actividad_imagen1 as imagen1,
-                    pds.actividad_imagen2 as imagen2,
-                    pds.actividad_imagen3 as imagen3,
-                    
-                    -- Campos de transporte
-                    pds.transporte_medio as medio,
-                    pds.transporte_lugar_salida as lugar_salida,
-                    pds.transporte_lugar_llegada as lugar_llegada,
-                    pds.transporte_duracion as duracion,
-                    
-                    -- Campos de alojamiento
-                    pds.alojamiento_tipo as tipo,
-                    pds.alojamiento_categoria as categoria,
-                    pds.alojamiento_imagen as imagen
-                    
-                FROM programa_dias_servicios pds
-                WHERE pds.programa_dia_id = ? 
-                ORDER BY pds.orden ASC, pds.es_alternativa ASC, pds.orden_alternativa ASC", 
-                [$diaId]
-            );
-            
-            return [
-                'success' => true,
-                'data' => $servicios
-            ];
-            
-        } catch(Exception $e) {
-            error_log("Error en listServices: " . $e->getMessage());
-            throw $e;
+        // Verificar permisos
+        $dia = $this->db->fetch(
+            "SELECT pd.*, ps.user_id 
+            FROM programa_dias pd 
+            JOIN programa_solicitudes ps ON pd.solicitud_id = ps.id 
+            WHERE pd.id = ? AND ps.user_id = ? AND ps.agencia_id = ?", 
+            [$diaId, $user_id, $agencia_id]
+        );
+        
+        if (!$dia) {
+            throw new Exception('Día no encontrado o sin permisos');
         }
+        
+        // ⭐ OBTENER TODOS LOS SERVICIOS (principales y alternativas) en lista plana
+        $todos_servicios = $this->db->fetchAll(
+            "SELECT 
+                pds.*,
+                pds.nombre_servicio as nombre,
+                pds.nombre_servicio as titulo,
+                pds.descripcion_servicio as descripcion,
+                pds.ubicacion_servicio as ubicacion,
+                pds.latitud,
+                pds.longitud,
+                
+                -- Campos de actividad
+                pds.actividad_imagen1 as imagen1,
+                pds.actividad_imagen2 as imagen2,
+                pds.actividad_imagen3 as imagen3,
+                
+                -- Campos de transporte
+                pds.transporte_medio as medio,
+                pds.transporte_lugar_salida as lugar_salida,
+                pds.transporte_lugar_llegada as lugar_llegada,
+                pds.transporte_lat_salida as lat_salida,
+                pds.transporte_lng_salida as lng_salida,
+                pds.transporte_lat_llegada as lat_llegada,
+                pds.transporte_lng_llegada as lng_llegada,
+                pds.transporte_duracion as duracion,
+                
+                -- Campos de alojamiento
+                pds.alojamiento_tipo as tipo,
+                pds.alojamiento_categoria as categoria,
+                pds.alojamiento_imagen as imagen
+                
+            FROM programa_dias_servicios pds
+            WHERE pds.programa_dia_id = ?
+            ORDER BY pds.orden ASC, pds.es_alternativa ASC, pds.orden_alternativa ASC", 
+            [$diaId]
+        );
+        
+        error_log("📋 Total servicios encontrados (planos): " . count($todos_servicios));
+        
+        // ⭐ AGRUPAR: Separar principales de alternativas
+        $servicios_principales = [];
+        $alternativas_por_principal = [];
+        
+        foreach ($todos_servicios as $servicio) {
+            if ($servicio['es_alternativa'] == 0) {
+                // Es un servicio principal
+                $servicio['alternativas'] = []; // Inicializar array de alternativas vacío
+                $servicios_principales[$servicio['id']] = $servicio;
+                error_log("✅ Servicio principal encontrado: ID={$servicio['id']}, Nombre={$servicio['nombre']}");
+            } else {
+                // Es una alternativa
+                $principal_id = $servicio['servicio_principal_id'];
+                if (!isset($alternativas_por_principal[$principal_id])) {
+                    $alternativas_por_principal[$principal_id] = [];
+                }
+                $alternativas_por_principal[$principal_id][] = $servicio;
+                error_log("🔄 Alternativa encontrada: ID={$servicio['id']}, Principal_ID=$principal_id, Orden_Alt={$servicio['orden_alternativa']}");
+            }
+        }
+        
+        // ⭐ ASIGNAR alternativas a sus servicios principales
+        foreach ($servicios_principales as $id => &$principal) {
+            if (isset($alternativas_por_principal[$id])) {
+                $principal['alternativas'] = $alternativas_por_principal[$id];
+                error_log("📦 Servicio ID=$id tiene " . count($principal['alternativas']) . " alternativas");
+            } else {
+                $principal['alternativas'] = [];
+                error_log("📦 Servicio ID=$id NO tiene alternativas");
+            }
+        }
+        unset($principal); // Romper referencia
+        
+        // ⭐ CONVERTIR a array indexado (sin las keys de ID)
+        $servicios_agrupados = array_values($servicios_principales);
+        
+        error_log("✅ Servicios principales agrupados: " . count($servicios_agrupados));
+        foreach ($servicios_agrupados as $srv) {
+            error_log("   - ID={$srv['id']}: {$srv['nombre']} con " . count($srv['alternativas']) . " alternativas");
+        }
+        
+        return [
+            'success' => true,
+            'data' => $servicios_agrupados,
+            'total_principales' => count($servicios_agrupados),
+            'total_servicios' => count($todos_servicios)
+        ];
+        
+    } catch(Exception $e) {
+        error_log("Error en listServices: " . $e->getMessage());
+        throw $e;
     }
+}
     
     private function updateService($servicioId, $data) {
         // Implementar según necesidades
