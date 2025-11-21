@@ -92,72 +92,37 @@ foreach ($dias as &$dia) {
         $servicios_raw = $db->fetchAll(
             "SELECT 
                 pds.*,
-                CASE 
-                    WHEN pds.tipo_servicio = 'actividad' THEN ba.nombre
-                    WHEN pds.tipo_servicio = 'transporte' THEN bt.titulo
-                    WHEN pds.tipo_servicio = 'alojamiento' THEN bal.nombre
-                END as nombre,
-                CASE 
-                    WHEN pds.tipo_servicio = 'actividad' THEN ba.descripcion
-                    WHEN pds.tipo_servicio = 'transporte' THEN bt.descripcion
-                    WHEN pds.tipo_servicio = 'alojamiento' THEN bal.descripcion
-                END as descripcion,
-                CASE 
-                    WHEN pds.tipo_servicio = 'actividad' THEN ba.ubicacion
-                    WHEN pds.tipo_servicio = 'transporte' THEN CONCAT(COALESCE(bt.lugar_salida, ''), ' → ', COALESCE(bt.lugar_llegada, ''))
-                    WHEN pds.tipo_servicio = 'alojamiento' THEN bal.ubicacion
-                END as ubicacion,
-                CASE 
-                    WHEN pds.tipo_servicio = 'actividad' THEN ba.imagen1
-                    WHEN pds.tipo_servicio = 'transporte' THEN NULL
-                    WHEN pds.tipo_servicio = 'alojamiento' THEN bal.imagen
-                END as imagen,
-                CASE 
-                    WHEN pds.tipo_servicio = 'actividad' THEN ba.imagen2
-                    ELSE NULL
-                END as imagen2,
-                CASE 
-                    WHEN pds.tipo_servicio = 'actividad' THEN ba.imagen3
-                    ELSE NULL
-                END as imagen3,
-                CASE 
-                    WHEN pds.tipo_servicio = 'actividad' THEN ba.latitud
-                    WHEN pds.tipo_servicio = 'transporte' THEN bt.lat_salida
-                    WHEN pds.tipo_servicio = 'alojamiento' THEN bal.latitud
-                END as latitud,
-                CASE 
-                    WHEN pds.tipo_servicio = 'actividad' THEN ba.longitud
-                    WHEN pds.tipo_servicio = 'transporte' THEN bt.lng_salida
-                    WHEN pds.tipo_servicio = 'alojamiento' THEN bal.longitud
-                END as longitud,
-                CASE 
-                    WHEN pds.tipo_servicio = 'transporte' THEN bt.lat_llegada
-                    ELSE NULL
-                END as lat_llegada,
-                CASE 
-                    WHEN pds.tipo_servicio = 'transporte' THEN bt.lng_llegada
-                    ELSE NULL
-                END as lng_llegada,
-                CASE 
-                    WHEN pds.tipo_servicio = 'transporte' THEN bt.duracion
-                    ELSE NULL
-                END as duracion,
-                CASE 
-                    WHEN pds.tipo_servicio = 'transporte' THEN bt.medio
-                    ELSE NULL
-                END as medio_transporte,
-                CASE 
-                    WHEN pds.tipo_servicio = 'alojamiento' THEN bal.tipo
-                    ELSE NULL
-                END as tipo_alojamiento,
-                CASE 
-                    WHEN pds.tipo_servicio = 'alojamiento' THEN bal.categoria
-                    ELSE NULL
-                END as categoria_alojamiento
+                -- Los datos ya están copiados en programa_dias_servicios
+                pds.nombre_servicio as nombre,
+                pds.descripcion_servicio as descripcion,
+                pds.ubicacion_servicio as ubicacion,
+                pds.latitud,
+                pds.longitud,
+                
+                -- Campos específicos de actividad
+                pds.actividad_imagen1 as imagen,
+                pds.actividad_imagen2 as imagen2,
+                pds.actividad_imagen3 as imagen3,
+                
+                -- Campos específicos de transporte
+                pds.transporte_medio as medio_transporte,
+                pds.transporte_titulo,
+                pds.transporte_lugar_salida,
+                pds.transporte_lugar_llegada,
+                pds.transporte_lat_salida as lat_salida,
+                pds.transporte_lng_salida as lng_salida,
+                pds.transporte_lat_llegada as lat_llegada,
+                pds.transporte_lng_llegada as lng_llegada,
+                pds.transporte_duracion as duracion,
+                pds.transporte_distancia_km,
+                
+                -- Campos específicos de alojamiento
+                pds.alojamiento_tipo as tipo_alojamiento,
+                pds.alojamiento_categoria as categoria_alojamiento,
+                pds.alojamiento_imagen as alojamiento_imagen_principal,
+                pds.alojamiento_sitio_web
+                
             FROM programa_dias_servicios pds
-            LEFT JOIN biblioteca_actividades ba ON pds.tipo_servicio = 'actividad' AND pds.biblioteca_item_id = ba.id AND ba.activo = 1
-            LEFT JOIN biblioteca_transportes bt ON pds.tipo_servicio = 'transporte' AND pds.biblioteca_item_id = bt.id AND bt.activo = 1
-            LEFT JOIN biblioteca_alojamientos bal ON pds.tipo_servicio = 'alojamiento' AND pds.biblioteca_item_id = bal.id AND bal.activo = 1
             WHERE pds.programa_dia_id = ?
             ORDER BY pds.orden ASC, pds.es_alternativa ASC, pds.orden_alternativa ASC", 
             [$dia['id']]

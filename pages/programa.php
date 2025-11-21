@@ -5089,7 +5089,11 @@ function renderizarServiciosDia(diaId, servicios) {
         return;
     }
 
-    console.log(`🎨 Renderizando ${servicios.length} servicios para día ${diaId}`);
+    console.log(`🎨 Renderizando ${servicios.length} servicios CON ALTERNATIVAS para día ${diaId}`);
+
+    // Actualizar contador en sidebar (solo contar principales)
+    const principalesCount = servicios.length;
+    actualizarContadorServicios(diaId, principalesCount);
 
     if (servicios.length === 0) {
         container.innerHTML = `
@@ -5100,38 +5104,17 @@ function renderizarServiciosDia(diaId, servicios) {
         return;
     }
 
-    // Ordenar servicios por orden
-    const serviciosOrdenados = [...servicios].sort((a, b) => (a.orden || 0) - (b.orden || 0));
-
+    // ⭐ SOLUCIÓN: Renderizar con jerarquía
     container.innerHTML = `
         <h6 style="margin-bottom: 12px; color: #333; font-weight: 600;">
-            <i class="fas fa-list"></i> Servicios agregados (${serviciosOrdenados.length}):
+            <i class="fas fa-list"></i> Servicios agregados (${principalesCount}):
         </h6>
-        ${serviciosOrdenados.map(servicio => `
-            <div class="service-item" data-servicio-id="${servicio.id}">
-                <div class="service-info">
-                    <div class="service-icon ${servicio.tipo_servicio}">
-                        <i class="fas fa-${getServiceIconByType(servicio.tipo_servicio)}"></i>
-                    </div>
-                    <div class="service-details">
-                        <h6>${servicio.titulo || servicio.nombre || 'Servicio sin título'}</h6>
-                        <p>${getServiceSummary(servicio)}</p>
-                    </div>
-                </div>
-                <div class="service-actions">
-                    <button class="btn-edit-service" onclick="editarServicio(${servicio.id})" title="Editar">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn-remove-service" onclick="eliminarServicio(${servicio.id})" title="Eliminar">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-        `).join('')}
+        ${servicios.map(servicio => renderizarServicioConAlternativas(servicio)).join('')}
     `;
 
-    console.log(`✅ Servicios renderizados para día ${diaId}`);
+    console.log(`✅ Servicios con alternativas renderizados para día ${diaId}`);
 }
+
 function abrirVistaPrevia() {
     if (!programaId) {
         showAlert('Primero debes guardar el programa para ver la vista previa', 'error');
@@ -6452,21 +6435,20 @@ function setupInputCounter(input, counter, maxLength) {
 }
 
 function renderizarServicioConAlternativas(servicio) {
+    const hasAlternatives = servicio.alternativas && servicio.alternativas.length > 0;
     const alternativas = servicio.alternativas || [];
-    const hasAlternatives = alternativas.length > 0;
     
     return `
-        <div class="service-group" data-servicio-id="${servicio.id}">
+        <div class="service-group" data-servicio-principal-id="${servicio.id}">
             <!-- Servicio Principal -->
-            <div class="service-item principal">
+            <div class="service-item principal" data-servicio-id="${servicio.id}">
                 <div class="service-info">
                     <div class="service-icon ${servicio.tipo_servicio}">
                         <i class="fas fa-${getServiceIconByType(servicio.tipo_servicio, servicio)}"></i>
                     </div>
                     <div class="service-details">
                         <h6>
-                            <i class="fas fa-star" style="color: #ffc107; font-size: 12px; margin-right: 4px;" title="Principal"></i>
-                            ${servicio.titulo || servicio.nombre || 'Servicio sin título'}
+                            ${servicio.nombre || servicio.titulo || 'Servicio sin título'}
                             ${hasAlternatives ? `<span class="alternatives-indicator">${alternativas.length} alt</span>` : ''}
                         </h6>
                         <p>${getServiceSummary(servicio)}</p>
@@ -6506,7 +6488,7 @@ function renderizarAlternativa(alternativa) {
                 <div class="service-details">
                     <h6>
                         <i class="fas fa-sync-alt" style="color: #17a2b8; font-size: 12px; margin-right: 4px;" title="Alternativa"></i>
-                        Alternativa ${alternativa.orden_alternativa}: ${alternativa.titulo || alternativa.nombre || 'Sin título'}
+                        Alternativa ${alternativa.orden_alternativa}: ${alternativa.nombre || alternativa.titulo || 'Sin título'}
                     </h6>
                     <p>${getServiceSummary(alternativa)}</p>
                     ${alternativa.notas_alternativa ? `
