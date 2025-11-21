@@ -275,6 +275,9 @@ class ProgramaDiasAPI {
                 throw new Exception('Error al insertar día');
             }
             
+            // Actualizar fecha de salida
+            $this->actualizarFechaSalida($programaId);
+            
             return [
                 'success' => true,
                 'dia_id' => $nuevoDiaId,
@@ -324,6 +327,9 @@ class ProgramaDiasAPI {
             }
             
             $this->reorderDiasAfterDelete($dia['programa_id'], $dia['dia_numero']);
+            
+            // Actualizar fecha de salida
+            $this->actualizarFechaSalida($dia['programa_id']);
             
             return [
                 'success' => true,
@@ -445,6 +451,9 @@ class ProgramaDiasAPI {
             $stmt = $pdo->prepare("UPDATE programa_dias SET duracion_estancia = ? WHERE id = ?");
             $stmt->execute([$nuevaDuracion, $diaId]);
             
+            // Actualizar fecha de salida
+            $this->actualizarFechaSalida($dia['solicitud_id']);
+            
             return [
                 'success' => true,
                 'message' => 'Estancia actualizada correctamente',
@@ -469,7 +478,54 @@ class ProgramaDiasAPI {
             'data' => []
         ];
     }
-    
+    private function actualizarFechaSalida($programaId) {
+        try {
+            // Obtener fecha de llegada
+            $programa = $this->db->fetch(
+                "SELECT fecha_llegada FROM programa_solicitudes WHERE id = ?",
+                [$programaId]
+            );
+            
+            if (!$programa || !$programa['fecha_llegada']) {
+                error_log("No hay fecha de llegada para calcular fecha de salida");
+                return;
+            }
+            
+            // Obtener suma total de duraciones
+            $result = $this->db->fetch(
+                "SELECT COALESCE(SUM(duracion_estancia), 0) as total_dias 
+                 FROM programa_dias 
+                 WHERE solicitud_id = ?",
+                [$programaId]
+            );
+            
+            $totalDias = intval($result['total_dias']) ?: 0;
+            
+            if ($totalDias === 0) {
+                error_log("No hay días creados, no se actualiza fecha de salida");
+                return;
+            }
+            
+            // Calcular fecha de salida
+            $fechaLlegada = new DateTime($programa['fecha_llegada']);
+            $fechaSalida = clone $fechaLlegada;
+            $fechaSalida->add(new DateInterval('P' . ($totalDias) . 'D'));
+            
+            // Actualizar en base de datos
+            $this->db->update(
+                'programa_solicitudes',
+                ['fecha_salida' => $fechaSalida->format('Y-m-d')],
+                'id = ?',
+                [$programaId]
+            );
+            
+            error_log("✅ Fecha de salida actualizada: " . $fechaSalida->format('Y-m-d') . " (total días: $totalDias)");
+            
+        } catch(Exception $e) {
+            error_log("Error actualizando fecha de salida: " . $e->getMessage());
+        }
+    }
+
     private function sendError($message) {
         ob_clean();
         header('Content-Type: application/json; charset=utf-8');
