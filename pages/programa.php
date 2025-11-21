@@ -3323,9 +3323,14 @@ textarea.form-control {
                             
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label class="form-label" for="passengers">Número de pasajeros *</label>
+                                    <label class="form-label" for="passengers">Número de pasajeros</label>
                                     <input type="number" class="form-control" id="passengers" name="passengers" 
-                                           value="<?= htmlspecialchars($form_data['passengers']) ?>" min="1" required>
+                                        value="<?= htmlspecialchars($form_data['passengers']) ?>" min="1" readonly
+                                        placeholder="Se calcula automáticamente al guardar los precios"
+                                        style="background: #f8fafc; color: #718096; font-style: italic;">
+                                    <small class="form-text text-muted">
+                                        <i class="fas fa-info-circle"></i> Se actualiza automáticamente desde la sección de Precios
+                                    </small>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label" for="accompaniment">Acompañamiento</label>
@@ -5516,12 +5521,21 @@ async function guardarPrecios() {
 
         const result = await response.json();
         
-        // DEBUG: Ver qué está devolviendo el servidor
         console.log('🔍 Respuesta del servidor:', result);
 
-        // SOLUCIÓN TEMPORAL: Si se guarda (aunque diga error), mostrar éxito
         if (result.success || response.ok) {
             showAlert('✅ Precios guardados exitosamente', 'success');
+            
+            // ACTUALIZAR INMEDIATAMENTE el campo de pasajeros
+            const cantidadAdultos = parseInt(formData.get('cantidad_adultos') || 0);
+            const cantidadNinos = parseInt(formData.get('cantidad_ninos') || 0);
+            const totalPasajeros = cantidadAdultos + cantidadNinos;
+            
+            const passengersInput = document.getElementById('passengers');
+            if (passengersInput && totalPasajeros > 0) {
+                passengersInput.value = totalPasajeros;
+                console.log(`✅ Campo pasajeros actualizado a: ${totalPasajeros}`);
+            }
         } else {
             showAlert('❌ ' + (result.message || 'Error al guardar precios'), 'error');
         }

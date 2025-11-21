@@ -561,8 +561,7 @@ private function duplicarPrecios($programa_original_id, $nuevo_programa_id) {
             'traveler_name' => 'Nombre del viajero',
             'traveler_lastname' => 'Apellido del viajero', 
             'destination' => 'Destino',
-            'arrival_date' => 'Fecha de llegada',
-            'passengers' => 'Número de pasajeros'
+            'arrival_date' => 'Fecha de llegada'
         ];
         
         // Si no hay departure_date, usar arrival_date como valor por defecto
@@ -587,10 +586,15 @@ private function duplicarPrecios($programa_original_id, $nuevo_programa_id) {
 
         // La fecha de salida se calcula automáticamente, no validar
         
-        // Validar número de pasajeros
-        $passengers = intval($_POST['passengers']);
-        if ($passengers < 1 || $passengers > 20) {
-            throw new Exception('El número de pasajeros debe estar entre 1 y 20');
+        // Validar número de pasajeros (opcional)
+        if (isset($_POST['passengers']) && !empty($_POST['passengers'])) {
+            $passengers = intval($_POST['passengers']);
+            if ($passengers < 1 || $passengers > 20) {
+                throw new Exception('El número de pasajeros debe estar entre 1 y 20');
+            }
+        } else {
+            // Si no viene, usar 1 por defecto
+            $_POST['passengers'] = 1;
         }
         
         error_log("✅ Validación de datos completada exitosamente");

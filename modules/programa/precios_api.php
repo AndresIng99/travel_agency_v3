@@ -136,6 +136,17 @@ class ProgramaPreciosAPI {
                 
                 error_log("✅ Precios creados para programa $programa_id con ID $precioId");
             }
+
+            // ACTUALIZAR número de pasajeros en programa_solicitudes
+            $total_pasajeros = $preciosData['cantidad_adultos'] + $preciosData['cantidad_ninos'];
+            $this->db->update(
+                'programa_solicitudes',
+                ['numero_pasajeros' => $total_pasajeros],
+                'id = ?',
+                [$programa_id]
+            );
+
+            error_log("✅ Número de pasajeros actualizado a: $total_pasajeros");
             
             return [
                 'success' => false,
