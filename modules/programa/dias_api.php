@@ -342,68 +342,90 @@ class ProgramaDiasAPI {
         }
     }
     
-    private function updateDia($diaId, $data) {
-        if (!$diaId) {
-            throw new Exception('ID de día requerido');
+private function updateDia($diaId, $data) {
+    if (!$diaId) {
+        throw new Exception('ID de día requerido');
+    }
+    
+    try {
+        $user_id = $_SESSION['user_id'];
+        $agencia_id = $_SESSION['agencia_id'] ?? null;
+
+        if (!$agencia_id) {
+            throw new Exception('Usuario sin agencia asignada');
         }
         
-        try {
-            $user_id = $_SESSION['user_id'];
-            $agencia_id = $_SESSION['agencia_id'] ?? null;
-
-            if (!$agencia_id) {
-                throw new Exception('Usuario sin agencia asignada');
-            }
-            
-            $dia = $this->db->fetch(
-                "SELECT pd.*, ps.user_id 
-                 FROM programa_dias pd 
-                 JOIN programa_solicitudes ps ON pd.solicitud_id = ps.id 
-                 WHERE pd.id = ? AND ps.user_id = ? AND ps.agencia_id = ?", 
-                [$diaId, $user_id, $agencia_id]
-            );
-            
-            if (!$dia) {
-                throw new Exception('Día no encontrado o sin permisos');
-            }
-            
-            $updateData = [];
-            $allowedFields = ['titulo', 'descripcion', 'ubicacion', 'duracion_estancia', 'imagen1', 'imagen2', 'imagen3'];
-            
-            foreach ($allowedFields as $field) {
-                if (isset($data[$field])) {
-                    $updateData[$field] = $data[$field];
-                }
-            }
-            
-            if (empty($updateData)) {
-                throw new Exception('No hay datos para actualizar');
-            }
-            
-            $pdo = $this->db->getConnection();
-            $setParts = [];
-            $values = [];
-            
-            foreach ($updateData as $key => $value) {
-                $setParts[] = "`$key` = ?";
-                $values[] = $value;
-            }
-            $values[] = $diaId;
-            
-            $sql = "UPDATE programa_dias SET " . implode(', ', $setParts) . " WHERE id = ?";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute($values);
-            
-            return [
-                'success' => true,
-                'message' => 'Día actualizado exitosamente'
-            ];
-            
-        } catch(Exception $e) {
-            error_log("Error en updateDia: " . $e->getMessage());
-            throw $e;
+        // Verificar permisos
+        $dia = $this->db->fetch(
+            "SELECT pd.*, ps.user_id 
+             FROM programa_dias pd 
+             JOIN programa_solicitudes ps ON pd.solicitud_id = ps.id 
+             WHERE pd.id = ? AND ps.user_id = ? AND ps.agencia_id = ?", 
+            [$diaId, $user_id, $agencia_id]
+        );
+        
+        if (!$dia) {
+            throw new Exception('Día no encontrado o sin permisos');
         }
+        
+        // ⭐ VALIDACIONES
+        if (empty($data['titulo'])) {
+            throw new Exception('El título es obligatorio');
+        }
+        
+        if (empty($data['descripcion'])) {
+            throw new Exception('La descripción es obligatoria');
+        }
+        
+        // Validar al menos 1 imagen
+        $hasImage = false;
+        for ($i = 1; $i <= 3; $i++) {
+            $imageKey = 'imagen' . $i;
+            if (!empty($data[$imageKey]) || !empty($dia[$imageKey])) {
+                $hasImage = true;
+                break;
+            }
+        }
+        
+        if (!$hasImage) {
+            throw new Exception('Debe tener al menos 1 imagen');
+        }
+        
+        // ⭐ PREPARAR DATOS PARA ACTUALIZAR
+        $updateData = [];
+        $allowedFields = ['titulo', 'descripcion', 'ubicacion', 'imagen1', 'imagen2', 'imagen3'];
+        
+        foreach ($allowedFields as $field) {
+            if (isset($data[$field])) {
+                $updateData[$field] = $data[$field];
+            }
+        }
+        
+        if (empty($updateData)) {
+            throw new Exception('No hay datos para actualizar');
+        }
+        
+        // ⭐ ACTUALIZAR EN BASE DE DATOS
+        $rowsAffected = $this->db->update(
+            'programa_dias',
+            $updateData,
+            'id = ?',
+            [$diaId]
+        );
+        
+        error_log("✅ Día $diaId actualizado: $rowsAffected filas");
+        
+        return [
+            'success' => true,
+            'message' => 'Día actualizado exitosamente',
+            'dia_id' => $diaId
+        ];
+        
+    } catch(Exception $e) {
+        error_log("❌ Error en updateDia: " . $e->getMessage());
+        throw $e;
     }
+}
     
     private function reorderDiasAfterDelete($programaId, $deletedDiaNumber) {
         try {

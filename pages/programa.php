@@ -843,6 +843,7 @@ $page_title = $is_editing ? 'Editar Programa' : 'Nuevo Programa';
     font-size: 14px;
 }
 
+/* Botones de acción en sidebar - VISIBLES */
 .day-actions-sidebar {
     display: flex;
     gap: 4px;
@@ -856,15 +857,15 @@ $page_title = $is_editing ? 'Editar Programa' : 'Nuevo Programa';
 }
 
 .day-action-btn {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
+    font-size: 12px;
     transition: all 0.2s;
 }
 
@@ -873,19 +874,31 @@ $page_title = $is_editing ? 'Editar Programa' : 'Nuevo Programa';
     color: #6c757d;
 }
 
+.day-action-btn.edit:hover {
+    background: #6c757d;
+    color: white;
+    transform: scale(1.1);
+}
+
 .day-action-btn.delete {
     background: rgba(220, 53, 69, 0.2);
     color: #dc3545;
 }
 
+.day-action-btn.delete:hover {
+    background: #dc3545;
+    color: white;
+    transform: scale(1.1);
+}
+
 .day-sidebar-item.active .day-action-btn.edit {
-    background: rgba(108, 117, 125, 0.2);
-    color: #6c757d;
+    background: rgba(108, 117, 125, 0.3);
+    color: #495057;
 }
 
 .day-sidebar-item.active .day-action-btn.delete {
-    background: rgba(220, 53, 69, 0.2);
-    color: #dc3545;
+    background: rgba(220, 53, 69, 0.3);
+    color: #c82333;
 }
 
 .day-action-btn:hover {
@@ -2948,9 +2961,6 @@ textarea.form-control {
 .section-header:hover .section-title {
     animation: titleGlow 2s ease-in-out infinite;
 }
-.day-action-btn.edit {
-    display: none !important;
-}
 /* ============================================================
    CENTRADO FORZADO PARA MODAL
    ============================================================ */
@@ -3202,6 +3212,313 @@ textarea.form-control {
 
 .drag-helper.show {
     opacity: 1;
+}
+
+
+/* ============================================================
+   ESTILOS PARA EDICIÓN INLINE DE DÍAS Y ACTIVIDADES
+   ============================================================ */
+
+/* Formulario inline general */
+.edit-inline-form {
+    background: #fff;
+    border: 2px solid #2d5a4a;
+    border-radius: 12px;
+    margin: 20px 0;
+    padding: 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Header del formulario */
+.edit-form-header {
+    background: linear-gradient(135deg, #2d5a4a 0%, #4a7c59 100%);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 10px 10px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.edit-form-header h4 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.btn-close-edit {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-close-edit:hover {
+    background: rgba(255,255,255,0.3);
+    transform: scale(1.1);
+}
+
+/* Cuerpo del formulario */
+.edit-form-body {
+    padding: 20px;
+}
+
+/* Form groups */
+.edit-form-body .form-group {
+    margin-bottom: 20px;
+}
+
+.edit-form-body label {
+    display: block;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.edit-form-body label .required {
+    color: #e74c3c;
+    margin-left: 4px;
+}
+
+.edit-form-body .form-control {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.edit-form-body .form-control:focus {
+    outline: none;
+    border-color: #2d5a4a;
+    box-shadow: 0 0 0 3px rgba(45, 90, 74, 0.1);
+}
+
+.edit-form-body textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.edit-form-body .form-text {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: #666;
+}
+
+/* Búsqueda de ubicación */
+.location-search-wrapper {
+    position: relative;
+}
+
+.location-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    display: none;
+}
+
+.location-results.active {
+    display: block;
+}
+
+.location-result-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s;
+}
+
+.location-result-item:hover {
+    background: #f8f9fa;
+}
+
+.location-result-item:last-child {
+    border-bottom: none;
+}
+
+/* Preview de imágenes en edición */
+.images-preview-edit {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.image-preview-item {
+    position: relative;
+    aspect-ratio: 4/3;
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+}
+
+.image-preview-item .preview-img {
+    width: 100%;
+    height: calc(100% - 40px);
+    object-fit: cover;
+}
+
+.image-preview-item .empty-image-slot {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+}
+
+.image-preview-item .empty-image-slot i {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+.image-preview-item .empty-image-slot p {
+    margin: 0;
+    font-size: 12px;
+}
+
+.btn-remove-image {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(231, 76, 60, 0.9);
+    color: white;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-remove-image:hover {
+    background: #e74c3c;
+    transform: scale(1.1);
+}
+
+.btn-change-image {
+    width: 100%;
+    padding: 8px;
+    background: #2d5a4a;
+    color: white;
+    border: none;
+    border-radius: 0 0 6px 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-change-image:hover {
+    background: #234a3a;
+}
+
+/* Botones de acción del formulario */
+.edit-form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.edit-form-actions .btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+
+.edit-form-actions .btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.edit-form-actions .btn-secondary:hover {
+    background: #5a6268;
+}
+
+.edit-form-actions .btn-primary {
+    background: linear-gradient(135deg, #2d5a4a 0%, #4a7c59 100%);
+    color: white;
+}
+
+.edit-form-actions .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(45, 90, 74, 0.3);
+}
+
+/* Botón editar en servicio */
+.btn-edit-service {
+    background: rgba(108, 117, 125, 0.1);
+    color: #6c757d;
+    border: 1px solid #6c757d;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.btn-edit-service:hover {
+    background: #6c757d;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .images-preview-edit {
+        grid-template-columns: 1fr;
+    }
+    
+    .edit-form-actions {
+        flex-direction: column;
+    }
+    
+    .edit-form-actions .btn {
+        width: 100%;
+    }
 }
     </style>
 </head>
@@ -4245,9 +4562,9 @@ async function cargarDiasPrograma() {
             renderizarDias();
             
             // Cargar servicios para cada día
-            for (const dia of diasPrograma) {
-                console.log(`🔧 Cargando servicios para día ${dia.id}`);
+            for (const dia of diasOrdenados) {
                 await cargarServiciosDia(dia.id);
+                await cargarServiciosParaContador(dia.id);
             }
         } else {
             console.error('❌ Error en respuesta de días:', result.message);
@@ -5057,28 +5374,28 @@ function cerrarModalServicios() {
 // FUNCIÓN CORREGIDA PARA CARGAR SERVICIOS DE UN DÍA
 // ============================================================
 async function cargarServiciosDia(diaId) {
-    console.log(`🔧 Cargando servicios para día ${diaId}...`);
-    
     try {
+        console.log(`🔧 Cargando servicios para día ${diaId}...`);
+        
         const response = await fetch(`<?= APP_URL ?>/modules/programa/servicios_api.php?action=list&dia_id=${diaId}`);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
         const result = await response.json();
         
         console.log(`📋 Servicios del día ${diaId}:`, result);
-
+        
         if (result.success) {
+            // ⭐ GUARDAR SERVICIOS EN EL OBJETO DEL DÍA
+            const dia = diasPrograma.find(d => d.id == diaId);
+            if (dia) {
+                dia.servicios = result.data || [];
+                console.log('✅ Servicios guardados en diasPrograma para día', diaId);
+            }
+            
+            // ⭐ USAR LA FUNCIÓN CORRECTA
             renderizarServiciosDia(diaId, result.data || []);
-        } else {
-            console.error(`❌ Error cargando servicios del día ${diaId}:`, result.message);
-            mostrarErrorServicios(diaId, result.message);
         }
+        
     } catch (error) {
-        console.error(`❌ Error crítico cargando servicios del día ${diaId}:`, error);
-        mostrarErrorServicios(diaId, 'Error de conexión: ' + error.message);
+        console.error(`Error cargando servicios del día ${diaId}:`, error);
     }
 }
 
@@ -5662,32 +5979,30 @@ function renderizarSidebarDias() {
                 data-dia-numero="${dia.dia_numero}"
                 onclick="seleccionarDiaEnSidebar(${dia.id})">
                 
-                <!-- Indicador de drag (se muestra al hover) -->
                 <div class="drag-handle" title="Arrastra para reordenar">
                     <i class="fas fa-grip-vertical"></i>
                 </div>
                 
                 <div class="day-services-count" id="services-count-${dia.id}">0</div>
-                ${duracion > 1 ? '<div class="multi-day-indicator" title="' + duracion + ' días de estancia"></div>' : ''}
+                
+                ${duracion > 1 ? '<div class="multi-day-indicator"></div>' : ''}
                 
                 <div class="day-item-header">
                     <div class="day-number-sidebar">
                         ${rangoTexto}
                         ${duracion > 1 ? '<span class="duration-badge">' + duracion + 'd</span>' : ''}
                     </div>
+                    
+                    <!-- CONTROLES DE ESTANCIA -->
                     <div class="day-controls">
-                        <button class="estancia-btn" 
-                                onclick="event.stopPropagation(); cambiarEstancia(${dia.id}, ${duracion - 1})" 
-                                title="Reducir estancia"
-                                ${duracion <= 1 ? 'disabled' : ''}>➖</button>
-                        <span class="estancia-display" data-suffix="${duracion === 1 ? '' : 'd'}">${duracion}</span>
-                        <button class="estancia-btn" 
-                                onclick="event.stopPropagation(); cambiarEstancia(${dia.id}, ${duracion + 1})" 
-                                title="Ampliar estancia"
-                                ${duracion >= 30 ? 'disabled' : ''}>➕</button>
+                        <button class="estancia-btn" onclick="event.stopPropagation(); cambiarEstancia(${dia.id}, ${duracion - 1})" ${duracion <= 1 ? 'disabled' : ''}>➖</button>
+                        <span class="estancia-display">${duracion}</span>
+                        <button class="estancia-btn" onclick="event.stopPropagation(); cambiarEstancia(${dia.id}, ${duracion + 1})" ${duracion >= 30 ? 'disabled' : ''}>➕</button>
                     </div>
+                    
+                    <!-- ⭐ BOTONES DE EDITAR Y ELIMINAR AQUÍ -->
                     <div class="day-actions-sidebar">
-                        <button class="day-action-btn edit" onclick="event.stopPropagation(); editarDia(${dia.id})" title="Editar">
+                        <button class="day-action-btn edit" onclick="event.stopPropagation(); abrirEdicionDia(${dia.id})" title="Editar día">
                             <i class="fas fa-edit"></i>
                         </button>
                         <button class="day-action-btn delete" onclick="event.stopPropagation(); eliminarDia(${dia.id})" title="Eliminar">
@@ -5695,7 +6010,8 @@ function renderizarSidebarDias() {
                         </button>
                     </div>
                 </div>
-                <div class="day-item-title">${titulo}${duracionTexto}</div>
+                
+                <div class="day-item-title">${titulo}</div>
                 <div class="day-item-location">
                     <i class="fas fa-map-marker-alt"></i>
                     ${ubicacion}
@@ -6022,6 +6338,126 @@ function renderizarDetalleDia(diaId) {
             </div>
         </div>
     `;
+
+    // Agregar formulario inline de edición si no existe
+    let editForm = document.getElementById(`edit-dia-form-${diaId}`);
+    if (!editForm) {
+        const formHTML = `
+            <div id="edit-dia-form-${diaId}" class="edit-inline-form" style="display: none;">
+                <div class="edit-form-header">
+                    <h4><i class="fas fa-edit"></i> Editar Día ${dia.dia_numero}</h4>
+                    <button class="btn-close-edit" onclick="cerrarEdicionDia(${diaId})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="edit-form-body">
+                    <!-- Título -->
+                    <div class="form-group">
+                        <label for="edit-dia-titulo-${diaId}">
+                            Título <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="edit-dia-titulo-${diaId}" 
+                            class="form-control"
+                            value="${dia.titulo || ''}"
+                            maxlength="300"
+                            required
+                        >
+                        <small class="form-text">Máximo 300 caracteres</small>
+                    </div>
+                    
+                    <!-- Descripción -->
+                    <div class="form-group">
+                        <label for="edit-dia-descripcion-${diaId}">
+                            Descripción <span class="required">*</span>
+                        </label>
+                        <textarea 
+                            id="edit-dia-descripcion-${diaId}" 
+                            class="form-control"
+                            rows="4"
+                            maxlength="2000"
+                            required
+                        >${dia.descripcion || ''}</textarea>
+                        <small class="form-text">Máximo 2000 caracteres</small>
+                    </div>
+                    
+                    <!-- Ubicación con búsqueda -->
+                    <div class="form-group">
+                        <label for="edit-dia-ubicacion-${diaId}">
+                            Ubicación <span class="required">*</span>
+                        </label>
+                        <div class="location-search-wrapper">
+                            <input 
+                                type="text" 
+                                id="edit-dia-ubicacion-${diaId}" 
+                                class="form-control location-search-input"
+                                value="${dia.ubicacion || ''}"
+                                placeholder="Buscar ubicación..."
+                                autocomplete="off"
+                            >
+                            <div id="location-results-dia-${diaId}" class="location-results"></div>
+                        </div>
+                        <input type="hidden" id="edit-dia-latitud-${diaId}" value="${dia.latitud || ''}">
+                        <input type="hidden" id="edit-dia-longitud-${diaId}" value="${dia.longitud || ''}">
+                    </div>
+                    
+                    <!-- Imágenes -->
+                    <div class="form-group">
+                        <label>
+                            Imágenes <span class="required">*</span>
+                            <small>(mínimo 1 imagen)</small>
+                        </label>
+                        
+                        <div class="images-preview-edit">
+                            ${[1,2,3].map(i => {
+                                const imagenUrl = dia['imagen' + i];
+                                return `
+                                    <div class="image-preview-item" data-image-number="${i}">
+                                        ${imagenUrl ? `
+                                            <img src="${imagenUrl}" alt="Imagen ${i}" class="preview-img">
+                                            <button type="button" class="btn-remove-image" onclick="removerImagenDia(${diaId}, ${i})">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        ` : `
+                                            <div class="empty-image-slot">
+                                                <i class="fas fa-image"></i>
+                                                <p>Imagen ${i}</p>
+                                            </div>
+                                        `}
+                                        <input 
+                                            type="file" 
+                                            id="edit-dia-imagen${i}-${diaId}" 
+                                            accept="image/jpeg,image/jpg,image/png,image/webp"
+                                            onchange="previewImagenDia(${diaId}, ${i}, this)"
+                                            style="display: none;"
+                                        >
+                                        <button type="button" class="btn-change-image" onclick="document.getElementById('edit-dia-imagen${i}-${diaId}').click()">
+                                            ${imagenUrl ? 'Cambiar' : 'Agregar'}
+                                        </button>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                        <small class="form-text text-muted">Formatos: JPG, PNG, WEBP. Máximo 5MB por imagen.</small>
+                    </div>
+                    
+                    <!-- Botones de acción -->
+                    <div class="edit-form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="cerrarEdicionDia(${diaId})">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="guardarEdicionDia(${diaId})">
+                            <i class="fas fa-save"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        detailContainer.insertAdjacentHTML('beforeend', formHTML);
+    }
 }
 
 function renderizarDetalleVacio() {
@@ -6455,12 +6891,14 @@ function renderizarServicioConAlternativas(servicio) {
                     </div>
                 </div>
                 <div class="service-actions">
-                    <button class="btn-add-alternative" onclick="abrirModalAlternativa(${servicio.id}, '${servicio.tipo_servicio}')" title="Agregar alternativa">
-                        <i class="fas fa-plus-circle"></i>
-                    </button>
-                    <button class="btn-edit-service" onclick="editarServicio(${servicio.id})" title="Editar">
-                        <i class="fas fa-edit"></i>
-                    </button>
+                    ${servicio.tipo_servicio === 'actividad' ? `
+                        <button class="btn-add-alternative" onclick="abrirModalAlternativa(${servicio.id}, '${servicio.tipo_servicio}')" title="Agregar alternativa">
+                            <i class="fas fa-plus-circle"></i>
+                        </button>
+                        <button class="btn-edit-service" onclick="abrirEdicionActividad(${servicio.id})" title="Editar actividad">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    ` : ''}
                     <button class="btn-remove-service" onclick="eliminarServicio(${servicio.id})" title="Eliminar">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -6499,7 +6937,7 @@ function renderizarAlternativa(alternativa) {
                 </div>
             </div>
             <div class="service-actions">
-                <button class="btn-edit-service" onclick="editarAlternativa(${alternativa.id})" title="Editar alternativa">
+                <button class="btn-edit-service" onclick="abrirEdicionActividad(${alternativa.id})" title="Editar alternativa">
                     <i class="fas fa-edit"></i>
                 </button>
                 <button class="btn-remove-service" onclick="eliminarAlternativa(${alternativa.id})" title="Eliminar alternativa">
@@ -7204,7 +7642,6 @@ function abrirMiBiblioteca() {
     }, 100);
 }
 // Función para calcular y mostrar fecha de salida automáticamente
-// Función para calcular y mostrar fecha de salida automáticamente
 function actualizarFechaSalida() {
     const fechaLlegada = document.getElementById('arrival-date').value;
     const calculatedDeparture = document.getElementById('calculated-departure');
@@ -7256,6 +7693,799 @@ cargarDiasPrograma = async function() {
     await originalCargarDiasPrograma();
     actualizarFechaSalida();
 };
+
+// ============================================================
+// EDICIÓN DE DÍAS - FUNCIONES COMPLETAS
+// ============================================================
+
+// Abrir formulario de edición inline
+function abrirEdicionDia(diaId) {
+    console.log(`📝 Abriendo edición de día ${diaId}`);
+    
+    const formElement = document.getElementById(`edit-dia-form-${diaId}`);
+    if (!formElement) {
+        console.error('Formulario no encontrado');
+        return;
+    }
+    
+    // Ocultar otros formularios de edición abiertos
+    document.querySelectorAll('.edit-inline-form').forEach(form => {
+        form.style.display = 'none';
+    });
+    
+    // Mostrar este formulario
+    formElement.style.display = 'block';
+    
+    // Scroll suave al formulario
+    formElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    
+    // Inicializar búsqueda de ubicación para este día
+    inicializarBusquedaUbicacionDia(diaId);
+}
+
+// Cerrar formulario de edición
+function cerrarEdicionDia(diaId) {
+    const formElement = document.getElementById(`edit-dia-form-${diaId}`);
+    if (formElement) {
+        formElement.style.display = 'none';
+    }
+}
+
+// Guardar cambios del día
+async function guardarEdicionDia(diaId) {
+    console.log(`💾 Guardando edición de día ${diaId}`);
+    
+    try {
+        // Obtener valores
+        const titulo = document.getElementById(`edit-dia-titulo-${diaId}`).value.trim();
+        const descripcion = document.getElementById(`edit-dia-descripcion-${diaId}`).value.trim();
+        const ubicacion = document.getElementById(`edit-dia-ubicacion-${diaId}`).value.trim();
+        const latitud = document.getElementById(`edit-dia-latitud-${diaId}`).value;
+        const longitud = document.getElementById(`edit-dia-longitud-${diaId}`).value;
+        
+        // ⭐ VALIDACIONES
+        if (!titulo) {
+            showAlert('El título es obligatorio', 'error');
+            return;
+        }
+        
+        if (!descripcion) {
+            showAlert('La descripción es obligatoria', 'error');
+            return;
+        }
+        
+        // Validar al menos 1 imagen
+        const imagenes = {};
+        let tieneImagen = false;
+        
+        for (let i = 1; i <= 3; i++) {
+            const imgInput = document.getElementById(`edit-dia-imagen${i}-${diaId}`);
+            const existingImg = document.querySelector(`#edit-dia-form-${diaId} .image-preview-item[data-image-number="${i}"] .preview-img`);
+            
+            if (imgInput && imgInput.files && imgInput.files[0]) {
+                imagenes[`imagen${i}`] = imgInput.files[0];
+                tieneImagen = true;
+            } else if (existingImg) {
+                tieneImagen = true;
+            }
+        }
+        
+        if (!tieneImagen) {
+            showAlert('Debe tener al menos 1 imagen', 'error');
+            return;
+        }
+        
+        // ⭐ PASO 1: Subir imágenes nuevas (si hay)
+        let imagenesSubidas = {};
+        if (Object.keys(imagenes).length > 0) {
+            imagenesSubidas = await subirImagenesDia(diaId, imagenes);
+        }
+        
+        // ⭐ PASO 2: Actualizar datos del día
+        const dataToUpdate = {
+            titulo,
+            descripcion,
+            ubicacion,
+            latitud: latitud || null,
+            longitud: longitud || null
+        };
+        
+        // Agregar URLs de imágenes subidas
+        Object.assign(dataToUpdate, imagenesSubidas);
+        
+        const response = await fetch('<?= APP_URL ?>/modules/programa/dias_api.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'update',
+                dia_id: diaId,
+                ...dataToUpdate
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('Día actualizado exitosamente', 'success');
+            cerrarEdicionDia(diaId);
+            
+            // Recargar días
+            await cargarDiasPrograma();
+            
+        } else {
+            showAlert(result.message || result.error || 'Error al actualizar día', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('Error de conexión al guardar el día', 'error');
+    }
+}
+
+// Subir imágenes del día
+async function subirImagenesDia(diaId, imagenes) {
+    const formData = new FormData();
+    formData.append('type', 'dia');
+    formData.append('item_id', diaId);
+    
+    for (const [key, file] of Object.entries(imagenes)) {
+        formData.append(key, file);
+    }
+    
+    const response = await fetch('<?= APP_URL ?>/modules/programa/upload_images.php', {
+        method: 'POST',
+        body: formData
+    });
+    
+    const result = await response.json();
+    
+    if (!result.success) {
+        throw new Error(result.error || 'Error subiendo imágenes');
+    }
+    
+    return result.images;
+}
+
+// Preview de imagen de día
+function previewImagenDia(diaId, imageNumber, input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const container = input.closest('.image-preview-item');
+            const existingImg = container.querySelector('.preview-img');
+            const emptySlot = container.querySelector('.empty-image-slot');
+            const btnChange = container.querySelector('.btn-change-image');
+            
+            if (existingImg) {
+                existingImg.src = e.target.result;
+            } else if (emptySlot) {
+                emptySlot.remove();
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.alt = `Imagen ${imageNumber}`;
+                img.className = 'preview-img';
+                container.insertBefore(img, btnChange);
+                
+                // Agregar botón de remover
+                const btnRemove = document.createElement('button');
+                btnRemove.type = 'button';
+                btnRemove.className = 'btn-remove-image';
+                btnRemove.onclick = () => removerImagenDia(diaId, imageNumber);
+                btnRemove.innerHTML = '<i class="fas fa-times"></i>';
+                container.appendChild(btnRemove);
+            }
+            
+            btnChange.textContent = 'Cambiar';
+        };
+        
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// Remover imagen de día
+function removerImagenDia(diaId, imageNumber) {
+    const container = document.querySelector(`#edit-dia-form-${diaId} .image-preview-item[data-image-number="${imageNumber}"]`);
+    if (!container) return;
+    
+    const img = container.querySelector('.preview-img');
+    const btnRemove = container.querySelector('.btn-remove-image');
+    const btnChange = container.querySelector('.btn-change-image');
+    const input = document.getElementById(`edit-dia-imagen${imageNumber}-${diaId}`);
+    
+    if (img) img.remove();
+    if (btnRemove) btnRemove.remove();
+    
+    // Agregar empty slot
+    const emptySlot = document.createElement('div');
+    emptySlot.className = 'empty-image-slot';
+    emptySlot.innerHTML = `
+        <i class="fas fa-image"></i>
+        <p>Imagen ${imageNumber}</p>
+    `;
+    container.insertBefore(emptySlot, btnChange);
+    
+    // Limpiar input
+    if (input) input.value = '';
+    
+    btnChange.textContent = 'Agregar';
+}
+
+// Inicializar búsqueda de ubicación para día
+function inicializarBusquedaUbicacionDia(diaId) {
+    const input = document.getElementById(`edit-dia-ubicacion-${diaId}`);
+    const resultsContainer = document.getElementById(`location-results-dia-${diaId}`);
+    
+    if (!input || !resultsContainer) return;
+    
+    let searchTimeout;
+    
+    input.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+        
+        if (query.length < 3) {
+            resultsContainer.classList.remove('active');
+            return;
+        }
+        
+        searchTimeout = setTimeout(async () => {
+            try {
+                const results = await buscarUbicacion(query);
+                mostrarResultadosUbicacion(results, resultsContainer, diaId, 'dia');
+            } catch (error) {
+                console.error('Error buscando ubicación:', error);
+            }
+        }, 500);
+    });
+    
+    // Cerrar resultados al hacer clic fuera
+    document.addEventListener('click', function(e) {
+        if (!input.contains(e.target) && !resultsContainer.contains(e.target)) {
+            resultsContainer.classList.remove('active');
+        }
+    });
+}
+
+// ============================================================
+// EDICIÓN DE ACTIVIDADES - FUNCIONES COMPLETAS
+// ============================================================
+
+// Abrir formulario de edición de actividad
+function abrirEdicionActividad(actividadId) {
+    console.log(`📝 Abriendo edición de actividad ${actividadId}`);
+    
+    // Primero verificar si el formulario ya existe
+    let formElement = document.getElementById(`edit-actividad-form-${actividadId}`);
+    
+    if (!formElement) {
+        // Si no existe, necesitamos obtener los datos de la actividad y crear el formulario
+        const actividad = buscarActividadPorId(actividadId);
+        if (!actividad) {
+            showAlert('Actividad no encontrada', 'error');
+            return;
+        }
+        
+        // Crear el formulario dinámicamente
+        const container = document.querySelector(`[data-servicio-id="${actividadId}"]`)?.closest('.service-group') || 
+                         document.querySelector(`[data-alternativa-id="${actividadId}"]`)?.closest('.service-group');
+        
+        if (!container) {
+            showAlert('No se encontró el contenedor', 'error');
+            return;
+        }
+        
+        const formHTML = renderizarFormularioEdicionActividad(actividad);
+        container.insertAdjacentHTML('afterend', formHTML);
+        
+        formElement = document.getElementById(`edit-actividad-form-${actividadId}`);
+    }
+    
+    // Ocultar otros formularios
+    document.querySelectorAll('.edit-inline-form').forEach(form => {
+        form.style.display = 'none';
+    });
+    
+    // Mostrar este formulario
+    formElement.style.display = 'block';
+    
+    // Scroll
+    formElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    
+    // Inicializar búsqueda de ubicación
+    inicializarBusquedaUbicacionActividad(actividadId);
+}
+
+// Buscar actividad por ID en los servicios cargados
+function buscarActividadPorId(actividadId) {
+    console.log('🔍 Buscando actividad:', actividadId);
+    console.log('📦 Estructura diasPrograma:', diasPrograma);
+    
+    // Buscar en el día seleccionado primero (más eficiente)
+    if (selectedDayId) {
+        const diaSeleccionado = diasPrograma.find(d => d.id == selectedDayId);
+        if (diaSeleccionado && diaSeleccionado.servicios) {
+            
+            // Buscar en servicios principales
+            for (const servicio of diaSeleccionado.servicios) {
+                if (servicio.id == actividadId) {
+                    console.log('✅ Actividad encontrada (principal):', servicio);
+                    return servicio;
+                }
+                
+                // Buscar en alternativas
+                if (servicio.alternativas && Array.isArray(servicio.alternativas)) {
+                    const alternativa = servicio.alternativas.find(alt => alt.id == actividadId);
+                    if (alternativa) {
+                        console.log('✅ Actividad encontrada (alternativa):', alternativa);
+                        return alternativa;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Si no se encontró en el día seleccionado, buscar en todos los días
+    for (const dia of diasPrograma) {
+        if (!dia.servicios) continue;
+        
+        for (const servicio of dia.servicios) {
+            if (servicio.id == actividadId) {
+                console.log('✅ Actividad encontrada en día', dia.id, ':', servicio);
+                return servicio;
+            }
+            
+            // Buscar en alternativas
+            if (servicio.alternativas && Array.isArray(servicio.alternativas)) {
+                const alternativa = servicio.alternativas.find(alt => alt.id == actividadId);
+                if (alternativa) {
+                    console.log('✅ Actividad encontrada (alternativa) en día', dia.id, ':', alternativa);
+                    return alternativa;
+                }
+            }
+        }
+    }
+    
+    console.error('❌ Actividad no encontrada:', actividadId);
+    console.log('📋 Días disponibles:', diasPrograma.map(d => ({id: d.id, servicios: d.servicios?.length})));
+    
+    return null;
+}
+// ⭐ FUNCIÓN TEMPORAL DE DEBUG - Agregar al final del <script>
+function debugEstructuraServicios() {
+    console.log('=== DEBUG ESTRUCTURA ===');
+    console.log('Día seleccionado:', selectedDayId);
+    
+    const dia = diasPrograma.find(d => d.id == selectedDayId);
+    if (dia) {
+        console.log('📅 Día completo:', dia);
+        console.log('📋 Servicios:', dia.servicios);
+        
+        if (dia.servicios) {
+            dia.servicios.forEach((servicio, index) => {
+                console.log(`Servicio ${index}:`, {
+                    id: servicio.id,
+                    tipo: servicio.tipo_servicio,
+                    nombre: servicio.nombre || servicio.titulo,
+                    alternativas: servicio.alternativas?.length || 0
+                });
+            });
+        }
+    }
+    console.log('=== FIN DEBUG ===');
+}
+
+// Llamar automáticamente al cargar servicios
+window.debugEstructuraServicios = debugEstructuraServicios;
+// Renderizar formulario de edición de actividad
+function renderizarFormularioEdicionActividad(actividad) {
+    return `
+        <div id="edit-actividad-form-${actividad.id}" class="edit-inline-form edit-actividad" style="display: none;">
+            <div class="edit-form-header">
+                <h4><i class="fas fa-edit"></i> Editar Actividad</h4>
+                <button class="btn-close-edit" onclick="cerrarEdicionActividad(${actividad.id})">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="edit-form-body">
+                <!-- Nombre -->
+                <div class="form-group">
+                    <label for="edit-act-nombre-${actividad.id}">
+                        Nombre <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="edit-act-nombre-${actividad.id}" 
+                        class="form-control"
+                        value="${actividad.nombre || actividad.titulo || ''}"
+                        maxlength="300"
+                        required
+                    >
+                </div>
+                
+                <!-- Descripción -->
+                <div class="form-group">
+                    <label for="edit-act-descripcion-${actividad.id}">
+                        Descripción <span class="required">*</span>
+                    </label>
+                    <textarea 
+                        id="edit-act-descripcion-${actividad.id}" 
+                        class="form-control"
+                        rows="4"
+                        maxlength="2000"
+                        required
+                    >${actividad.descripcion || ''}</textarea>
+                </div>
+                
+                <!-- Ubicación -->
+                <div class="form-group">
+                    <label for="edit-act-ubicacion-${actividad.id}">
+                        Ubicación <span class="required">*</span>
+                    </label>
+                    <div class="location-search-wrapper">
+                        <input 
+                            type="text" 
+                            id="edit-act-ubicacion-${actividad.id}" 
+                            class="form-control location-search-input"
+                            value="${actividad.ubicacion || ''}"
+                            placeholder="Buscar ubicación..."
+                            autocomplete="off"
+                        >
+                        <div id="location-results-act-${actividad.id}" class="location-results"></div>
+                    </div>
+                    <input type="hidden" id="edit-act-latitud-${actividad.id}" value="${actividad.latitud || ''}">
+                    <input type="hidden" id="edit-act-longitud-${actividad.id}" value="${actividad.longitud || ''}">
+                </div>
+                
+                <!-- Imágenes -->
+                <div class="form-group">
+                    <label>
+                        Imágenes <span class="required">*</span>
+                        <small>(mínimo 1 imagen)</small>
+                    </label>
+                    
+                    <div class="images-preview-edit">
+                        ${[1,2,3].map(i => {
+                            const imagenUrl = actividad['imagen' + i] || actividad[`actividad_imagen${i}`];
+                            return `
+                                <div class="image-preview-item" data-image-number="${i}">
+                                    ${imagenUrl ? `
+                                        <img src="${imagenUrl}" alt="Imagen ${i}" class="preview-img">
+                                        <button type="button" class="btn-remove-image" onclick="removerImagenActividad(${actividad.id}, ${i})">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    ` : `
+                                        <div class="empty-image-slot">
+                                            <i class="fas fa-image"></i>
+                                            <p>Imagen ${i}</p>
+                                        </div>
+                                    `}
+                                    <input 
+                                        type="file" 
+                                        id="edit-act-imagen${i}-${actividad.id}" 
+                                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                                        onchange="previewImagenActividad(${actividad.id}, ${i}, this)"
+                                        style="display: none;"
+                                    >
+                                    <button type="button" class="btn-change-image" onclick="document.getElementById('edit-act-imagen${i}-${actividad.id}').click()">
+                                        ${imagenUrl ? 'Cambiar' : 'Agregar'}
+                                    </button>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+                
+                <!-- Botones -->
+                <div class="edit-form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="cerrarEdicionActividad(${actividad.id})">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="guardarEdicionActividad(${actividad.id})">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Cerrar formulario de edición de actividad
+function cerrarEdicionActividad(actividadId) {
+    const formElement = document.getElementById(`edit-actividad-form-${actividadId}`);
+    if (formElement) {
+        formElement.style.display = 'none';
+    }
+}
+
+// Guardar edición de actividad
+async function guardarEdicionActividad(actividadId) {
+    console.log(`💾 Guardando edición de actividad ${actividadId}`);
+    
+    try {
+        // Obtener valores
+        const nombre = document.getElementById(`edit-act-nombre-${actividadId}`).value.trim();
+        const descripcion = document.getElementById(`edit-act-descripcion-${actividadId}`).value.trim();
+        const ubicacion = document.getElementById(`edit-act-ubicacion-${actividadId}`).value.trim();
+        const latitud = document.getElementById(`edit-act-latitud-${actividadId}`).value;
+        const longitud = document.getElementById(`edit-act-longitud-${actividadId}`).value;
+        
+        // ⭐ VALIDACIONES
+        if (!nombre) {
+            showAlert('El nombre es obligatorio', 'error');
+            return;
+        }
+        
+        if (!descripcion) {
+            showAlert('La descripción es obligatoria', 'error');
+            return;
+        }
+        
+        // Validar al menos 1 imagen
+        const imagenes = {};
+        let tieneImagen = false;
+        
+        for (let i = 1; i <= 3; i++) {
+            const imgInput = document.getElementById(`edit-act-imagen${i}-${actividadId}`);
+            const existingImg = document.querySelector(`#edit-actividad-form-${actividadId} .image-preview-item[data-image-number="${i}"] .preview-img`);
+            
+            if (imgInput && imgInput.files && imgInput.files[0]) {
+                imagenes[`imagen${i}`] = imgInput.files[0];
+                tieneImagen = true;
+            } else if (existingImg) {
+                tieneImagen = true;
+            }
+        }
+        
+        if (!tieneImagen) {
+            showAlert('Debe tener al menos 1 imagen', 'error');
+            return;
+        }
+        
+        // ⭐ PASO 1: Subir imágenes nuevas (si hay)
+        let imagenesSubidas = {};
+        if (Object.keys(imagenes).length > 0) {
+            imagenesSubidas = await subirImagenesActividad(actividadId, imagenes);
+        }
+        
+        // ⭐ PASO 2: Actualizar datos de la actividad
+        const dataToUpdate = {
+            nombre_servicio: nombre,
+            descripcion_servicio: descripcion,
+            ubicacion_servicio: ubicacion,
+            latitud: latitud || null,
+            longitud: longitud || null
+        };
+        
+        // Mapear imágenes subidas a campos de actividad
+        if (imagenesSubidas.imagen1) dataToUpdate.actividad_imagen1 = imagenesSubidas.imagen1;
+        if (imagenesSubidas.imagen2) dataToUpdate.actividad_imagen2 = imagenesSubidas.imagen2;
+        if (imagenesSubidas.imagen3) dataToUpdate.actividad_imagen3 = imagenesSubidas.imagen3;
+        
+        const response = await fetch('<?= APP_URL ?>/modules/programa/servicios_api.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'update',
+                servicio_id: actividadId,
+                ...dataToUpdate
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('Actividad actualizada exitosamente', 'success');
+            cerrarEdicionActividad(actividadId);
+            
+            // Recargar servicios del día
+            if (selectedDayId) {
+                await cargarServiciosDia(selectedDayId);
+            }
+            
+        } else {
+            showAlert(result.message || result.error || 'Error al actualizar actividad', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('Error de conexión al guardar la actividad', 'error');
+    }
+}
+
+// Subir imágenes de actividad
+async function subirImagenesActividad(actividadId, imagenes) {
+    const formData = new FormData();
+    formData.append('type', 'actividad');
+    formData.append('item_id', actividadId);
+    
+    for (const [key, file] of Object.entries(imagenes)) {
+        formData.append(key, file);
+    }
+    
+    const response = await fetch('<?= APP_URL ?>/modules/programa/upload_images.php', {
+        method: 'POST',
+        body: formData
+    });
+    
+    const result = await response.json();
+    
+    if (!result.success) {
+        throw new Error(result.error || 'Error subiendo imágenes');
+    }
+    
+    return result.images;
+}
+
+// Preview de imagen de actividad
+function previewImagenActividad(actividadId, imageNumber, input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const container = input.closest('.image-preview-item');
+            const existingImg = container.querySelector('.preview-img');
+            const emptySlot = container.querySelector('.empty-image-slot');
+            const btnChange = container.querySelector('.btn-change-image');
+            
+            if (existingImg) {
+                existingImg.src = e.target.result;
+            } else if (emptySlot) {
+                emptySlot.remove();
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.alt = `Imagen ${imageNumber}`;
+                img.className = 'preview-img';
+                container.insertBefore(img, btnChange);
+                
+                // Agregar botón de remover
+                const btnRemove = document.createElement('button');
+                btnRemove.type = 'button';
+                btnRemove.className = 'btn-remove-image';
+                btnRemove.onclick = () => removerImagenActividad(actividadId, imageNumber);
+                btnRemove.innerHTML = '<i class="fas fa-times"></i>';
+                container.appendChild(btnRemove);
+            }
+            
+            btnChange.textContent = 'Cambiar';
+        };
+        
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// Remover imagen de actividad
+function removerImagenActividad(actividadId, imageNumber) {
+    const container = document.querySelector(`#edit-actividad-form-${actividadId} .image-preview-item[data-image-number="${imageNumber}"]`);
+    if (!container) return;
+    
+    const img = container.querySelector('.preview-img');
+    const btnRemove = container.querySelector('.btn-remove-image');
+    const btnChange = container.querySelector('.btn-change-image');
+    const input = document.getElementById(`edit-act-imagen${imageNumber}-${actividadId}`);
+    
+    if (img) img.remove();
+    if (btnRemove) btnRemove.remove();
+    
+    // Agregar empty slot
+    const emptySlot = document.createElement('div');
+    emptySlot.className = 'empty-image-slot';
+    emptySlot.innerHTML = `
+        <i class="fas fa-image"></i>
+        <p>Imagen ${imageNumber}</p>
+    `;
+    container.insertBefore(emptySlot, btnChange);
+    
+    // Limpiar input
+    if (input) input.value = '';
+    
+    btnChange.textContent = 'Agregar';
+}
+
+// Inicializar búsqueda de ubicación para actividad
+function inicializarBusquedaUbicacionActividad(actividadId) {
+    const input = document.getElementById(`edit-act-ubicacion-${actividadId}`);
+    const resultsContainer = document.getElementById(`location-results-act-${actividadId}`);
+    
+    if (!input || !resultsContainer) return;
+    
+    let searchTimeout;
+    
+    input.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+        
+        if (query.length < 3) {
+            resultsContainer.classList.remove('active');
+            return;
+        }
+        
+        searchTimeout = setTimeout(async () => {
+            try {
+                const results = await buscarUbicacion(query);
+                mostrarResultadosUbicacion(results, resultsContainer, actividadId, 'act');
+            } catch (error) {
+                console.error('Error buscando ubicación:', error);
+            }
+        }, 500);
+    });
+    
+    // Cerrar resultados al hacer clic fuera
+    document.addEventListener('click', function(e) {
+        if (!input.contains(e.target) && !resultsContainer.contains(e.target)) {
+            resultsContainer.classList.remove('active');
+        }
+    });
+}
+
+// ============================================================
+// FUNCIONES AUXILIARES COMPARTIDAS
+// ============================================================
+
+// Buscar ubicación en Nominatim
+async function buscarUbicacion(query) {
+    try {
+        const response = await fetch(
+            `<?= APP_URL ?>/modules/programa/location_proxy.php?q=${encodeURIComponent(query)}`
+        );
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            console.error('Error del proxy:', data.error);
+            return [];
+        }
+        
+        return data;
+    } catch (error) {
+        console.error('Error buscando ubicación:', error);
+        return [];
+    }
+}
+
+// Mostrar resultados de búsqueda
+function mostrarResultadosUbicacion(results, container, itemId, tipo) {
+    if (!results || results.length === 0) {
+        container.innerHTML = '<div class="location-result-item">No se encontraron resultados</div>';
+        container.classList.add('active');
+        return;
+    }
+    
+    container.innerHTML = results.map(result => `
+        <div class="location-result-item" onclick="seleccionarUbicacion('${itemId}', '${tipo}', ${result.lat}, ${result.lon}, \`${result.display_name.replace(/`/g, '')}\`)">
+            ${result.display_name}
+        </div>
+    `).join('');
+    
+    container.classList.add('active');
+}
+
+// Seleccionar ubicación
+function seleccionarUbicacion(itemId, tipo, lat, lon, displayName) {
+    const prefix = tipo === 'dia' ? 'edit-dia' : 'edit-act';
+    
+    document.getElementById(`${prefix}-ubicacion-${itemId}`).value = displayName;
+    document.getElementById(`${prefix}-latitud-${itemId}`).value = lat;
+    document.getElementById(`${prefix}-longitud-${itemId}`).value = lon;
+    
+    // Cerrar resultados
+    const resultsContainer = document.getElementById(`location-results-${tipo}-${itemId}`);
+    if (resultsContainer) {
+        resultsContainer.classList.remove('active');
+    }
+}
+
+console.log('✅ Funciones de edición de días y actividades cargadas');
+
 </script>
 </body>
 </html>

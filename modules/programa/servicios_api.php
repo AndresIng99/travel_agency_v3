@@ -70,7 +70,10 @@ class ProgramaServiciosAPI {
                     $result = $this->deleteService($_POST['servicio_id'] ?? $_GET['servicio_id'] ?? null);
                     break;
                 case 'update':
-                    $result = $this->updateService($_POST['servicio_id'] ?? null, $_POST);
+                    $input = json_decode(file_get_contents('php://input'), true);
+                    $servicioId = $input['servicio_id'] ?? $_POST['servicio_id'] ?? null;
+                    $data = $input ?: $_POST;
+                    $result = $this->updateService($servicioId, $data);
                     break;
                 case 'reorder':
                     $result = $this->reorderServices($_POST['dia_id'] ?? null, $_POST['orden'] ?? []);
@@ -543,10 +546,105 @@ private function listServices($diaId) {
     }
 }
     
-    private function updateService($servicioId, $data) {
-        // Implementar según necesidades
-        throw new Exception('Función updateService no implementada aún');
+private function updateService($servicioId, $data) {
+    if (!$servicioId) {
+        throw new Exception('ID de servicio requerido');
     }
+    
+    try {
+        $user_id = $_SESSION['user_id'];
+        $agencia_id = $_SESSION['agencia_id'] ?? null;
+
+        if (!$agencia_id) {
+            throw new Exception('Usuario sin agencia asignada');
+        }
+        
+        // ⭐ VERIFICAR PERMISOS Y QUE SEA ACTIVIDAD
+        $servicio = $this->db->fetch(
+            "SELECT pds.*, ps.user_id 
+            FROM programa_dias_servicios pds
+            JOIN programa_dias pd ON pds.programa_dia_id = pd.id
+            JOIN programa_solicitudes ps ON pd.solicitud_id = ps.id 
+            WHERE pds.id = ? AND ps.user_id = ? AND ps.agencia_id = ?", 
+            [$servicioId, $user_id, $agencia_id]
+        );
+        
+        if (!$servicio) {
+            throw new Exception('Servicio no encontrado o sin permisos');
+        }
+        
+        // ⭐ SOLO PERMITIR EDITAR ACTIVIDADES
+        if ($servicio['tipo_servicio'] !== 'actividad') {
+            throw new Exception('Solo se pueden editar actividades');
+        }
+        
+        // ⭐ VALIDACIONES
+        if (empty($data['nombre_servicio'])) {
+            throw new Exception('El nombre es obligatorio');
+        }
+        
+        if (empty($data['descripcion_servicio'])) {
+            throw new Exception('La descripción es obligatoria');
+        }
+        
+        // Validar al menos 1 imagen
+        $hasImage = false;
+        for ($i = 1; $i <= 3; $i++) {
+            $imageKey = 'actividad_imagen' . $i;
+            if (!empty($data[$imageKey]) || !empty($servicio[$imageKey])) {
+                $hasImage = true;
+                break;
+            }
+        }
+        
+        if (!$hasImage) {
+            throw new Exception('Debe tener al menos 1 imagen');
+        }
+        
+        // ⭐ PREPARAR DATOS PARA ACTUALIZAR
+        $updateData = [];
+        $allowedFields = [
+            'nombre_servicio',
+            'descripcion_servicio',
+            'ubicacion_servicio',
+            'latitud',
+            'longitud',
+            'actividad_imagen1',
+            'actividad_imagen2',
+            'actividad_imagen3'
+        ];
+        
+        foreach ($allowedFields as $field) {
+            if (isset($data[$field])) {
+                $updateData[$field] = $data[$field];
+            }
+        }
+        
+        if (empty($updateData)) {
+            throw new Exception('No hay datos para actualizar');
+        }
+        
+        // ⭐ ACTUALIZAR EN BASE DE DATOS
+        $rowsAffected = $this->db->update(
+            'programa_dias_servicios',
+            $updateData,
+            'id = ?',
+            [$servicioId]
+        );
+        
+        error_log("✅ Servicio (actividad) $servicioId actualizado: $rowsAffected filas");
+        
+        return [
+            'success' => true,
+            'message' => 'Actividad actualizada exitosamente',
+            'servicio_id' => $servicioId
+        ];
+        
+    } catch(Exception $e) {
+        error_log("❌ Error en updateService: " . $e->getMessage());
+        throw $e;
+    }
+}
     
     private function reorderServices($diaId, $orden) {
         if (!$diaId || empty($orden)) {

@@ -4701,30 +4701,52 @@ body {
         // =====================================================
         // ACCORDION FUNCTIONALITY FOR PRICING SECTION
         // =====================================================
-        function toggleAccordion(sectionId) {
-            const content = document.getElementById(`content-${sectionId}`);
-            const arrow = document.getElementById(`arrow-${sectionId}`);
-            const header = arrow.closest('.accordion-header');
-            
-            // Cerrar otros accordions abiertos
-            document.querySelectorAll('.accordion-content.active').forEach(function(otherContent) {
-                if (otherContent.id !== `content-${sectionId}`) {
-                    otherContent.classList.remove('active');
-                    const otherId = otherContent.id.replace('content-', '');
-                    const otherArrow = document.getElementById(`arrow-${otherId}`);
-                    if (otherArrow) {
-                        const otherHeader = otherArrow.closest('.accordion-header');
-                        otherArrow.classList.remove('rotated');
-                        otherHeader.classList.remove('active');
-                    }
+function toggleAccordion(element) {
+    // Obtener el header desde el elemento clickeado
+    const header = element.closest ? element.closest('.accordion-header') : element;
+    if (!header) {
+        console.error('No se encontró el header del accordion');
+        return;
+    }
+    
+    // Obtener el contenido (siguiente elemento hermano)
+    const content = header.nextElementSibling;
+    if (!content || !content.classList.contains('accordion-content')) {
+        console.error('No se encontró el contenido del accordion');
+        return;
+    }
+    
+    // Obtener la flecha
+    const arrow = header.querySelector('.accordion-icon, i[class*="chevron"]');
+    
+    // Cerrar otros accordions abiertos
+    document.querySelectorAll('.accordion-content.active').forEach(function(otherContent) {
+        if (otherContent !== content) {
+            otherContent.classList.remove('active');
+            const otherHeader = otherContent.previousElementSibling;
+            if (otherHeader) {
+                const otherArrow = otherHeader.querySelector('.accordion-icon, i[class*="chevron"]');
+                if (otherArrow) {
+                    otherArrow.classList.remove('rotated');
                 }
-            });
-            
-            // Toggle del accordion actual
-            content.classList.toggle('active');
-            arrow.classList.toggle('rotated');
-            header.classList.toggle('active');
+                otherHeader.classList.remove('active');
+            }
         }
+    });
+    
+    // Toggle del accordion actual
+    const isActive = content.classList.contains('active');
+    
+    if (isActive) {
+        content.classList.remove('active');
+        if (arrow) arrow.classList.remove('rotated');
+        header.classList.remove('active');
+    } else {
+        content.classList.add('active');
+        if (arrow) arrow.classList.add('rotated');
+        header.classList.add('active');
+    }
+}
 
         // =====================================================
         // ALTERNATIVES FUNCTIONALITY
