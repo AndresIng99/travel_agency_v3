@@ -4349,52 +4349,53 @@ async function cargarComidasDia(diaId) {
     try {
         console.log(`🍽️ Cargando comidas para día ${diaId}...`);
         
-        // Verificar que el contenedor existe
-        const mealContainer = document.getElementById(`meal-container-${diaId}`);
-        if (!mealContainer) {
-            console.warn(`⚠️ Contenedor de comidas no encontrado para día ${diaId}`);
-            return;
-        }
-        
         const response = await fetch(`<?= APP_URL ?>/modules/programa/dias_api.php?action=get_comidas&dia_id=${diaId}`);
         const result = await response.json();
         
         if (result.success && result.data) {
             console.log(`✅ Comidas cargadas para día ${diaId}:`, result.data);
             
-            // Marcar checkboxes según los datos
             const comidas = result.data;
             
-            // Desayuno
-            const desayunoCheckbox = document.getElementById(`meal_desayuno_${diaId}`);
+            // Marcar radio button según comidas_incluidas
+            const radioIncluidas = document.querySelector(`input[name="meals_${diaId}"][value="incluidas"]`);
+            const radioNoIncluidas = document.querySelector(`input[name="meals_${diaId}"][value="no_incluidas"]`);
+            
+            if (comidas.comidas_incluidas) {
+                if (radioIncluidas) radioIncluidas.checked = true;
+            } else {
+                if (radioNoIncluidas) radioNoIncluidas.checked = true;
+            }
+            
+            // Marcar checkboxes
+            const desayunoCheckbox = document.querySelector(`input[name="meal_desayuno_${diaId}"]`);
             if (desayunoCheckbox) {
                 desayunoCheckbox.checked = comidas.desayuno || false;
             }
             
-            // Almuerzo
-            const almuerzoCheckbox = document.getElementById(`meal_almuerzo_${diaId}`);
+            const almuerzoCheckbox = document.querySelector(`input[name="meal_almuerzo_${diaId}"]`);
             if (almuerzoCheckbox) {
                 almuerzoCheckbox.checked = comidas.almuerzo || false;
             }
             
-            // Cena
-            const cenaCheckbox = document.getElementById(`meal_cena_${diaId}`);
+            const cenaCheckbox = document.querySelector(`input[name="meal_cena_${diaId}"]`);
             if (cenaCheckbox) {
                 cenaCheckbox.checked = comidas.cena || false;
             }
             
-            // Mostrar/ocultar detalles según si hay comidas seleccionadas
+            // Mostrar/ocultar detalles según comidas_incluidas
             const mealDetails = document.getElementById(`meal-details-${diaId}`);
-            const hayComidas = comidas.desayuno || comidas.almuerzo || comidas.cena;
-            
             if (mealDetails) {
-                mealDetails.style.display = hayComidas ? 'block' : 'none';
+                mealDetails.style.display = comidas.comidas_incluidas ? 'block' : 'none';
             }
+            
+            console.log(`✅ Comidas aplicadas correctamente al día ${diaId}`);
+        } else {
+            console.warn(`⚠️ No se pudieron cargar comidas para día ${diaId}`);
         }
         
     } catch (error) {
-        console.error('Error cargando comidas:', error);
-        // No mostrar alerta al usuario, solo log
+        console.error(`❌ Error cargando comidas para día ${diaId}:`, error);
     }
 }
 
@@ -6222,6 +6223,7 @@ function seleccionarDiaEnSidebar(diaId) {
     
     // Cargar servicios del día seleccionado
     cargarServiciosDia(diaId);
+    cargarUbicacionesSecundariasDia(diaId);
     
     // RECONFIGURAR manejadores después de renderizar
     setTimeout(() => {
@@ -6269,12 +6271,15 @@ function renderizarDetalleDia(diaId) {
                         ${duracion >= 30 ? 'disabled' : ''}>➕</button>
             </div>
             <div class="day-detail-meta">
-                <span>
-                    <i class="fas fa-map-marker-alt"></i> 
-                    ${ubicacion}
-                </span>
-                ${fechaDia ? `
+                <div id="ubicaciones-display-${dia.id}" style="display: flex; flex-direction: column; gap: 8px;">
                     <span>
+                        <i class="fas fa-map-marker-alt"></i> 
+                        ${ubicacion}
+                    </span>
+                    <!-- Las ubicaciones secundarias se cargarán aquí -->
+                </div>
+                ${fechaDia ? `
+                    <span style="margin-top: 8px;">
                         <i class="fas fa-calendar"></i> 
                         ${fechaDia}
                     </span>
@@ -6499,6 +6504,31 @@ function renderizarDetalleDia(diaId) {
         `;
         
         detailContainer.insertAdjacentHTML('beforeend', formHTML);
+    }
+}
+
+async function cargarUbicacionesSecundariasDia(diaId) {
+    try {
+        const response = await fetch(`<?= APP_URL ?>/modules/programa/dias_api.php?action=get_ubicaciones_secundarias&dia_id=${diaId}`);
+        const result = await response.json();
+        
+        if (result.success && result.data && result.data.length > 0) {
+            const container = document.getElementById(`ubicaciones-display-${diaId}`);
+            if (container) {
+                // Agregar ubicaciones secundarias
+                result.data.forEach(ubicacion => {
+                    const ubicacionElement = document.createElement('span');
+                    ubicacionElement.innerHTML = `
+                        <i class="fas fa-map-marker-alt"></i> 
+                        ${ubicacion.ubicacion}
+                    `;
+                    ubicacionElement.style.cssText = 'display: flex; align-items: center; gap: 8px;';
+                    container.appendChild(ubicacionElement);
+                });
+            }
+        }
+    } catch (error) {
+        console.error(`Error cargando ubicaciones secundarias para día ${diaId}:`, error);
     }
 }
 
@@ -6933,14 +6963,19 @@ function renderizarServicioConAlternativas(servicio) {
                     </div>
                 </div>
                 <div class="service-actions">
+                    <!-- Botón de alternativa para TODOS los tipos de servicio -->
+                    <button class="btn-add-alternative" onclick="abrirModalAlternativa(${servicio.id}, '${servicio.tipo_servicio}')" title="Agregar alternativa">
+                        <i class="fas fa-plus-circle"></i>
+                    </button>
+                    
+                    <!-- Botón de edición solo para actividades -->
                     ${servicio.tipo_servicio === 'actividad' ? `
-                        <button class="btn-add-alternative" onclick="abrirModalAlternativa(${servicio.id}, '${servicio.tipo_servicio}')" title="Agregar alternativa">
-                            <i class="fas fa-plus-circle"></i>
-                        </button>
                         <button class="btn-edit-service" onclick="abrirEdicionActividad(${servicio.id})" title="Editar actividad">
                             <i class="fas fa-edit"></i>
                         </button>
                     ` : ''}
+                    
+                    <!-- Botón eliminar para todos -->
                     <button class="btn-remove-service" onclick="eliminarServicio(${servicio.id})" title="Eliminar">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -6971,7 +7006,8 @@ function renderizarAlternativa(alternativa) {
                         Alternativa ${alternativa.orden_alternativa}: ${alternativa.nombre || alternativa.titulo || 'Sin título'}
                     </h6>
                     <p>${getServiceSummary(alternativa)}</p>
-                    ${alternativa.notas_alternativa ? `
+                    ${alternativa.notas_alternativa ?
+                        `
                         <div style="font-size: 11px; color: #6c757d; margin-top: 4px;">
                             <i class="fas fa-sticky-note"></i> ${alternativa.notas_alternativa}
                         </div>
@@ -6979,9 +7015,14 @@ function renderizarAlternativa(alternativa) {
                 </div>
             </div>
             <div class="service-actions">
-                <button class="btn-edit-service" onclick="abrirEdicionActividad(${alternativa.id})" title="Editar alternativa">
-                    <i class="fas fa-edit"></i>
-                </button>
+                <!-- Solo mostrar botón editar para ACTIVIDADES -->
+                ${alternativa.tipo_servicio === 'actividad' ? `
+                    <button class="btn-edit-service" onclick="abrirEdicionActividad(${alternativa.id})" title="Editar alternativa">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                ` : ''}
+                
+                <!-- Botón eliminar para todas las alternativas -->
                 <button class="btn-remove-service" onclick="eliminarAlternativa(${alternativa.id})" title="Eliminar alternativa">
                     <i class="fas fa-trash"></i>
                 </button>

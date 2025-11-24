@@ -566,19 +566,103 @@ private function updateDia($diaId, $data) {
         }
     }
     
-    private function updateComidas($diaId, $data) {
+private function updateComidas($diaId, $data) {
+    try {
+        $diaId = (int)$diaId;
+        $user_id = $_SESSION['user_id'];
+        $agencia_id = $_SESSION['agencia_id'] ?? null;
+
+        if (!$agencia_id) {
+            throw new Exception('Usuario sin agencia asignada');
+        }
+        
+        // Verificar permisos
+        $dia = $this->db->fetch(
+            "SELECT pd.*, ps.user_id 
+             FROM programa_dias pd 
+             JOIN programa_solicitudes ps ON pd.solicitud_id = ps.id 
+             WHERE pd.id = ? AND ps.user_id = ? AND ps.agencia_id = ?", 
+            [$diaId, $user_id, $agencia_id]
+        );
+        
+        if (!$dia) {
+            throw new Exception('Día no encontrado o sin permisos');
+        }
+        
+        // Preparar datos para actualizar
+        $updateData = [
+            'comidas_incluidas' => isset($data['comidas_incluidas']) ? (int)$data['comidas_incluidas'] : 0,
+            'desayuno' => isset($data['desayuno']) ? (int)$data['desayuno'] : 0,
+            'almuerzo' => isset($data['almuerzo']) ? (int)$data['almuerzo'] : 0,
+            'cena' => isset($data['cena']) ? (int)$data['cena'] : 0
+        ];
+        
+        // Actualizar en base de datos
+        $this->db->update(
+            'programa_dias',
+            $updateData,
+            'id = ?',
+            [$diaId]
+        );
+        
+        error_log("✅ Comidas actualizadas para día $diaId: " . json_encode($updateData));
+        
         return [
             'success' => true,
-            'message' => 'Funcionalidad pendiente'
+            'message' => 'Comidas actualizadas correctamente',
+            'data' => $updateData
         ];
+        
+    } catch(Exception $e) {
+        error_log("❌ Error en updateComidas: " . $e->getMessage());
+        throw new Exception('Error al actualizar comidas: ' . $e->getMessage());
     }
+}
+
+private function getComidas($diaId) {
+    try {
+        $diaId = (int)$diaId;
+        $user_id = $_SESSION['user_id'];
+        $agencia_id = $_SESSION['agencia_id'] ?? null;
+
+        if (!$agencia_id) {
+            throw new Exception('Usuario sin agencia asignada');
+        }
+        
+        // Obtener datos de comidas
+        $comidas = $this->db->fetch(
+            "SELECT pd.comidas_incluidas, pd.desayuno, pd.almuerzo, pd.cena
+             FROM programa_dias pd 
+             JOIN programa_solicitudes ps ON pd.solicitud_id = ps.id 
+             WHERE pd.id = ? AND ps.user_id = ? AND ps.agencia_id = ?", 
+            [$diaId, $user_id, $agencia_id]
+        );
+        
+        if (!$comidas) {
+            throw new Exception('Día no encontrado o sin permisos');
+        }
+        
+        // Convertir a booleanos
+        $data = [
+            'comidas_incluidas' => (bool)$comidas['comidas_incluidas'],
+            'desayuno' => (bool)$comidas['desayuno'],
+            'almuerzo' => (bool)$comidas['almuerzo'],
+            'cena' => (bool)$comidas['cena']
+        ];
+        
+        error_log("✅ Comidas obtenidas para día $diaId: " . json_encode($data));
+        
+        return [
+            'success' => true,
+            'data' => $data
+        ];
+        
+    } catch(Exception $e) {
+        error_log("❌ Error en getComidas: " . $e->getMessage());
+        throw new Exception('Error al obtener comidas: ' . $e->getMessage());
+    }
+}
     
-    private function getComidas($diaId) {
-        return [
-            'success' => true,
-            'data' => []
-        ];
-    }
     private function actualizarFechaSalida($programaId) {
         try {
             // Obtener fecha de llegada
