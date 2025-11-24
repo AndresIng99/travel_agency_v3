@@ -4345,43 +4345,56 @@ async function guardarComidasDia(diaId) {
     }
 }
 
-// Función para cargar comidas guardadas de un día
 async function cargarComidasDia(diaId) {
     try {
+        console.log(`🍽️ Cargando comidas para día ${diaId}...`);
+        
+        // Verificar que el contenedor existe
+        const mealContainer = document.getElementById(`meal-container-${diaId}`);
+        if (!mealContainer) {
+            console.warn(`⚠️ Contenedor de comidas no encontrado para día ${diaId}`);
+            return;
+        }
+        
         const response = await fetch(`<?= APP_URL ?>/modules/programa/dias_api.php?action=get_comidas&dia_id=${diaId}`);
         const result = await response.json();
         
         if (result.success && result.data) {
-            const data = result.data;
+            console.log(`✅ Comidas cargadas para día ${diaId}:`, result.data);
             
-            // Seleccionar radio button
-            const radioIncluidas = document.querySelector(`input[name="meals_${diaId}"][value="incluidas"]`);
-            const radioNoIncluidas = document.querySelector(`input[name="meals_${diaId}"][value="no_incluidas"]`);
+            // Marcar checkboxes según los datos
+            const comidas = result.data;
             
-            if (data.comidas_incluidas == 1) {
-                if (radioIncluidas) radioIncluidas.checked = true;
-                document.getElementById(`meal-details-${diaId}`).style.display = 'block';
-                
-                // Seleccionar checkboxes
-                if (data.desayuno == 1) {
-                    const checkbox = document.querySelector(`input[name="meal_desayuno_${diaId}"]`);
-                    if (checkbox) checkbox.checked = true;
-                }
-                if (data.almuerzo == 1) {
-                    const checkbox = document.querySelector(`input[name="meal_almuerzo_${diaId}"]`);
-                    if (checkbox) checkbox.checked = true;
-                }
-                if (data.cena == 1) {
-                    const checkbox = document.querySelector(`input[name="meal_cena_${diaId}"]`);
-                    if (checkbox) checkbox.checked = true;
-                }
-            } else {
-                if (radioNoIncluidas) radioNoIncluidas.checked = true;
-                document.getElementById(`meal-details-${diaId}`).style.display = 'none';
+            // Desayuno
+            const desayunoCheckbox = document.getElementById(`meal_desayuno_${diaId}`);
+            if (desayunoCheckbox) {
+                desayunoCheckbox.checked = comidas.desayuno || false;
+            }
+            
+            // Almuerzo
+            const almuerzoCheckbox = document.getElementById(`meal_almuerzo_${diaId}`);
+            if (almuerzoCheckbox) {
+                almuerzoCheckbox.checked = comidas.almuerzo || false;
+            }
+            
+            // Cena
+            const cenaCheckbox = document.getElementById(`meal_cena_${diaId}`);
+            if (cenaCheckbox) {
+                cenaCheckbox.checked = comidas.cena || false;
+            }
+            
+            // Mostrar/ocultar detalles según si hay comidas seleccionadas
+            const mealDetails = document.getElementById(`meal-details-${diaId}`);
+            const hayComidas = comidas.desayuno || comidas.almuerzo || comidas.cena;
+            
+            if (mealDetails) {
+                mealDetails.style.display = hayComidas ? 'block' : 'none';
             }
         }
+        
     } catch (error) {
         console.error('Error cargando comidas:', error);
+        // No mostrar alerta al usuario, solo log
     }
 }
 
@@ -6383,10 +6396,10 @@ function renderizarDetalleDia(diaId) {
                         <small class="form-text">Máximo 2000 caracteres</small>
                     </div>
                     
-                    <!-- Ubicación con búsqueda -->
+                    <!-- Ubicación Principal -->
                     <div class="form-group">
                         <label for="edit-dia-ubicacion-${diaId}">
-                            Ubicación <span class="required">*</span>
+                            📍 Ubicación Principal <span class="required">*</span>
                         </label>
                         <div class="location-search-wrapper">
                             <input 
@@ -6394,13 +6407,42 @@ function renderizarDetalleDia(diaId) {
                                 id="edit-dia-ubicacion-${diaId}" 
                                 class="form-control location-search-input"
                                 value="${dia.ubicacion || ''}"
-                                placeholder="Buscar ubicación..."
+                                placeholder="🔍 Buscar ubicación principal..."
                                 autocomplete="off"
                             >
                             <div id="location-results-dia-${diaId}" class="location-results"></div>
                         </div>
                         <input type="hidden" id="edit-dia-latitud-${diaId}" value="${dia.latitud || ''}">
                         <input type="hidden" id="edit-dia-longitud-${diaId}" value="${dia.longitud || ''}">
+                        
+                        ${dia.ubicacion ? `
+                            <div class="ubicacion-preview" style="margin-top: 8px; padding: 10px; background: #f0fdf4; border-radius: 6px; border-left: 3px solid #10b981; font-size: 12px;">
+                                <strong style="color: #065f46;">${dia.ubicacion}</strong>
+                                ${dia.latitud && dia.longitud ? `
+                                    <div style="color: #059669; margin-top: 4px;">
+                                        📍 ${parseFloat(dia.latitud).toFixed(6)}, ${parseFloat(dia.longitud).toFixed(6)}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Ubicaciones Secundarias -->
+                    <div class="form-group">
+                        <label>
+                            📍 Ubicaciones Adicionales del Día
+                            <small style="color: #666;">(Opcional)</small>
+                        </label>
+                        <div id="ubicaciones-secundarias-edit-${diaId}" style="display: flex; flex-direction: column; gap: 12px;">
+                            <!-- Se cargarán dinámicamente -->
+                        </div>
+                        <button 
+                            type="button" 
+                            class="btn btn-outline" 
+                            onclick="agregarUbicacionSecundariaEdit(${diaId})"
+                            style="margin-top: 10px; display: inline-flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-plus"></i> Agregar Otra Ubicación
+                        </button>
                     </div>
                     
                     <!-- Imágenes -->
@@ -7721,6 +7763,9 @@ function abrirEdicionDia(diaId) {
     
     // Inicializar búsqueda de ubicación para este día
     inicializarBusquedaUbicacionDia(diaId);
+
+    // ✅ CARGAR UBICACIONES SECUNDARIAS
+    cargarUbicacionesSecundariasEdit(diaId);
 }
 
 // Cerrar formulario de edición
@@ -7736,14 +7781,14 @@ async function guardarEdicionDia(diaId) {
     console.log(`💾 Guardando edición de día ${diaId}`);
     
     try {
-        // Obtener valores
-        const titulo = document.getElementById(`edit-dia-titulo-${diaId}`).value.trim();
-        const descripcion = document.getElementById(`edit-dia-descripcion-${diaId}`).value.trim();
-        const ubicacion = document.getElementById(`edit-dia-ubicacion-${diaId}`).value.trim();
-        const latitud = document.getElementById(`edit-dia-latitud-${diaId}`).value;
-        const longitud = document.getElementById(`edit-dia-longitud-${diaId}`).value;
+        // Obtener valores principales
+        const titulo = document.getElementById(`edit-dia-titulo-${diaId}`)?.value?.trim();
+        const descripcion = document.getElementById(`edit-dia-descripcion-${diaId}`)?.value?.trim();
+        const ubicacion = document.getElementById(`edit-dia-ubicacion-${diaId}`)?.value?.trim();
+        const latitud = document.getElementById(`edit-dia-latitud-${diaId}`)?.value || null;
+        const longitud = document.getElementById(`edit-dia-longitud-${diaId}`)?.value || null;
         
-        // ⭐ VALIDACIONES
+        // Validaciones
         if (!titulo) {
             showAlert('El título es obligatorio', 'error');
             return;
@@ -7754,73 +7799,87 @@ async function guardarEdicionDia(diaId) {
             return;
         }
         
-        // Validar al menos 1 imagen
-        const imagenes = {};
-        let tieneImagen = false;
-        
-        for (let i = 1; i <= 3; i++) {
-            const imgInput = document.getElementById(`edit-dia-imagen${i}-${diaId}`);
-            const existingImg = document.querySelector(`#edit-dia-form-${diaId} .image-preview-item[data-image-number="${i}"] .preview-img`);
-            
-            if (imgInput && imgInput.files && imgInput.files[0]) {
-                imagenes[`imagen${i}`] = imgInput.files[0];
-                tieneImagen = true;
-            } else if (existingImg) {
-                tieneImagen = true;
-            }
-        }
-        
-        if (!tieneImagen) {
-            showAlert('Debe tener al menos 1 imagen', 'error');
+        if (!ubicacion) {
+            showAlert('La ubicación es obligatoria', 'error');
             return;
         }
         
-        // ⭐ PASO 1: Subir imágenes nuevas (si hay)
-        let imagenesSubidas = {};
-        if (Object.keys(imagenes).length > 0) {
-            imagenesSubidas = await subirImagenesDia(diaId, imagenes);
+        // ✅ RECOPILAR UBICACIONES SECUNDARIAS
+        const ubicacionesSecundarias = [];
+        const container = document.getElementById(`ubicaciones-secundarias-edit-${diaId}`);
+        
+        if (container) {
+            const items = container.querySelectorAll('.ubicacion-secundaria-item');
+            items.forEach((item, index) => {
+                const itemId = `ubic-sec-${diaId}-${index}`;
+                const ubicInput = document.getElementById(`${itemId}-input`);
+                const latInput = document.getElementById(`${itemId}-lat`);
+                const lngInput = document.getElementById(`${itemId}-lng`);
+                
+                if (ubicInput && ubicInput.value.trim()) {
+                    ubicacionesSecundarias.push({
+                        id: item.dataset.ubicId || null,
+                        ubicacion: ubicInput.value.trim(),
+                        latitud: latInput?.value || null,
+                        longitud: lngInput?.value || null,
+                        orden: index + 1
+                    });
+                }
+            });
         }
         
-        // ⭐ PASO 2: Actualizar datos del día
-        const dataToUpdate = {
-            titulo,
-            descripcion,
-            ubicacion,
-            latitud: latitud || null,
-            longitud: longitud || null
+        const dataToSend = {
+            action: 'update',
+            dia_id: diaId,
+            data: {
+                titulo: titulo,
+                descripcion: descripcion,
+                ubicacion: ubicacion,
+                latitud: latitud,
+                longitud: longitud,
+                ubicaciones_secundarias: ubicacionesSecundarias
+            }
         };
         
-        // Agregar URLs de imágenes subidas
-        Object.assign(dataToUpdate, imagenesSubidas);
+        console.log('📤 Enviando actualización:', dataToSend);
         
+        // Enviar actualización
         const response = await fetch('<?= APP_URL ?>/modules/programa/dias_api.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                action: 'update',
-                dia_id: diaId,
-                ...dataToUpdate
-            })
+            body: JSON.stringify(dataToSend)
         });
         
-        const result = await response.json();
+        console.log('📡 Status de respuesta:', response.status);
+        
+        // 🔍 LEER LA RESPUESTA COMPLETA PARA VER EL ERROR
+        const responseText = await response.text();
+        console.log('📄 Respuesta completa del servidor:', responseText);
+        
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (e) {
+            console.error('❌ Error parseando JSON:', e);
+            console.error('Texto recibido:', responseText.substring(0, 500));
+            showAlert('Error del servidor: ' + responseText.substring(0, 200), 'error');
+            return;
+        }
         
         if (result.success) {
-            showAlert('Día actualizado exitosamente', 'success');
+            showAlert('Día actualizado correctamente', 'success');
             cerrarEdicionDia(diaId);
-            
-            // Recargar días
             await cargarDiasPrograma();
-            
         } else {
-            showAlert(result.message || result.error || 'Error al actualizar día', 'error');
+            console.error('❌ Error del servidor:', result);
+            showAlert(result.error || result.message || 'Error al actualizar día', 'error');
         }
         
     } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error de conexión al guardar el día', 'error');
+        console.error('❌ Error:', error);
+        showAlert('Error de conexión al actualizar día: ' + error.message, 'error');
     }
 }
 
@@ -8320,6 +8379,357 @@ async function subirImagenesActividad(actividadId, imagenes) {
     }
     
     return result.images;
+}
+
+// ============================================================
+// UBICACIONES SECUNDARIAS EN EDICIÓN DE DÍAS
+// ============================================================
+
+/**
+ * Cargar ubicaciones secundarias del día
+ */
+async function cargarUbicacionesSecundariasEdit(diaId) {
+    try {
+        console.log(`📍 Cargando ubicaciones secundarias para día ${diaId}...`);
+        
+        const response = await fetch(`<?= APP_URL ?>/modules/programa/dias_api.php?action=get_ubicaciones_secundarias&dia_id=${diaId}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            const ubicaciones = result.data || [];
+            console.log(`✅ Ubicaciones secundarias cargadas: ${ubicaciones.length}`);
+            
+            renderizarUbicacionesSecundariasEdit(diaId, ubicaciones);
+        }
+        
+    } catch (error) {
+        console.error('Error cargando ubicaciones secundarias:', error);
+    }
+}
+
+/**
+ * Renderizar ubicaciones secundarias en el formulario
+ */
+function renderizarUbicacionesSecundariasEdit(diaId, ubicaciones) {
+    const container = document.getElementById(`ubicaciones-secundarias-edit-${diaId}`);
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (ubicaciones.length === 0) {
+        container.innerHTML = `
+            <div style="padding: 15px; background: #f9fafb; border-radius: 8px; text-align: center; color: #6b7280; font-size: 13px;">
+                <i class="fas fa-info-circle"></i> No hay ubicaciones adicionales
+            </div>
+        `;
+        return;
+    }
+    
+    ubicaciones.forEach((ubic, index) => {
+        const itemId = `ubic-sec-${diaId}-${index}`;
+        
+        const div = document.createElement('div');
+        div.className = 'ubicacion-secundaria-item';
+        div.dataset.ubicId = ubic.id || '';
+        div.dataset.index = index;
+        div.style.cssText = `
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: start;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        `;
+        
+        div.innerHTML = `
+            <div style="width: 100%;">
+                <div class="location-search-wrapper">
+                    <input 
+                        type="text" 
+                        id="${itemId}-input"
+                        class="form-control location-search-input"
+                        value="${ubic.ubicacion || ''}"
+                        placeholder="🔍 Buscar ubicación..."
+                        autocomplete="off"
+                        data-dia-id="${diaId}"
+                        data-ubic-index="${index}"
+                    >
+                    <div id="${itemId}-results" class="location-results"></div>
+                </div>
+                <input type="hidden" id="${itemId}-lat" value="${ubic.latitud || ''}">
+                <input type="hidden" id="${itemId}-lng" value="${ubic.longitud || ''}">
+                
+                ${ubic.ubicacion ? `
+                    <div class="ubicacion-preview" style="margin-top: 6px; padding: 8px; background: white; border-radius: 4px; font-size: 11px;">
+                        <strong style="color: #334155;">${ubic.ubicacion}</strong>
+                        ${ubic.latitud && ubic.longitud ? `
+                            <div style="color: #64748b; margin-top: 2px;">
+                                ${parseFloat(ubic.latitud).toFixed(6)}, ${parseFloat(ubic.longitud).toFixed(6)}
+                            </div>
+                        ` : ''}
+                    </div>
+                ` : ''}
+            </div>
+            
+            <button 
+                type="button" 
+                class="btn btn-danger-outline" 
+                onclick="removerUbicacionSecundariaEdit(${diaId}, ${index})"
+                style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;"
+                title="Eliminar ubicación">
+                <i class="fas fa-trash"></i>
+            </button>
+        `;
+        
+        container.appendChild(div);
+        
+        // Inicializar búsqueda para esta ubicación
+        setTimeout(() => {
+            inicializarBusquedaUbicacionSecundaria(diaId, index, itemId);
+        }, 100);
+    });
+}
+
+/**
+ * Agregar nueva ubicación secundaria
+ */
+function agregarUbicacionSecundariaEdit(diaId) {
+    const container = document.getElementById(`ubicaciones-secundarias-edit-${diaId}`);
+    if (!container) return;
+    
+    // Limpiar mensaje de "no hay ubicaciones"
+    const emptyMessage = container.querySelector('div[style*="f9fafb"]');
+    if (emptyMessage) {
+        emptyMessage.remove();
+    }
+    
+    const index = container.children.length;
+    const itemId = `ubic-sec-${diaId}-${index}`;
+    
+    const div = document.createElement('div');
+    div.className = 'ubicacion-secundaria-item';
+    div.dataset.index = index;
+    div.style.cssText = `
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        align-items: start;
+        padding: 12px;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    `;
+    
+    div.innerHTML = `
+        <div style="width: 100%;">
+            <div class="location-search-wrapper">
+                <input 
+                    type="text" 
+                    id="${itemId}-input"
+                    class="form-control location-search-input"
+                    placeholder="🔍 Buscar ubicación..."
+                    autocomplete="off"
+                    data-dia-id="${diaId}"
+                    data-ubic-index="${index}"
+                >
+                <div id="${itemId}-results" class="location-results"></div>
+            </div>
+            <input type="hidden" id="${itemId}-lat" value="">
+            <input type="hidden" id="${itemId}-lng" value="">
+        </div>
+        
+        <button 
+            type="button" 
+            class="btn btn-danger-outline" 
+            onclick="removerUbicacionSecundariaEdit(${diaId}, ${index})"
+            style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;"
+            title="Eliminar ubicación">
+            <i class="fas fa-trash"></i>
+        </button>
+    `;
+    
+    container.appendChild(div);
+    
+    // Inicializar búsqueda
+    setTimeout(() => {
+        inicializarBusquedaUbicacionSecundaria(diaId, index, itemId);
+    }, 100);
+}
+
+/**
+ * Remover ubicación secundaria
+ */
+function removerUbicacionSecundariaEdit(diaId, index) {
+    const container = document.getElementById(`ubicaciones-secundarias-edit-${diaId}`);
+    if (!container) return;
+    
+    const items = container.querySelectorAll('.ubicacion-secundaria-item');
+    if (items[index]) {
+        items[index].remove();
+    }
+    
+    // Si no quedan ubicaciones, mostrar mensaje
+    if (container.children.length === 0) {
+        container.innerHTML = `
+            <div style="padding: 15px; background: #f9fafb; border-radius: 8px; text-align: center; color: #6b7280; font-size: 13px;">
+                <i class="fas fa-info-circle"></i> No hay ubicaciones adicionales
+            </div>
+        `;
+    }
+}
+/**
+ * Buscar ubicación usando el MISMO API que biblioteca
+ */
+async function buscarUbicacionNominatim(query, resultsDiv, onSelectCallback) {
+    if (!query || query.length < 3) {
+        resultsDiv.classList.remove('active');
+        return;
+    }
+    
+    try {
+        console.log(`🔍 Buscando ubicación: ${query}`);
+        
+        // Mostrar loading
+        resultsDiv.innerHTML = `
+            <div style="padding: 12px; text-align: center; color: #666;">
+                <i class="fas fa-spinner fa-spin"></i> Buscando...
+            </div>
+        `;
+        resultsDiv.classList.add('active');
+        
+        // ✅ USAR EL MISMO API QUE BIBLIOTECA
+        const response = await fetch(
+            `<?= APP_URL ?>/modules/ubicaciones/ubicaciones_api.php?action=search&q=${encodeURIComponent(query)}`
+        );
+        
+        if (!response.ok) {
+            throw new Error('Error en la búsqueda');
+        }
+        
+        const result = await response.json();
+        
+        if (!result.success) {
+            throw new Error(result.error || 'Error en la búsqueda');
+        }
+        
+        const results = result.data || [];
+        console.log(`✅ Resultados encontrados: ${results.length}`);
+        
+        if (results.length === 0) {
+            resultsDiv.innerHTML = `
+                <div style="padding: 12px; text-align: center; color: #666; font-size: 13px;">
+                    <i class="fas fa-info-circle"></i> No se encontraron resultados
+                </div>
+            `;
+            return;
+        }
+        
+        // Renderizar resultados
+        resultsDiv.innerHTML = results.map(result => `
+            <div class="location-result-item" 
+                 data-lat="${result.lat}" 
+                 data-lon="${result.lon}"
+                 data-display-name="${result.display_name}"
+                 style="padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; transition: background 0.2s;">
+                <div style="font-weight: 500; color: #1e293b; font-size: 13px;">
+                    ${result.display_name}
+                </div>
+                <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+                    📍 ${parseFloat(result.lat).toFixed(6)}, ${parseFloat(result.lon).toFixed(6)}
+                </div>
+            </div>
+        `).join('');
+        
+        // Agregar eventos de click a cada resultado
+        resultsDiv.querySelectorAll('.location-result-item').forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                this.style.background = '#f8f9fa';
+            });
+            
+            item.addEventListener('mouseleave', function() {
+                this.style.background = 'white';
+            });
+            
+            item.addEventListener('click', function() {
+                const ubicacion = {
+                    display_name: this.dataset.displayName,
+                    lat: this.dataset.lat,
+                    lon: this.dataset.lon
+                };
+                
+                console.log('✅ Ubicación seleccionada:', ubicacion);
+                
+                // Ejecutar callback
+                if (onSelectCallback) {
+                    onSelectCallback(ubicacion);
+                }
+            });
+        });
+        
+    } catch (error) {
+        console.error('❌ Error buscando ubicación:', error);
+        resultsDiv.innerHTML = `
+            <div style="padding: 12px; text-align: center; color: #dc2626; font-size: 13px;">
+                <i class="fas fa-exclamation-circle"></i> ${error.message || 'Error al buscar ubicación'}
+            </div>
+        `;
+    }
+}
+/**
+ * Inicializar búsqueda para ubicación secundaria
+ */
+function inicializarBusquedaUbicacionSecundaria(diaId, index, itemId) {
+    const input = document.getElementById(`${itemId}-input`);
+    const resultsDiv = document.getElementById(`${itemId}-results`);
+    
+    if (!input || !resultsDiv) return;
+    
+    let searchTimeout;
+    
+    input.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+        
+        if (query.length < 3) {
+            resultsDiv.classList.remove('active');
+            return;
+        }
+        
+        searchTimeout = setTimeout(() => {
+            buscarUbicacionNominatim(query, resultsDiv, (ubicacion) => {
+                // Callback cuando se selecciona una ubicación
+                input.value = ubicacion.display_name;
+                document.getElementById(`${itemId}-lat`).value = ubicacion.lat;
+                document.getElementById(`${itemId}-lng`).value = ubicacion.lon;
+                resultsDiv.classList.remove('active');
+                
+                // Actualizar preview
+                const parent = input.closest('.ubicacion-secundaria-item');
+                const existingPreview = parent.querySelector('.ubicacion-preview');
+                if (existingPreview) existingPreview.remove();
+                
+                const preview = document.createElement('div');
+                preview.className = 'ubicacion-preview';
+                preview.style.cssText = 'margin-top: 6px; padding: 8px; background: white; border-radius: 4px; font-size: 11px;';
+                preview.innerHTML = `
+                    <strong style="color: #334155;">${ubicacion.display_name}</strong>
+                    <div style="color: #64748b; margin-top: 2px;">
+                        ${parseFloat(ubicacion.lat).toFixed(6)}, ${parseFloat(ubicacion.lon).toFixed(6)}
+                    </div>
+                `;
+                input.closest('div').appendChild(preview);
+            });
+        }, 300);
+    });
+    
+    // Cerrar resultados al hacer clic fuera
+    document.addEventListener('click', function(e) {
+        if (!input.contains(e.target) && !resultsDiv.contains(e.target)) {
+            resultsDiv.classList.remove('active');
+        }
+    });
 }
 
 // Preview de imagen de actividad

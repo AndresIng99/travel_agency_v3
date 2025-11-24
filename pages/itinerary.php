@@ -63,28 +63,18 @@ try {
         [$programa_id]
     );
     
+// ✅ DESPUÉS (nuevo código - ubicaciones del PROGRAMA, no de biblioteca):
 foreach ($dias as &$dia) {
-    // Buscar el día de biblioteca que coincida por título y ubicación
-    $biblioteca_dia = $db->fetch(
-        "SELECT id FROM biblioteca_dias 
-         WHERE titulo = ? AND ubicacion = ? AND activo = 1
-         LIMIT 1", 
-        [$dia['titulo'], $dia['ubicacion']]
+    // Obtener ubicaciones secundarias del DÍA DEL PROGRAMA (aisladas)
+    $dia['ubicaciones_secundarias'] = $db->fetchAll(
+        "SELECT ubicacion, latitud, longitud, orden 
+         FROM programa_dias_ubicaciones_secundarias 
+         WHERE programa_dia_id = ? 
+         ORDER BY orden ASC", 
+        [$dia['id']]
     );
     
-    if ($biblioteca_dia) {
-        $dia['ubicaciones_secundarias'] = $db->fetchAll(
-            "SELECT ubicacion, latitud, longitud, orden 
-             FROM biblioteca_dias_ubicaciones_secundarias 
-             WHERE dia_id = ? 
-             ORDER BY orden ASC", 
-            [$biblioteca_dia['id']]
-        );
-        error_log("DEBUG - Programa: " . $dia['titulo'] . " -> Biblioteca ID: " . $biblioteca_dia['id'] . " -> Ubicaciones: " . count($dia['ubicaciones_secundarias']));
-    } else {
-        $dia['ubicaciones_secundarias'] = [];
-        error_log("DEBUG - No se encontró biblioteca_dia para: " . $dia['titulo']);
-    }
+    error_log("DEBUG - Día: " . $dia['titulo'] . " (ID: {$dia['id']}) -> Ubicaciones secundarias: " . count($dia['ubicaciones_secundarias']));
 }
 
     // Obtener servicios para cada día con todas las alternativas
@@ -160,51 +150,38 @@ foreach ($dias as &$dia) {
     );
     
     // Preparar datos para el mapa
-    $puntos_mapa = [];
-    foreach ($dias as $dia) {
-        foreach ($dia['servicios'] as $orden => $servicio_grupo) {
-            $servicio = $servicio_grupo['principal'];
-            if ($servicio && $servicio['latitud'] && $servicio['longitud']) {
-                $puntos_mapa[] = [
-                    'lat' => floatval($servicio['latitud']),
-                    'lng' => floatval($servicio['longitud']),
-                    'titulo' => $servicio['nombre'],
-                    'descripcion' => $servicio['descripcion'],
-                    'tipo' => $servicio['tipo_servicio'],
-                    'dia' => $dia['dia_numero'],
-                    'ubicacion' => $servicio['ubicacion'],
-                    'imagen' => $servicio['imagen']
-                ];
-            }
-            
-            // Agregar punto de llegada para transportes
-            if ($servicio && $servicio['tipo_servicio'] == 'transporte' && 
-                $servicio['lat_llegada'] && $servicio['lng_llegada']) {
-                $puntos_mapa[] = [
-                    'lat' => floatval($servicio['lat_llegada']),
-                    'lng' => floatval($servicio['lng_llegada']),
-                    'titulo' => $servicio['nombre'] . ' (Llegada)',
-                    'descripcion' => $servicio['descripcion'],
-                    'tipo' => 'transporte_llegada',
-                    'dia' => $dia['dia_numero'],
-                    'ubicacion' => $servicio['ubicacion']
-                ];
-            }
-        }
+// Preparar datos para el mapa - SOLO UBICACIONES DE DÍAS
+$puntos_mapa = [];
+foreach ($dias as $dia) {
+    // Agregar ubicación principal del día
+    if ($dia['latitud'] && $dia['longitud']) {
+        $puntos_mapa[] = [
+            'lat' => floatval($dia['latitud']),
+            'lng' => floatval($dia['longitud']),
+            'titulo' => $dia['titulo'],
+            'descripcion' => $dia['descripcion'],
+            'tipo' => 'dia',
+            'dia' => $dia['dia_numero'],
+            'ubicacion' => $dia['ubicacion'],
+            'imagen' => $dia['imagen1'] ?? null
+        ];
     }
-// Agregar ubicaciones secundarias al mapa
-if (!empty($dia['ubicaciones_secundarias'])) {
-    foreach ($dia['ubicaciones_secundarias'] as $ubicacion_sec) {
-        if ($ubicacion_sec['latitud'] && $ubicacion_sec['longitud']) {
-            $puntos_mapa[] = [
-                'lat' => floatval($ubicacion_sec['latitud']),
-                'lng' => floatval($ubicacion_sec['longitud']),
-                'titulo' => $ubicacion_sec['ubicacion'],
-                'descripcion' => 'Ubicación secundaria - ' . $dia['titulo'],
-                'tipo' => 'ubicacion_secundaria',
-                'dia' => $dia['dia_numero'],
-                'ubicacion' => $ubicacion_sec['ubicacion']
-            ];
+    
+    // Agregar ubicaciones secundarias del día
+    if (!empty($dia['ubicaciones_secundarias'])) {
+        foreach ($dia['ubicaciones_secundarias'] as $index => $ubicacion_sec) {
+            if ($ubicacion_sec['latitud'] && $ubicacion_sec['longitud']) {
+                $puntos_mapa[] = [
+                    'lat' => floatval($ubicacion_sec['latitud']),
+                    'lng' => floatval($ubicacion_sec['longitud']),
+                    'titulo' => $ubicacion_sec['ubicacion'],
+                    'descripcion' => 'Ubicación ' . ($index + 2) . ' - ' . $dia['titulo'],
+                    'tipo' => 'ubicacion_secundaria',
+                    'dia' => $dia['dia_numero'],
+                    'ubicacion' => $ubicacion_sec['ubicacion'],
+                    'imagen' => null
+                ];
+            }
         }
     }
 }
@@ -344,63 +321,111 @@ if ($programa['fecha_llegada']) {
            ======================================== */
         .hero-section {
             height: 100vh;
-            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url('<?= addslashes($imagen_portada) ?>');
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url('<?= addslashes($imagen_portada) ?>');
             background-size: cover;
             background-position: center;
-            background-attachment: fixed;
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
             color: white;
             position: relative;
+            overflow: hidden;
         }
-        
-        .hero-content {
-            max-width: 800px;
-            padding: 0 20px;
-            animation: fadeInUp 1s ease-out;
+
+        /* Capa de fondo con animación de zoom */
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: -5%;
+            left: -5%;
+            width: 110%;
+            height: 110%;
+            background-image: inherit;
+            background-size: cover;
+            background-position: center;
+            animation: slowZoom 25s ease-in-out infinite alternate;
+            z-index: -1;
         }
-        
-        .hero-subtitle {
-            font-size: 1.2rem;
-            margin-bottom: 15px;
-            opacity: 0.9;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            font-weight: 500;
+
+        @keyframes continuousZoom {
+            0%, 100% { transform: scale(1); }      ← Inicio y fin en scale(1)
+            50% { transform: scale(1.1); }         ← Mitad en scale(1.1)
         }
-        
-        .hero-title {
+        .hero-program-title {
             font-family: 'Playfair Display', serif;
-            font-size: 4rem;
-            font-weight: 700;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin: 15px 0 20px 0;
+            color: #ffffff;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.6);
+            animation: fadeInUp 1s ease-out 0.3s both;
         }
+        @media (max-width: 768px) {
+            .hero-program-title {
+                font-size: 1.8rem;
+            }
+            .hero-title {
+                font-size: 2rem;
+            }
+        }
+.hero-content {
+    max-width: 1000px;
+    padding: 0 20px;
+    animation: fadeInUp 1.2s ease-out;
+}
+
+.hero-subtitle {
+    font-size: 1rem;
+    margin-bottom: 20px;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-weight: 400;
+    animation: fadeInDown 1s ease-out 0.2s both;
+}
+
+.hero-title {
+    font-weight: 700;                              
+    font-size: 5rem;
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.5);     
+    letter-spacing: 1px;                           
+    color: #ffffff;                               
+}
+
+.hero-description {
+    font-size: 1.4rem;
+    margin-bottom: 40px;
+    opacity: 0.95;
+    font-weight: 300;
+    animation: fadeInUp 1s ease-out 0.6s both;
+}
         
-        .hero-description {
-            font-size: 1.3rem;
-            margin-bottom: 30px;
-            opacity: 0.95;
-        }
-        
-        .hero-stats {
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            margin-bottom: 40px;
-            flex-wrap: wrap;
-        }
-        
-        .hero-stat {
-            text-align: center;
-            background: rgba(255,255,255,0.15);
-            padding: 20px 25px;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-            min-width: 120px;
-        }
+.hero-stats {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+    animation: fadeInUp 1s ease-out 0.8s both;
+}
+
+.hero-stat {
+    text-align: center;
+    background: rgba(255,255,255,0.1);
+    padding: 25px 30px;
+    border-radius: 20px;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255,255,255,0.2);
+    min-width: 130px;
+    transition: all 0.3s ease;
+}
+
+.hero-stat:hover {
+    background: rgba(255,255,255,0.2);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
         
         .hero-stat-number {
             font-size: 2.5rem;
@@ -3179,93 +3204,64 @@ body {
             }
         }
         
-        @media (max-width: 768px) {
-            .hero-title {
-                font-size: 2.5rem;
-            }
-            
-            .hero-stats {
-                gap: 20px;
-            }
-            
-            .hero-stat {
-                min-width: 100px;
-                padding: 15px 20px;
-            }
-            
-            .section-title {
-                font-size: 2rem;
-            }
-            
-            .overview-details {
-                grid-template-columns: 1fr;
-            }
-            
-            .day-images {
-                grid-template-columns: 1fr;
-                height: 200px;
-            }
-            
-            .day-image:first-child {
-                grid-row: span 1;
-            }
-            
-            .itinerary-timeline::before {
-                left: 40px;
-            }
-            
-            .day-card {
-                padding-left: 90px;
-            }
-            
-            .day-number {
-                width: 70px;
-                height: 50px;
-            }
-            
-            .day-number-main {
-                font-size: 1rem;
-            }
-            
-            .day-number-label {
-                font-size: 0.6rem;
-            }
-            
-            .navbar-nav {
-                display: none;
-            }
-            
-            .service-item {
-                flex-direction: column;
-                gap: 15px;
-            }
-            
-            .service-icon {
-                width: 45px;
-                height: 45px;
-                font-size: 1rem;
-                margin-top: 0;
-            }
-            
-            .service-meta {
-                flex-direction: column;
-                gap: 8px;
-            }
-            
-            .day-title {
-                font-size: 1.4rem;
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 8px;
-            }
-            
-            .extended-stay-badge,
-            .duration-indicator,
-            .stay-duration-note {
-                margin-left: 0;
-                margin-top: 5px;
-            }
-        }
+@media (max-width: 768px) {
+    .hero-subtitle {
+        font-size: 0.8rem;
+        letter-spacing: 2px;
+        margin-bottom: 15px;
+    }
+    
+    .hero-title {
+        font-size: 2.8rem;
+        line-height: 1.2;
+        margin-bottom: 20px;
+    }
+    
+    .hero-description {
+        font-size: 1.1rem;
+        margin-bottom: 30px;
+    }
+    
+    .hero-stats {
+        gap: 15px;
+    }
+    
+    .hero-stat {
+        padding: 15px 20px;
+        min-width: 100px;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-title {
+        font-size: 2.2rem;
+    }
+    
+    .hero-description {
+        font-size: 1rem;
+    }
+}
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
         
         @media (max-width: 480px) {
             .main-content {
@@ -3825,37 +3821,37 @@ body {
     </nav>
 
     <!-- Hero Section -->
-    <section class="hero-section">
-        <div class="hero-content">
-            <div class="hero-subtitle">Tu aventura perfecta</div>
-            <h1 class="hero-title">Itinerario personalizado de <?= $duracion_dias ?> <?= $duracion_dias == 1 ? 'día' : 'días' ?></h1>
-            <div class="hero-description">
-                Diseñado especialmente para <strong><?= htmlspecialchars($nombre_viajero) ?></strong>
-            </div>
-            
-            <div class="hero-stats">
-                <div class="hero-stat">
-                    <span class="hero-stat-number"><?= $duracion_dias ?></span>
-                    <span class="hero-stat-label"><?= $duracion_dias == 1 ? 'Día' : 'Días' ?></span>
-                </div>
-                <div class="hero-stat">
-                    <span class="hero-stat-number"><?= $num_pasajeros ?></span>
-                    <span class="hero-stat-label"><?= $num_pasajeros == 1 ? 'Viajero' : 'Viajeros' ?></span>
-                </div>
-                <?php if ($fecha_inicio_formatted): ?>
-                <div class="hero-stat">
-                    <span class="hero-stat-title">Fecha de Salida</span>
-                    <span class="hero-stat-number"><?= date('j', strtotime($programa['fecha_llegada'])) ?></span>
-                    <span class="hero-stat-label"><?= date('M Y', strtotime($programa['fecha_llegada'])) ?></span>
-                </div>
-                <?php endif; ?>
-            </div>
+<section class="hero-section">
+    <div class="hero-content">
+        <div class="hero-subtitle">Tu aventura perfecta</div>
+        <h1 class="hero-title"><?= htmlspecialchars($titulo_programa) ?></h1>
+        <div class="hero-description">
+            Diseñado especialmente para <strong><?= htmlspecialchars($nombre_viajero) ?></strong>
         </div>
         
-        <div class="scroll-indicator">
-            <i class="fas fa-chevron-down"></i>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <span class="hero-stat-number"><?= $duracion_dias ?></span>
+                <span class="hero-stat-label"><?= $duracion_dias == 1 ? 'Día' : 'Días' ?></span>
+            </div>
+            <div class="hero-stat">
+                <span class="hero-stat-number"><?= $num_pasajeros ?></span>
+                <span class="hero-stat-label"><?= $num_pasajeros == 1 ? 'Viajero' : 'Viajeros' ?></span>
+            </div>
+            <?php if ($fecha_inicio_formatted): ?>
+            <div class="hero-stat">
+                <span class="hero-stat-title">Fecha de Salida</span>
+                <span class="hero-stat-number"><?= date('j', strtotime($programa['fecha_llegada'])) ?></span>
+                <span class="hero-stat-label"><?= date('M Y', strtotime($programa['fecha_llegada'])) ?></span>
+            </div>
+            <?php endif; ?>
         </div>
-    </section>
+    </div>
+    
+    <div class="scroll-indicator">
+        <i class="fas fa-chevron-down"></i>
+    </div>
+</section>
 
     <!-- Main Content -->
     <div class="main-content">
@@ -4600,10 +4596,8 @@ body {
                 }).addTo(map);
                 
                 const iconColors = {
-                    'actividad': '#e74c3c',
-                    'alojamiento': '#f39c12',
-                    'transporte': '#3498db',
-                    'transporte_llegada': '#9b59b6'
+                    'dia': '#27ae60',
+                    'ubicacion_secundaria': '#2ecc71'
                 };
                 
                 puntosMapa.forEach(function(punto, index) {
@@ -4613,22 +4607,24 @@ body {
                         html: `
                             <div style="
                                 background-color: ${color};
-                                width: 30px;
-                                height: 30px;
+                                width: 36px;
+                                height: 36px;
                                 border-radius: 50%;
                                 display: flex;
                                 align-items: center;
                                 justify-content: center;
                                 color: white;
                                 font-weight: bold;
-                                font-size: 12px;
-                                border: 2px solid white;
-                                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-                            ">${punto.dia}</div>
+                                font-size: 15px;
+                                border: 3px solid white;
+                                box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+                            ">
+                                ${punto.tipo === 'dia' ? '📍' : punto.dia}
+                            </div>
                         `,
-                        className: 'custom-div-icon',
-                        iconSize: [30, 30],
-                        iconAnchor: [15, 15]
+                        className: 'custom-marker',
+                        iconSize: [36, 36],
+                        iconAnchor: [18, 18]
                     });
                     
                     const marker = L.marker([punto.lat, punto.lng], {

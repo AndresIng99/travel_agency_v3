@@ -56,8 +56,22 @@ class ProgramaDiasAPI {
                     $result = $this->deleteDia($_POST['dia_id'] ?? null);
                     break;
                     
+                case 'get_ubicaciones_secundarias':
+                    $result = $this->getUbicacionesSecundarias($_GET['dia_id'] ?? null);
+                    break;
+
                 case 'update':
-                    $result = $this->updateDia($_POST['dia_id'] ?? null, $_POST);
+                    $diaId = $_POST['dia_id'] ?? null;
+                    $updateData = $_POST['data'] ?? [];
+                    
+                    error_log("🔍 Case UPDATE - dia_id recibido: " . var_export($diaId, true));
+                    error_log("🔍 Case UPDATE - POST completo: " . json_encode($_POST, JSON_UNESCAPED_UNICODE));
+                    
+                    if (!$diaId) {
+                        throw new Exception('ID de día requerido (recibido: ' . var_export($diaId, true) . ')');
+                    }
+                    
+                    $result = $this->updateDia($diaId, $updateData);
                     break;
                     
                 case 'reorder':
@@ -263,7 +277,10 @@ class ProgramaDiasAPI {
                 'titulo' => $diaBiblioteca['titulo'],
                 'descripcion' => $diaBiblioteca['descripcion'],
                 'ubicacion' => $diaBiblioteca['ubicacion'],
+                'latitud' => $diaBiblioteca['latitud'],              
+                'longitud' => $diaBiblioteca['longitud'],            
                 'duracion_estancia' => $diaBiblioteca['duracion_estancia'] ?? 1,
+                'biblioteca_dia_id' => $bibliotecaDiaId,             
                 'imagen1' => $diaBiblioteca['imagen1'],
                 'imagen2' => $diaBiblioteca['imagen2'],
                 'imagen3' => $diaBiblioteca['imagen3']
@@ -274,6 +291,7 @@ class ProgramaDiasAPI {
             if (!$nuevoDiaId) {
                 throw new Exception('Error al insertar día');
             }
+            $this->copiarUbicacionesSecundarias($bibliotecaDiaId, $nuevoDiaId, $agencia_id);
             
             // Actualizar fecha de salida
             $this->actualizarFechaSalida($programaId);
@@ -287,6 +305,54 @@ class ProgramaDiasAPI {
         } catch(Exception $e) {
             error_log("Error en addDiaFromBiblioteca: " . $e->getMessage());
             throw $e;
+        }
+    }
+
+    
+    private function copiarUbicacionesSecundarias($bibliotecaDiaId, $programaDiaId, $agencia_id) {
+        try {
+            error_log("📍 Copiando ubicaciones secundarias: Biblioteca Día ID=$bibliotecaDiaId → Programa Día ID=$programaDiaId");
+            
+            // Obtener ubicaciones secundarias del día de biblioteca
+            $ubicacionesBiblioteca = $this->db->fetchAll(
+                "SELECT ubicacion, latitud, longitud, orden 
+                FROM biblioteca_dias_ubicaciones_secundarias 
+                WHERE dia_id = ? AND agencia_id = ? 
+                ORDER BY orden ASC",
+                [$bibliotecaDiaId, $agencia_id]
+            );
+            
+            if (empty($ubicacionesBiblioteca)) {
+                error_log("   ℹ️  No hay ubicaciones secundarias para copiar");
+                return;
+            }
+            
+            error_log("   📋 Encontradas " . count($ubicacionesBiblioteca) . " ubicaciones secundarias");
+            
+            // Insertar cada ubicación secundaria en la tabla del programa
+            foreach ($ubicacionesBiblioteca as $ubicacion) {
+                $ubicacionData = [
+                    'programa_dia_id' => $programaDiaId,
+                    'ubicacion' => $ubicacion['ubicacion'],
+                    'latitud' => $ubicacion['latitud'],
+                    'longitud' => $ubicacion['longitud'],
+                    'orden' => $ubicacion['orden']
+                ];
+                
+                $insertId = $this->db->insert('programa_dias_ubicaciones_secundarias', $ubicacionData);
+                
+                if ($insertId) {
+                    error_log("   ✅ Ubicación copiada: {$ubicacion['ubicacion']} (ID: $insertId)");
+                } else {
+                    error_log("   ⚠️ Error copiando ubicación: {$ubicacion['ubicacion']}");
+                }
+            }
+            
+            error_log("✅ Ubicaciones secundarias copiadas exitosamente");
+            
+        } catch(Exception $e) {
+            error_log("❌ Error copiando ubicaciones secundarias: " . $e->getMessage());
+            // No lanzamos excepción para no interrumpir el proceso principal
         }
     }
     
@@ -342,12 +408,29 @@ class ProgramaDiasAPI {
         }
     }
     
+/**
+ * Actualizar día del programa
+ */
 private function updateDia($diaId, $data) {
-    if (!$diaId) {
+    // ✅ Intentar obtener dia_id desde múltiples lugares
+    if (!$diaId && isset($data['dia_id'])) {
+        $diaId = $data['dia_id'];
+        unset($data['dia_id']);
+    }
+    
+    // Convertir a entero
+    $diaId = (int)$diaId;
+    
+    if (!$diaId || $diaId <= 0) {
+        error_log("❌ dia_id inválido: " . var_export($diaId, true));
+        error_log("❌ data recibido: " . json_encode($data, JSON_UNESCAPED_UNICODE));
         throw new Exception('ID de día requerido');
     }
     
     try {
+        error_log("📝 Actualizando día ID: $diaId");
+        error_log("📋 Datos recibidos: " . json_encode($data, JSON_UNESCAPED_UNICODE));
+        
         $user_id = $_SESSION['user_id'];
         $agencia_id = $_SESSION['agencia_id'] ?? null;
 
@@ -368,64 +451,60 @@ private function updateDia($diaId, $data) {
             throw new Exception('Día no encontrado o sin permisos');
         }
         
-        // ⭐ VALIDACIONES
-        if (empty($data['titulo'])) {
-            throw new Exception('El título es obligatorio');
-        }
-        
-        if (empty($data['descripcion'])) {
-            throw new Exception('La descripción es obligatoria');
-        }
-        
-        // Validar al menos 1 imagen
-        $hasImage = false;
-        for ($i = 1; $i <= 3; $i++) {
-            $imageKey = 'imagen' . $i;
-            if (!empty($data[$imageKey]) || !empty($dia[$imageKey])) {
-                $hasImage = true;
-                break;
-            }
-        }
-        
-        if (!$hasImage) {
-            throw new Exception('Debe tener al menos 1 imagen');
-        }
-        
-        // ⭐ PREPARAR DATOS PARA ACTUALIZAR
+        // Preparar datos para actualizar
         $updateData = [];
-        $allowedFields = ['titulo', 'descripcion', 'ubicacion', 'imagen1', 'imagen2', 'imagen3'];
         
-        foreach ($allowedFields as $field) {
-            if (isset($data[$field])) {
-                $updateData[$field] = $data[$field];
-            }
+        if (isset($data['titulo'])) {
+            $updateData['titulo'] = trim($data['titulo']);
+        }
+        if (isset($data['descripcion'])) {
+            $updateData['descripcion'] = trim($data['descripcion']);
+        }
+        if (isset($data['ubicacion'])) {
+            $updateData['ubicacion'] = trim($data['ubicacion']);
+        }
+        if (isset($data['latitud'])) {
+            $updateData['latitud'] = $data['latitud'] ?: null;
+        }
+        if (isset($data['longitud'])) {
+            $updateData['longitud'] = $data['longitud'] ?: null;
         }
         
-        if (empty($updateData)) {
-            throw new Exception('No hay datos para actualizar');
+        error_log("🔄 Campos a actualizar: " . json_encode($updateData, JSON_UNESCAPED_UNICODE));
+        
+        // Actualizar día
+        if (!empty($updateData)) {
+            $updated = $this->db->update(
+                'programa_dias',
+                $updateData,
+                'id = ?',
+                [$diaId]
+            );
+            
+            error_log("✅ Filas actualizadas: " . ($updated ? 'Sí' : 'No'));
         }
         
-        // ⭐ ACTUALIZAR EN BASE DE DATOS
-        $rowsAffected = $this->db->update(
-            'programa_dias',
-            $updateData,
-            'id = ?',
-            [$diaId]
-        );
+        // ✅ ACTUALIZAR UBICACIONES SECUNDARIAS
+        if (isset($data['ubicaciones_secundarias'])) {
+            error_log("📍 Actualizando ubicaciones secundarias...");
+            $this->updateUbicacionesSecundarias($diaId, $data['ubicaciones_secundarias']);
+        }
         
-        error_log("✅ Día $diaId actualizado: $rowsAffected filas");
+        error_log("✅ Día ID=$diaId actualizado correctamente");
         
         return [
             'success' => true,
-            'message' => 'Día actualizado exitosamente',
+            'message' => 'Día actualizado correctamente',
             'dia_id' => $diaId
         ];
         
     } catch(Exception $e) {
         error_log("❌ Error en updateDia: " . $e->getMessage());
+        error_log("Stack trace: " . $e->getTraceAsString());
         throw $e;
     }
 }
+
     
     private function reorderDiasAfterDelete($programaId, $deletedDiaNumber) {
         try {
@@ -547,7 +626,7 @@ private function updateDia($diaId, $data) {
             error_log("Error actualizando fecha de salida: " . $e->getMessage());
         }
     }
-
+    
     private function sendError($message) {
         ob_clean();
         header('Content-Type: application/json; charset=utf-8');
@@ -558,6 +637,70 @@ private function updateDia($diaId, $data) {
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }
+
+/**
+ * Obtener ubicaciones secundarias de un día
+ */
+private function getUbicacionesSecundarias($diaId) {
+    if (!$diaId) {
+        throw new Exception('ID de día requerido');
+    }
+    
+    try {
+        $ubicaciones = $this->db->fetchAll(
+            "SELECT id, ubicacion, latitud, longitud, orden 
+             FROM programa_dias_ubicaciones_secundarias 
+             WHERE programa_dia_id = ? 
+             ORDER BY orden ASC",
+            [$diaId]
+        );
+        
+        return [
+            'success' => true,
+            'data' => $ubicaciones
+        ];
+        
+    } catch(Exception $e) {
+        error_log("Error en getUbicacionesSecundarias: " . $e->getMessage());
+        throw $e;
+    }
+}
+
+/**
+ * Actualizar ubicaciones secundarias de un día
+ */
+private function updateUbicacionesSecundarias($diaId, $ubicaciones) {
+    try {
+        // Eliminar ubicaciones existentes
+        $this->db->query(
+            "DELETE FROM programa_dias_ubicaciones_secundarias WHERE programa_dia_id = ?",
+            [$diaId]
+        );
+        
+        // Insertar nuevas ubicaciones
+        if (!empty($ubicaciones)) {
+            foreach ($ubicaciones as $ubic) {
+                if (isset($ubic['ubicacion']) && !empty($ubic['ubicacion'])) {
+                    $ubicData = [
+                        'programa_dia_id' => $diaId,
+                        'ubicacion' => $ubic['ubicacion'],
+                        'latitud' => $ubic['latitud'] ?? null,
+                        'longitud' => $ubic['longitud'] ?? null,
+                        'orden' => $ubic['orden'] ?? 1
+                    ];
+                    
+                    $this->db->insert('programa_dias_ubicaciones_secundarias', $ubicData);
+                }
+            }
+        }
+        
+        error_log("✅ Ubicaciones secundarias actualizadas para día $diaId");
+        
+    } catch(Exception $e) {
+        error_log("Error actualizando ubicaciones secundarias: " . $e->getMessage());
+        throw $e;
+    }
+}
 }
 
 // Iniciar API
