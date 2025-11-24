@@ -17,7 +17,7 @@ App::requireLogin();
 class ProgramaImageUploader {
     private $db;
     private $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    private $maxFileSize = 5 * 1024 * 1024; // 5MB
+    private $maxFileSize = 10 * 1024 * 1024; // 10MB
     
     public function __construct() {
         try {
@@ -109,7 +109,7 @@ class ProgramaImageUploader {
                 
                 // Validar tamaño
                 if ($file['size'] > $this->maxFileSize) {
-                    throw new Exception("Imagen $i excede el tamaño máximo (5MB)");
+                    throw new Exception("Imagen $i excede el tamaño máximo (10MB)");
                 }
                 
                 // Generar ruta de destino

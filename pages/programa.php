@@ -3699,7 +3699,7 @@ textarea.form-control {
                                         accept=".jpeg,.jpg,.png,.webp,image/jpeg,image/jpg,image/png,image/webp"
                                         data-max-size="20971520">
                                     <small class="form-text text-muted">
-                                        <i class="fas fa-info-circle"></i> Formatos permitidos: JPEG, PNG, JPG, WebP | Peso máximo: 20MB
+                                        <i class="fas fa-info-circle"></i> Formatos permitidos: JPEG, PNG, JPG, WebP | Peso máximo: 10MB
                                     </small>
                                     <div class="file-info" id="cover-image-info"></div>
                                     <?php if (!empty($form_data['cover_image'])): ?>
@@ -5776,11 +5776,11 @@ function setupFileValidation() {
                 return;
             }
             
-            // Validar tamaño (20MB = 20971520 bytes)
-            const maxSize = 20971520;
+            // Validar tamaño (10MB = 20971520 bytes)
+            const maxSize = 10485760;
             if (file.size > maxSize) {
                 const sizeMB = (file.size / 1024 / 1024).toFixed(2);
-                fileInfo.textContent = `❌ Archivo muy grande: ${sizeMB}MB. Máximo: 20MB`;
+                fileInfo.textContent = `❌ Archivo muy grande: ${sizeMB}MB. Máximo: 10MB`;
                 fileInfo.className = 'file-info invalid';
                 fileInput.value = '';
                 return;
@@ -5790,8 +5790,8 @@ function setupFileValidation() {
             const sizeMB = (file.size / 1024 / 1024).toFixed(2);
             const extension = fileType.split('/')[1].toUpperCase();
             
-            // Mostrar advertencia si es muy grande (>10MB)
-            if (file.size > 10485760) {
+            // Mostrar advertencia si es muy grande (>8MB)
+            if (file.size > 8388608) {
                 fileInfo.textContent = `⚠️ ${file.name} (${extension}, ${sizeMB}MB) - Archivo grande, puede tardar en subir`;
                 fileInfo.className = 'file-info warning';
             } else {

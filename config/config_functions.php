@@ -260,8 +260,8 @@ function uploadAgenciaImageBiblioteca($file, $agencia_id, $tipo, $resourceId, $f
     }
     
     // Límite de 2MB
-    if ($file['size'] > 2 * 1024 * 1024) {
-        throw new Exception('Archivo demasiado grande (máx 2MB)');
+    if ($file['size'] > 10 * 1024 * 1024) {
+        throw new Exception('Archivo demasiado grande (máx 10MB)');
     }
     
     // Obtener ruta física
@@ -292,14 +292,14 @@ function uploadAgenciaImageBiblioteca($file, $agencia_id, $tipo, $resourceId, $f
 function uploadAgenciaImagePrograma($file, $agencia_id, $programa_id) {
     // Validar archivo
     $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    $maxSize = 5 * 1024 * 1024; // 5MB
-    
+    $maxSize = 10 * 1024 * 1024; // 10MB
+
     if (!in_array($file['type'], $allowedTypes)) {
         throw new Exception('Tipo de archivo no permitido: ' . $file['type']);
     }
-    
+
     if ($file['size'] > $maxSize) {
-        throw new Exception('Archivo demasiado grande. Máximo 5MB');
+        throw new Exception('Archivo demasiado grande. Máximo 10MB');
     }
     
     // Obtener ruta física

@@ -454,9 +454,9 @@ private function uploadImage($file, $type, $resourceId, $field) {
             throw new Exception('Tipo de archivo no permitido: ' . $file['type']);
         }
         
-        // ✅ CAMBIO: Límite de 2MB (antes era 10MB)
-        if ($file['size'] > 2 * 1024 * 1024) { // 2MB máximo
-            throw new Exception('Archivo demasiado grande (máx 2MB)');
+        // Límite de 10MB
+        if ($file['size'] > 10 * 1024 * 1024) { // 10MB máximo
+            throw new Exception('Archivo demasiado grande (máx 10MB)');
         }
         
         // Obtener agencia_id de la sesión

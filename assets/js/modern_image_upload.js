@@ -8,7 +8,7 @@ let imageManager = {
     selectedFiles: [],        // Archivos nuevos seleccionados
     existingImages: [],       // Imágenes ya guardadas en BD
     maxImages: 3,             // Máximo de imágenes
-    maxSizeMB: 2,            // Tamaño máximo por imagen
+    maxSizeMB: 10,            // Tamaño máximo por imagen
     allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
     currentResourceId: null,  // ID del recurso actual (para edición)
     currentResourceType: null // Tipo: 'dias' o 'actividades'

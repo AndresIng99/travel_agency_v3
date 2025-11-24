@@ -524,16 +524,50 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
             margin-bottom: 8px;
         }
 
-        .card-description {
-            color: #718096;
-            font-size: 14px;
-            line-height: 1.5;
-            margin-bottom: 12px;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
+        /* Estilos para descripción con "Leer más" */
+.card-description {
+    color: #718096;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 12px;
+    position: relative;
+}
+
+.card-description.truncated {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.card-description.expanded {
+    display: block;
+    max-height: none;
+}
+
+.read-more-btn {
+    color: var(--primary-color, #667eea);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-block;
+    margin-top: 5px;
+    transition: all 0.2s ease;
+    background: none;
+    border: none;
+    padding: 0;
+    text-decoration: underline;
+}
+
+.read-more-btn:hover {
+    color: var(--secondary-color, #764ba2);
+    transform: translateX(3px);
+}
+
+.read-more-btn i {
+    font-size: 11px;
+    margin-left: 3px;
+}
 
         .card-location {
             display: flex;
@@ -2252,6 +2286,75 @@ function renderPlantillaPrecios(data, exists) {
     document.getElementById('plantilla-precios-form').addEventListener('submit', savePlantillaPrecios);
 }
 
+// ===== FUNCIONES PARA "LEER MÁS" =====
+
+/**
+ * Verificar si el texto necesita ser truncado
+ */
+function isTextTruncated(text, maxLength = 150) {
+    return text && text.length > maxLength;
+}
+
+/**
+ * Crear descripción con botón "Leer más"
+ */
+function createDescriptionWithReadMore(descripcion, cardId) {
+    if (!descripcion || descripcion.trim() === '') {
+        return '<p class="card-description">Sin descripción</p>';
+    }
+    
+    const isTruncated = isTextTruncated(descripcion, 150);
+    
+    if (!isTruncated) {
+        // Si la descripción es corta, mostrarla completa sin botón
+        return `<p class="card-description">${escapeHtml(descripcion)}</p>`;
+    }
+    
+    // Si la descripción es larga, agregar botón "Leer más"
+    return `
+        <div class="description-container">
+            <p class="card-description truncated" id="desc-${cardId}">
+                ${escapeHtml(descripcion)}
+            </p>
+            <button class="read-more-btn" onclick="toggleDescription('${cardId}', event)">
+                <span class="read-more-text">Leer más</span>
+                <i class="fas fa-chevron-down"></i>
+            </button>
+        </div>
+    `;
+}
+
+/**
+ * Expandir/contraer descripción
+ */
+function toggleDescription(cardId, event) {
+    // Prevenir que se active el click de la tarjeta
+    event.stopPropagation();
+    
+    const descElement = document.getElementById(`desc-${cardId}`);
+    const button = event.currentTarget;
+    const textSpan = button.querySelector('.read-more-text');
+    const icon = button.querySelector('i');
+    
+    if (!descElement || !button) return;
+    
+    if (descElement.classList.contains('truncated')) {
+        // Expandir
+        descElement.classList.remove('truncated');
+        descElement.classList.add('expanded');
+        textSpan.textContent = 'Leer menos';
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+    } else {
+        // Contraer
+        descElement.classList.add('truncated');
+        descElement.classList.remove('expanded');
+        textSpan.textContent = 'Leer más';
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+    }
+}
+
 // Función mejorada para contadores (más simple y eficiente)
 function setupCharacterCountersForPlantilla() {
     const textareas = document.querySelectorAll('.plantilla-textarea');
@@ -3288,13 +3391,13 @@ function escapeHtml(text) {
             `;
         }
     }
-            
+            const cardId = `${currentTab}-${item.id}`;
             return `
                 <div class="item-card" onclick="editResource(${item.id})">
                     ${imageHTML}
                     <div class="card-content">
                         <h3 class="card-title">${escapeHtml(title)}</h3>
-                        <p class="card-description">${escapeHtml(item.descripcion || 'Sin descripción')}</p>
+                        ${createDescriptionWithReadMore(item.descripcion, cardId)}
                         <div class="card-location">
                             ${currentTab === 'transportes' ? getTransportIcon(item.medio) : '📍'} ${escapeHtml(location)}
                             ${item.ubicaciones_secundarias && item.ubicaciones_secundarias.length > 0 ? 
@@ -3571,8 +3674,8 @@ function handleImagePreview(input) {
             return;
         }
         
-        if (file.size > 5 * 1024 * 1024) {
-            alert('El archivo es demasiado grande. Máximo 5MB permitido');
+        if (file.size > 10 * 1024 * 1024) {
+            alert('El archivo es demasiado grande. Máximo 10MB');
             input.value = '';
             return;
         }
@@ -3622,12 +3725,13 @@ function loadSpecificFields() {
         case 'dias':
         fieldsHTML = `
             <!-- TÍTULO -->
-            <div class="form-group">
+            <div class="form-group" style="grid-column: 1 / -1;">
                 <label for="titulo">Título de la Jornada</label>
-                <div class="input-with-counter">
+                <div class="input-with-counter" style="width: 100%;">
                     <input type="text" id="titulo" name="titulo" required 
                         placeholder="Ej: Día en París"
-                        maxlength="250">
+                        maxlength="250"
+                        style="width: 100%;">
                     <div class="char-counter" id="titulo-counter">0/250</div>
                 </div>
             </div>
@@ -3783,7 +3887,7 @@ function loadSpecificFields() {
                             <div>Arrastra tu imagen aquí</div>
                             <div style="font-size: 12px; color: #718096; margin-top: 8px;">
                                 o haz clic para seleccionar<br>
-                                JPEG, PNG, WebP | Máximo 2MB
+                                JPEG, PNG, WebP | Máximo 10MB
                             </div>
                         </div>
                     </div>
@@ -5021,11 +5125,11 @@ function setupImageValidation() {
                 return;
             }
             
-            // Validar tamaño (20MB)
-            const maxSize = 20971520;
+            // Validar tamaño (10MB)
+            const maxSize = 10485760;
             if (file.size > maxSize) {
                 const sizeMB = (file.size / 1024 / 1024).toFixed(2);
-                alert(`Archivo muy grande: ${sizeMB}MB. Máximo: 20MB`);
+                alert(`Archivo muy grande: ${sizeMB}MB. Máximo: 10MB`);
                 this.value = '';
                 return;
             }
@@ -5522,8 +5626,8 @@ function handleImagePreviewEnhanced(input, uploadArea) {
         return;
     }
     
-    if (file.size > 5 * 1024 * 1024) {
-        showUploadError(uploadArea, 'El archivo es demasiado grande (máx. 5MB)');
+    if (file.size > 10 * 1024 * 1024) {
+        showAlert(`La imagen "${file.name}" supera los 10MB`, 'error');
         input.value = '';
         return;
     }
@@ -6834,6 +6938,7 @@ function createTransportCard(item) {
     const transportIcon = getTransportIcon(item.medio);
     const title = item.titulo || 'Transporte';
     const route = `${item.lugar_salida || 'Origen'} → ${item.lugar_llegada || 'Destino'}`;
+    const cardId = `transport-${item.id}`;  // ← AGREGAR ESTA LÍNEA
     
     return `
         <div class="item-card transport-card" onclick="editResource(${item.id}, 'transportes')">
@@ -6843,7 +6948,7 @@ function createTransportCard(item) {
             </div>
             <div class="card-content">
                 <h3 class="card-title">${escapeHtml(title)}</h3>
-                <p class="card-description">${escapeHtml(item.descripcion || 'Sin descripción')}</p>
+                ${createDescriptionWithReadMore(item.descripcion, cardId)}  
                 <div class="card-route">🛣️ ${escapeHtml(route)}</div>
                 ${item.duracion ? `<div class="card-duration">⏱️ ${escapeHtml(item.duracion)}</div>` : ''}
                 ${item.precio ? `<div class="card-price">💰 ${escapeHtml(item.precio)}</div>` : ''}
@@ -7424,8 +7529,8 @@ function validateImageFile(file) {
     }
     
     // Validar tamaño (5MB máximo)
-    if (file.size > 5 * 1024 * 1024) {
-        showMessage(`"${file.name}" es demasiado grande (máx. 5MB)`, 'error');
+    if (file.size > 10 * 1024 * 1024) {
+        alert('El archivo es demasiado grande. Máximo 10MB');
         return false;
     }
     

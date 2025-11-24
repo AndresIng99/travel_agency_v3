@@ -881,14 +881,14 @@ private function duplicarPrecios($programa_original_id, $nuevo_programa_id) {
             
             // Validar archivo
             $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-            $maxSize = 5 * 1024 * 1024; // 5MB
-            
+            $maxSize = 10 * 1024 * 1024; // 10MB
+
             if (!in_array($file['type'], $allowedTypes)) {
                 throw new Exception('Tipo de archivo no permitido: ' . $file['type']);
             }
-            
+
             if ($file['size'] > $maxSize) {
-                throw new Exception('Archivo demasiado grande. Máximo 5MB');
+                throw new Exception('Archivo demasiado grande. Máximo 10MB');
             }
             
             // Obtener agencia_id de la sesión
