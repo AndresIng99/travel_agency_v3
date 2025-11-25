@@ -146,7 +146,7 @@ public static function requireLogin() {
                 session_start();
                 
                 // Mensaje informativo
-                $_SESSION['error'] = '⚠️ Tu sesión fue cerrada porque iniciaste sesión en otro dispositivo.';
+                $_SESSION['error'] = '⚠️ Tu sesión se cerró porque se abrió en otro dispositivo.';
                 
                 self::redirect('/login');
             }

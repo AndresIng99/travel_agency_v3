@@ -56,28 +56,6 @@ try {
     // Verificar si el usuario existe y la contraseña es correcta
     if ($user && password_verify($password, $user['password'])) {
 
-        // ==================================================
-        // VERIFICAR SESIÓN ÚNICA
-        // ==================================================
-
-        // Verificar si el usuario ya tiene una sesión activa
-        if (!empty($user['session_token'])) {
-            // Ya tiene una sesión activa en otro dispositivo
-            // Guardar datos temporales para confirmar cierre
-            $_SESSION['pending_login'] = [
-                'user_id' => $user['id'],
-                'email' => $user['email'],
-                'password' => $password, // Guardamos para validar después
-                'existing_session' => [
-                    'ip' => $user['session_ip'],
-                    'user_agent' => $user['session_user_agent'],
-                    'started_at' => $user['session_started_at']
-                ]
-            ];
-            
-            // Redirigir a página de confirmación
-            App::redirect('/confirm-close-session');
-        }
 
         // ==================================================
         // GENERAR NUEVO TOKEN DE SESIÓN
