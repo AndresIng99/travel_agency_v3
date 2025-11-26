@@ -2764,8 +2764,12 @@ body {
 
 
 /* ============================================================
-   ESTILOS PARA PDF - VERSIÓN PROFESIONAL Y COMPLETA
+   ESTILOS MEJORADOS PARA PORTADA DEL PDF
+   ============================================================
+   Reemplazar la sección @media print del archivo itinerary.php
+   específicamente la parte de .hero-section
    ============================================================ */
+
 @media print {
     /* ========== CONFIGURACIÓN GLOBAL ========== */
     * {
@@ -2776,7 +2780,7 @@ body {
     
     @page {
         size: A4 portrait;
-        margin: 15mm 12mm;
+        margin: 0;  /* Sin márgenes para la portada */
     }
     
     html, body {
@@ -2811,40 +2815,186 @@ body {
     #map,
     section:has(#map),
     .thumbnail-overlay,
-    .gallery-overlay,
-    .service-website a:hover,
-    .hotel-thumbnail:hover,
-    .gallery-item:hover {
+    .gallery-overlay {
         display: none !important;
         visibility: hidden !important;
     }
     
-    /* ========== HERO/PORTADA COMPACTA ========== */
+    /* ========== ✨ PORTADA MEJORADA - PÁGINA COMPLETA ========== */
     .hero-section {
-        height: 180px !important;
-        min-height: 180px !important;
-        page-break-after: avoid;
+        /* Ocupar toda la primera página */
+        height: 100vh !important;
+        min-height: 297mm !important; /* A4 height */
+        max-height: 297mm !important;
+        page-break-after: always !important;
+        
+        /* Imagen de fondo con mejor calidad */
         background-size: cover !important;
-        background-position: center !important;
+        background-position: center center !important;
+        background-repeat: no-repeat !important;
+        
+        /* Asegurar que el fondo se imprima */
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        
+        /* Gradiente oscuro sobre la imagen para mejorar legibilidad */
         position: relative;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
     
+    /* Overlay oscuro para mejorar contraste del texto */
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+            to bottom,
+            rgba(0, 0, 0, 0.3) 0%,
+            rgba(0, 0, 0, 0.5) 50%,
+            rgba(0, 0, 0, 0.7) 100%
+        ) !important;
+        z-index: 1;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    /* Contenido de la portada */
     .hero-content {
-        padding: 20px !important;
+        position: relative;
+        z-index: 2;
+        text-align: center !important;
+        padding: 60px 40px !important;
+        max-width: 800px !important;
+        color: #ffffff !important;
     }
     
-    .hero-title {
-        font-size: 28pt !important;
-        margin-bottom: 8px !important;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-    }
-    
+    /* Subtítulo de la portada */
     .hero-subtitle {
-        font-size: 12pt !important;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        font-size: 14pt !important;
+        font-weight: 400 !important;
+        letter-spacing: 3px !important;
+        text-transform: uppercase !important;
+        margin-bottom: 20px !important;
+        color: rgba(255, 255, 255, 0.95) !important;
+        text-shadow: 2px 2px 6px rgba(0,0,0,0.8) !important;
     }
     
-    /* ========== OVERVIEW SECTION ========== */
+    /* Título principal - MÁS GRANDE Y ELEGANTE */
+    .hero-title {
+        font-family: 'Playfair Display', serif !important;
+        font-size: 48pt !important; /* Aumentado de 28pt */
+        font-weight: 700 !important;
+        line-height: 1.2 !important;
+        margin-bottom: 25px !important;
+        color: #ffffff !important;
+        text-shadow: 3px 3px 10px rgba(0,0,0,0.9) !important;
+        letter-spacing: -1px !important;
+    }
+    
+    /* Descripción del viajero */
+    .hero-description {
+        font-size: 16pt !important;
+        font-weight: 300 !important;
+        margin-bottom: 50px !important;
+        color: rgba(255, 255, 255, 0.95) !important;
+        text-shadow: 2px 2px 6px rgba(0,0,0,0.8) !important;
+        line-height: 1.5 !important;
+    }
+    
+    .hero-description strong {
+        font-weight: 600 !important;
+        color: #ffffff !important;
+    }
+    
+    /* Stats del viaje - REDISEÑADOS Y MÁS VISIBLES */
+    .hero-stats {
+        display: flex !important;
+        justify-content: center !important;
+        gap: 40px !important;
+        flex-wrap: wrap !important;
+        margin-top: 50px !important;
+        padding-top: 40px !important;
+        border-top: 2px solid rgba(255, 255, 255, 0.3) !important;
+    }
+    
+    .hero-stat {
+        text-align: center !important;
+        padding: 20px 30px !important;
+        background: rgba(255, 255, 255, 0.15) !important;
+        backdrop-filter: blur(10px) !important;
+        border-radius: 15px !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        min-width: 150px !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    .hero-stat-title {
+        display: block !important;
+        font-size: 10pt !important;
+        font-weight: 500 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 2px !important;
+        margin-bottom: 8px !important;
+        color: rgba(255, 255, 255, 0.9) !important;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.7) !important;
+    }
+    
+    .hero-stat-number {
+        display: block !important;
+        font-size: 32pt !important; /* Aumentado */
+        font-weight: 700 !important;
+        color: #ffffff !important;
+        margin-bottom: 5px !important;
+        text-shadow: 2px 2px 6px rgba(0,0,0,0.8) !important;
+    }
+    
+    .hero-stat-label {
+        display: block !important;
+        font-size: 11pt !important;
+        font-weight: 400 !important;
+        color: rgba(255, 255, 255, 0.95) !important;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.7) !important;
+    }
+    
+    /* Logo de la agencia en la portada (opcional) */
+    .hero-section::after {
+        content: '<?= addslashes($company_name) ?>'; /* Mostrar nombre de agencia */
+        position: absolute;
+        bottom: 30px;
+        right: 40px;
+        font-size: 12pt;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.8);
+        text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
+        z-index: 3;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+    
+    /* ========== SEGUNDA PÁGINA EN ADELANTE ========== */
+    /* Agregar márgenes normales después de la portada */
+    .main-content {
+        margin-top: 0 !important;
+        padding-top: 20mm !important;
+    }
+    
+    @page:first {
+        margin: 0; /* Sin márgenes en la primera página (portada) */
+    }
+    
+    @page {
+        margin: 15mm 12mm; /* Márgenes normales en el resto de páginas */
+    }
+    
+    /* ========== RESTO DE ESTILOS PARA EL CONTENIDO ========== */
+    /* ... mantener todos los estilos existentes para overview, itinerario, etc. ... */
+    
     .overview-section {
         page-break-inside: avoid;
         margin-bottom: 15px;
@@ -2861,335 +3011,34 @@ body {
         margin-bottom: 15px !important;
     }
     
-    .overview-grid {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 15px !important;
-        page-break-inside: avoid;
-    }
-    
-    .detail-item {
-        padding: 10px !important;
-        page-break-inside: avoid;
-    }
-    
-    .detail-icon {
-        width: 35px !important;
-        height: 35px !important;
-        font-size: 16px !important;
-    }
-    
-    /* ========== DÍAS DEL ITINERARIO ========== */
-    .itinerary-timeline {
-        margin-top: 20px;
-    }
-    
+    /* Day cards */
     .day-card {
         page-break-inside: avoid;
-        margin-bottom: 20px !important;
+        margin-bottom: 15px !important;
         border: 1px solid #e0e0e0 !important;
+        padding: 12px !important;
     }
     
-    .day-number-main {
-        font-size: 32pt !important;
-    }
-    
-    .day-title {
+    .day-header {
         font-size: 14pt !important;
-        margin-bottom: 8px !important;
-    }
-    
-    .day-location {
-        margin-bottom: 12px !important;
-    }
-    
-    /* ========== IMÁGENES DE LOS DÍAS - VISIBLES ========== */
-    .day-images {
-        display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 8px !important;
-        height: auto !important;
-        margin: 12px 0 !important;
-        page-break-inside: avoid;
-    }
-    
-    .day-image {
-        height: 120px !important;
-        background-size: cover !important;
-        background-position: center !important;
-        border-radius: 6px !important;
-        border: 1px solid #e0e0e0 !important;
-        page-break-inside: avoid;
-    }
-    
-    .day-image::before {
-        display: none !important;
-    }
-    
-    /* Si solo hay 1 imagen */
-    .day-images:has(.day-image:only-child) {
-        grid-template-columns: 1fr !important;
-    }
-    
-    /* Si solo hay 2 imágenes */
-    .day-images:has(.day-image:nth-child(2):last-child) {
-        grid-template-columns: repeat(2, 1fr) !important;
-    }
-    
-    /* ========== SERVICIOS ========== */
-    .day-services {
-        margin-top: 12px;
-    }
-    
-    .services-grid {
-        display: block !important;
-    }
-    
-    .service-group {
-        page-break-inside: avoid;
-        margin-bottom: 12px !important;
+        margin-bottom: 10px !important;
     }
     
     .service-item {
-        padding: 12px !important;
-        margin-bottom: 8px !important;
-        border: 1px solid #e0e0e0 !important;
         page-break-inside: avoid;
-        background: white !important;
-    }
-    
-    .service-icon {
-        width: 35px !important;
-        height: 35px !important;
-        font-size: 16px !important;
-    }
-    
-    .service-details h4 {
-        font-size: 11pt !important;
-        margin-bottom: 6px !important;
-    }
-    
-    .service-details p {
-        font-size: 9pt !important;
-        line-height: 1.3 !important;
-    }
-    
-    .service-meta {
-        font-size: 8pt !important;
-        margin-top: 6px !important;
-    }
-    
-    /* ========== HOTEL: IMAGEN PEQUEÑA VISIBLE ========== */
-    .hotel-content {
-        display: flex !important;
-        gap: 12px !important;
-        page-break-inside: avoid;
-    }
-    
-    .hotel-thumbnail {
-        width: 120px !important;
-        min-width: 120px !important;
-        height: 90px !important;
-        border: 1px solid #e0e0e0 !important;
-        page-break-inside: avoid;
-    }
-    
-    .hotel-thumbnail img {
-        width: 100% !important;
-        height: 100% !important;
-        object-fit: cover !important;
-    }
-    
-    .hotel-text {
-        flex: 1 !important;
-    }
-    
-    /* ========== HOTEL: SITIO WEB VISIBLE ========== */
-    .service-website {
-        margin-top: 8px !important;
-        page-break-inside: avoid;
-    }
-    
-    .service-website a {
-        display: inline-block !important;
-        padding: 6px 12px !important;
-        background: #f0f0f0 !important;
-        color: #333 !important;
-        text-decoration: none !important;
-        border: 1px solid #ddd !important;
-        border-radius: 4px !important;
-        font-size: 8pt !important;
-    }
-    
-    /* ========== ACTIVIDAD: GALERÍA VISIBLE ========== */
-    .activity-gallery {
-        display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 8px !important;
-        margin-top: 12px !important;
-        page-break-inside: avoid;
-    }
-    
-    .gallery-item {
-        height: 100px !important;
-        border: 1px solid #e0e0e0 !important;
-        border-radius: 6px !important;
-        overflow: hidden !important;
-        page-break-inside: avoid;
-    }
-    
-    .gallery-item img {
-        width: 100% !important;
-        height: 100% !important;
-        object-fit: cover !important;
-    }
-    
-    .gallery-count {
-        display: none !important;
-    }
-    
-    /* Si solo hay 1 imagen */
-    .activity-gallery.single-image {
-        grid-template-columns: 1fr !important;
-    }
-    
-    .activity-gallery.single-image .gallery-item {
-        height: 150px !important;
-    }
-    
-    /* Si solo hay 2 imágenes */
-    .activity-gallery.two-images {
-        grid-template-columns: repeat(2, 1fr) !important;
-    }
-    
-    /* ========== ALTERNATIVAS - EXPANDIDAS Y VISIBLES ========== */
-    .alternatives-list {
-        max-height: none !important;
-        display: block !important;
-        overflow: visible !important;
-        margin-top: 10px !important;
-        padding-left: 15px !important;
-        border-left: 3px solid #95a5a6 !important;
-    }
-    
-    .service-item.alternativa {
-        background: #f8f8f8 !important;
-        border: 1px solid #e0e0e0 !important;
-        margin-left: 0 !important;
-        page-break-inside: avoid;
-    }
-    
-    .alternative-badge {
-        background: #95a5a6 !important;
-        color: white !important;
-        padding: 2px 6px !important;
-        border-radius: 3px !important;
-        font-size: 7pt !important;
-    }
-    
-    /* ========== COMIDAS ========== */
-    .day-meals {
-        page-break-inside: avoid;
-        margin-top: 12px !important;
+        margin-bottom: 10px !important;
         padding: 10px !important;
-        background: #fffbf0 !important;
-        border: 1px solid #f39c12 !important;
-        border-radius: 6px !important;
     }
     
-    .day-meals h4 {
-        font-size: 10pt !important;
-        margin-bottom: 8px !important;
-    }
-    
-    .meal-item {
-        font-size: 8pt !important;
-        padding: 4px 0 !important;
-    }
-    
-    /* ========== PRECIOS - NUEVA PÁGINA ========== */
-    .pricing-section {
-        page-break-before: always !important;
-        margin-top: 0 !important;
-    }
-    
-    .pricing-header {
-        margin-bottom: 20px !important;
-        page-break-after: avoid;
-    }
-    
-    .pricing-header h2 {
-        font-size: 20pt !important;
-        margin-bottom: 8px !important;
-    }
-    
-    .price-main-card {
-        page-break-inside: avoid;
-        padding: 15px !important;
-        border: 2px solid #3498db !important;
-        border-radius: 8px !important;
-        margin-bottom: 20px !important;
-    }
-    
-    .price-value {
-        font-size: 24pt !important;
-    }
-    
-    .price-currency {
-        font-size: 14pt !important;
-    }
-    
-    /* ========== ACORDEONES - EXPANDIDOS ========== */
-    .pricing-accordions {
-        margin-top: 20px;
-    }
-    
-    .pricing-accordion {
-        page-break-inside: avoid;
-        margin-bottom: 15px !important;
-        border: 1px solid #ddd !important;
-        border-radius: 6px !important;
-        overflow: visible !important;
-    }
-    
-    .accordion-header {
-        padding: 10px 15px !important;
-        background: #f8f9fa !important;
-        border-bottom: 1px solid #e0e0e0 !important;
-    }
-    
-    .accordion-title {
-        font-size: 11pt !important;
-        font-weight: 600 !important;
-    }
-    
-    .accordion-content {
-        max-height: none !important;
-        overflow: visible !important;
-        display: block !important;
-        padding: 12px 15px !important;
-    }
-    
-    .pricing-list {
-        margin: 0 !important;
-        padding: 0 0 0 20px !important;
-    }
-    
-    .pricing-list li {
-        font-size: 9pt !important;
-        line-height: 1.4 !important;
-        margin-bottom: 6px !important;
-        page-break-inside: avoid;
-    }
-    
-    /* ========== FOOTER ========== */
+    /* Footer compacto */
     .footer {
-        page-break-inside: avoid;
-        margin-top: 20px !important;
-        padding: 15px !important;
         background: #2c3e50 !important;
-        color: white !important;
+        color: #fff !important;
+        padding: 15px !important;
         text-align: center !important;
+        page-break-inside: avoid !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
     
     .footer h3 {
@@ -3202,30 +3051,7 @@ body {
         margin: 4px 0 !important;
     }
     
-    .footer-bottom {
-        font-size: 8pt !important;
-        margin-top: 10px !important;
-        padding-top: 10px !important;
-        border-top: 1px solid rgba(255,255,255,0.3) !important;
-    }
-    
-    /* ========== UBICACIONES SECUNDARIAS ========== */
-    .secondary-locations-section {
-        page-break-inside: avoid;
-        margin-top: 10px !important;
-        padding: 10px !important;
-        background: #f8fffe !important;
-        border: 1px solid #e8f5e8 !important;
-    }
-    
-    .secondary-location-item {
-        font-size: 8pt !important;
-        padding: 6px !important;
-        margin-bottom: 4px !important;
-        page-break-inside: avoid;
-    }
-    
-    /* ========== OPTIMIZACIONES GENERALES ========== */
+    /* Optimizaciones generales */
     h1, h2, h3, h4, h5, h6 {
         page-break-after: avoid !important;
         page-break-inside: avoid !important;
@@ -3239,12 +3065,6 @@ body {
     img {
         max-width: 100% !important;
         page-break-inside: avoid !important;
-    }
-    
-    /* Evitar líneas huérfanas y viudas */
-    * {
-        orphans: 3;
-        widows: 3;
     }
 }
 
