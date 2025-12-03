@@ -92,6 +92,8 @@ $page_title = $is_editing ? 'Editar Programa' : 'Nuevo Programa';
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="<?= APP_URL ?>/assets/css/dashboard.css" rel="stylesheet">
+
+    <script src="<?= APP_URL ?>/assets/js/ubicacion-search-widget.js"></script>
     
     <style>
 
@@ -3520,6 +3522,52 @@ textarea.form-control {
         width: 100%;
     }
 }
+/* Drop zone styles */
+.drop-zone-multiple {
+    transition: all 0.3s ease;
+}
+
+.drop-zone-multiple:hover {
+    border-color: #10b981 !important;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%) !important;
+}
+
+.drop-zone-multiple.drag-over {
+    border-color: #10b981 !important;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%) !important;
+    transform: scale(1.02);
+}
+
+/* Animations */
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+#crearDiaModalPrograma .modal-content {
+    animation: modalSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalSlideIn {
+    from { opacity: 0; transform: scale(0.9) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.drop-zone-multiple:hover {
+    border-color: #10b981 !important;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%) !important;
+}
     </style>
 </head>
 
@@ -4095,12 +4143,17 @@ textarea.form-control {
                 <button class="close-modal" onclick="cerrarModalBiblioteca()">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="biblioteca-filters">
-                    <div class="search-box">
+                <div class="biblioteca-filters" style="display: flex; gap: 15px; align-items: center; margin-bottom: 20px;">
+                    <div class="search-box" style="flex: 1;">
                         <i class="fas fa-search"></i>
-                        <input type="text" placeholder="Buscar días por título, ubicación o descripción..." 
-                               id="search-dias" class="form-control">
+                        <input type="text" placeholder="Buscar días..." id="search-dias" class="form-control">
                     </div>
+                    <!-- BOTÓN PARA CREAR DÍA -->
+                    <button type="button" class="btn btn-success" onclick="abrirModalCrearDiaPrograma()" 
+                            style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 10px; color: white; font-weight: 600; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+                        <i class="fas fa-plus-circle"></i>
+                        Crear Nuevo Día
+                    </button>
                 </div>
                 <div id="biblioteca-dias-grid" class="biblioteca-grid">
                     <!-- Los días de la biblioteca se cargarán aquí -->
@@ -4116,6 +4169,108 @@ textarea.form-control {
             </div>
         </div>
     </div>
+
+<div id="crearDiaModalPrograma" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 1000px; max-height: 95vh; overflow-y: auto;">
+        <div class="modal-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+            <h3><i class="fas fa-calendar-plus"></i> Crear Nuevo Día</h3>
+            <button class="close-modal" onclick="cerrarModalCrearDiaPrograma()" style="background: rgba(255,255,255,0.2);">&times;</button>
+        </div>
+        
+        <div class="modal-body" style="padding: 30px;">
+            <form id="formCrearDiaEnPrograma">
+                
+                <!-- IDIOMA -->
+                <div class="form-group">
+                    <label>🌐 Idioma</label>
+                    <select id="idioma-crear-programa" name="idioma" class="form-control">
+                        <option value="es">Español</option>
+                        <option value="en">English</option>
+                        <option value="fr">Français</option>
+                        <option value="pt">Português</option>
+                    </select>
+                </div>
+
+                <!-- TÍTULO -->
+                <div class="form-group">
+                    <label>📝 Título <span style="color: #ef4444;">*</span></label>
+                    <div style="position: relative;">
+                        <input type="text" id="titulo-crear-programa" name="titulo" class="form-control" required 
+                               placeholder="Ej: Día en París" maxlength="300" style="padding-right: 80px;">
+                        <div class="char-counter" id="titulo-counter-programa" 
+                             style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 11px; color: #6b7280;">0/300</div>
+                    </div>
+                </div>
+
+                <!-- UBICACIÓN PRINCIPAL -->
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label>📍 Ubicación Principal <span style="color: #ef4444;">*</span></label>
+                    <div style="position: relative;">
+                        <input type="text" 
+                               id="ubicacion-principal-crear-programa" 
+                               name="ubicacion"
+                               class="form-control" 
+                               required
+                               placeholder="🔍 Buscar ciudad, lugar, monumento..."
+                               autocomplete="off"
+                               style="padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px;">
+                        <input type="hidden" name="latitud" id="latitud-principal-programa">
+                        <input type="hidden" name="longitud" id="longitud-principal-programa">
+                        <div id="preview-ubicacion-principal-programa"></div>
+                    </div>
+                </div>
+
+                <!-- UBICACIONES SECUNDARIAS -->
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label>📍 Ubicaciones Adicionales (opcional)</label>
+                    <div id="ubicaciones-secundarias-container-programa" style="display: flex; flex-direction: column; gap: 12px;">
+                        <!-- Se agregan dinámicamente -->
+                    </div>
+                    <button type="button" onclick="agregarUbicacionSecundariaPrograma()" 
+                            style="margin-top: 12px; padding: 10px 20px; background: #48bb78; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                        ➕ Agregar Otra Ubicación
+                    </button>
+                </div>
+
+                <!-- DESCRIPCIÓN -->
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label>📄 Descripción</label>
+                    <div style="position: relative;">
+                        <textarea id="descripcion-crear-programa" name="descripcion" rows="5" class="form-control"
+                                  placeholder="Describe las actividades..." maxlength="3000" 
+                                  style="padding-bottom: 35px;"></textarea>
+                        <div class="char-counter" id="descripcion-counter-programa" 
+                             style="position: absolute; right: 12px; bottom: 12px; font-size: 11px; color: #6b7280;">0/3000</div>
+                    </div>
+                </div>
+
+                <!-- IMÁGENES -->
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label>📸 Imágenes (máximo 3)</label>
+                    <div id="imageUploadContainerPrograma"></div>
+                </div>
+
+                <!-- Inputs ocultos para imágenes -->
+                <input type="file" id="imagenes-programa" name="imagen1" accept="image/*" style="display: none;">
+                <input type="file" id="imagen2-programa" name="imagen2" accept="image/*" style="display: none;">
+                <input type="file" id="imagen3-programa" name="imagen3" accept="image/*" style="display: none;">
+                <input type="file" id="multipleImages-programa" multiple accept="image/*" style="display: none;">
+                
+            </form>
+        </div>
+        
+        <div class="modal-footer" style="padding: 20px 30px; display: flex; gap: 12px; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="cerrarModalCrearDiaPrograma()">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+            <button type="button" class="btn btn-success" onclick="guardarDiaEnPrograma()"
+                    style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none;">
+                <i class="fas fa-save"></i> Crear y Agregar
+            </button>
+        </div>
+    </div>
+</div>
+
 
     <!-- Modal para agregar servicios (actividades, transporte, alojamiento) -->
     <div id="serviciosModal" class="modal" style="display: none;">
@@ -4150,6 +4305,538 @@ textarea.form-control {
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+
+
+<script>
+// Variables globales para el modal de crear día
+let widgetUbicacionPrincipalPrograma = null;
+let widgetsSecundariasPrograma = [];
+let contadorSecundariasPrograma = 0;
+let selectedImagesPrograma = [];
+
+// Función helper para obtener la URL base
+function getBaseURL() {
+    const base = document.querySelector('base');
+    if (base && base.href) {
+        return base.href.replace(/\/$/, '');
+    }
+    
+    // Obtener la ruta completa incluyendo subdirectorios
+    const pathname = window.location.pathname;
+    const pathParts = pathname.split('/').filter(p => p);
+    
+    // Si estamos en programa.php, quitar el archivo y quedarnos con la carpeta
+    if (pathParts[pathParts.length - 1] === 'programa.php' || 
+        pathParts[pathParts.length - 1].startsWith('programa')) {
+        pathParts.pop();
+    }
+    
+    const protocol = window.location.protocol;
+    const host = window.location.host;
+    const basePath = pathParts.length > 0 ? '/' + pathParts.join('/') : '';
+    
+    return `${protocol}//${host}${basePath}`;
+}
+
+// Abrir modal
+function abrirModalCrearDiaPrograma() {
+    console.log('🎬 Abriendo modal de crear día...');
+    
+    const modal = document.getElementById('crearDiaModalPrograma');
+    const modalBiblioteca = document.getElementById('bibliotecaModal');
+    
+    if (modalBiblioteca) {
+        modalBiblioteca.style.zIndex = '9998';
+    }
+    
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    modal.style.zIndex = '10000';
+    
+    setTimeout(() => {
+        modal.classList.add('show');
+    }, 10);
+    
+    setTimeout(() => {
+        inicializarFormularioPrograma();
+    }, 100);
+}
+
+// Cerrar modal
+function cerrarModalCrearDiaPrograma() {
+    const modal = document.getElementById('crearDiaModalPrograma');
+    const modalBiblioteca = document.getElementById('bibliotecaModal');
+    
+    modal.classList.remove('show');
+    
+    setTimeout(() => {
+        modal.style.display = 'none';
+        if (modalBiblioteca) {
+            modalBiblioteca.style.zIndex = '9999';
+        }
+    }, 300);
+    
+    limpiarFormularioPrograma();
+}
+
+// Inicializar formulario
+function inicializarFormularioPrograma() {
+    console.log('🔧 Inicializando formulario...');
+    
+    limpiarFormularioPrograma();
+    
+    setTimeout(() => {
+        inicializarWidgetUbicacionPrograma();
+        inicializarSistemaImagenesPrograma();
+        inicializarContadoresPrograma();
+    }, 200);
+}
+
+// Inicializar widget de ubicación principal
+function inicializarWidgetUbicacionPrograma() {
+    const inputPrincipal = document.getElementById('ubicacion-principal-crear-programa');
+    
+    if (!inputPrincipal) {
+        console.error('❌ Input de ubicación principal no encontrado');
+        return;
+    }
+    
+    console.log('📍 Inicializando widget de ubicación principal...');
+    
+    if (widgetUbicacionPrincipalPrograma) {
+        widgetUbicacionPrincipalPrograma.destroy();
+        widgetUbicacionPrincipalPrograma = null;
+    }
+    
+    if (typeof UbicacionSearchWidget === 'undefined') {
+        console.error('❌ UbicacionSearchWidget no está cargado');
+        return;
+    }
+    
+    try {
+        const baseURL = getBaseURL();
+        
+        widgetUbicacionPrincipalPrograma = new UbicacionSearchWidget(inputPrincipal, {
+            apiUrl: `${baseURL}/modules/ubicaciones/ubicaciones_api.php`,
+            latInputId: 'latitud-principal-programa',
+            lngInputId: 'longitud-principal-programa',
+            placeholder: '🔍 Buscar ciudad, lugar, monumento...',
+            showPreview: true,
+            previewContainerId: 'preview-ubicacion-principal-programa',
+            autoSave: true,
+            minChars: 3,
+            debounceTime: 300,
+            onSelect: (location) => {
+                console.log('✅ Ubicación seleccionada:', location);
+            }
+        });
+        
+        console.log('✅ Widget inicializado con URL:', `${baseURL}/modules/ubicaciones/ubicaciones_api.php`);
+    } catch (error) {
+        console.error('❌ Error al crear widget:', error);
+    }
+}
+
+// Agregar ubicación secundaria
+function agregarUbicacionSecundariaPrograma() {
+    contadorSecundariasPrograma++;
+    const index = Date.now() + contadorSecundariasPrograma;
+    
+    const container = document.getElementById('ubicaciones-secundarias-container-programa');
+    
+    const div = document.createElement('div');
+    div.className = 'ubicacion-secundaria-item';
+    div.setAttribute('data-index', index);
+    div.style.cssText = 'display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 12px; background: #f8fafc; border-radius: 10px; border: 2px dashed #cbd5e0;';
+    
+    div.innerHTML = `
+        <div style="position: relative;">
+            <input type="text" 
+                id="ubicacion-sec-${index}-programa"
+                class="form-control"
+                placeholder="🔍 Buscar ubicación adicional..."
+                autocomplete="off"
+                style="padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px;">
+            <input type="hidden" id="lat-sec-${index}-programa">
+            <input type="hidden" id="lng-sec-${index}-programa">
+            <div id="preview-sec-${index}-programa"></div>
+        </div>
+        <button type="button" onclick="eliminarUbicacionSecundariaPrograma(${index})" 
+                style="width: 40px; height: 40px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px;">
+            ✕
+        </button>
+    `;
+    
+    container.appendChild(div);
+    
+    setTimeout(() => {
+        const input = document.getElementById(`ubicacion-sec-${index}-programa`);
+        if (input && typeof UbicacionSearchWidget !== 'undefined') {
+            try {
+                const baseURL = getBaseURL();
+                
+                const widget = new UbicacionSearchWidget(input, {
+                    apiUrl: `${baseURL}/modules/ubicaciones/ubicaciones_api.php`,
+                    latInputId: `lat-sec-${index}-programa`,
+                    lngInputId: `lng-sec-${index}-programa`,
+                    placeholder: '🔍 Buscar otra ubicación...',
+                    showPreview: true,
+                    previewContainerId: `preview-sec-${index}-programa`,
+                    autoSave: true,
+                    minChars: 3
+                });
+                
+                widgetsSecundariasPrograma.push({ index, widget });
+                console.log(`✅ Widget secundario ${index} inicializado`);
+            } catch (error) {
+                console.error(`❌ Error al crear widget secundario:`, error);
+            }
+        }
+    }, 100);
+}
+
+// Eliminar ubicación secundaria
+function eliminarUbicacionSecundariaPrograma(index) {
+    const item = document.querySelector(`.ubicacion-secundaria-item[data-index="${index}"]`);
+    if (item) {
+        const widgetData = widgetsSecundariasPrograma.find(w => w.index === index);
+        if (widgetData && widgetData.widget) {
+            widgetData.widget.destroy();
+        }
+        
+        widgetsSecundariasPrograma = widgetsSecundariasPrograma.filter(w => w.index !== index);
+        item.remove();
+        
+        console.log(`🗑️ Ubicación secundaria ${index} eliminada`);
+    }
+}
+
+// Inicializar sistema de imágenes
+function inicializarSistemaImagenesPrograma() {
+    const container = document.getElementById('imageUploadContainerPrograma');
+    if (!container) return;
+    
+    selectedImagesPrograma = [];
+    
+    container.innerHTML = `
+        <div id="dropZonePrograma" class="drop-zone-multiple" 
+             style="border: 2px dashed #cbd5e0; border-radius: 12px; padding: 40px; text-align: center; background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%); cursor: pointer;">
+            <div class="drop-zone-content">
+                <div style="font-size: 48px; margin-bottom: 15px;">📸</div>
+                <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Arrastra hasta 3 imágenes aquí</div>
+                <div style="font-size: 14px; color: #718096; margin-bottom: 15px;">o haz clic para seleccionar</div>
+                <button type="button" class="btn-select-images" 
+                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600;">
+                    📂 Seleccionar Imágenes
+                </button>
+            </div>
+        </div>
+        <div id="imagesPreviewPrograma" style="margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;"></div>
+    `;
+    
+    const dropZone = document.getElementById('dropZonePrograma');
+    const fileInput = document.getElementById('multipleImages-programa');
+    
+    if (dropZone && fileInput) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => {
+            dropZone.addEventListener(e, (ev) => { ev.preventDefault(); ev.stopPropagation(); });
+        });
+        
+        ['dragenter', 'dragover'].forEach(e => {
+            dropZone.addEventListener(e, () => {
+                dropZone.style.borderColor = '#10b981';
+                dropZone.style.background = 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)';
+            });
+        });
+        
+        ['dragleave', 'drop'].forEach(e => {
+            dropZone.addEventListener(e, () => {
+                dropZone.style.borderColor = '#cbd5e0';
+                dropZone.style.background = 'linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%)';
+            });
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            handleFilesPrograma(Array.from(e.dataTransfer.files));
+        });
+        
+        dropZone.addEventListener('click', (e) => {
+            if (e.target.classList.contains('btn-select-images')) {
+                e.preventDefault();
+                e.stopPropagation();
+                fileInput.click();
+            }
+        });
+        
+        fileInput.addEventListener('change', function() {
+            handleFilesPrograma(Array.from(this.files));
+        });
+    }
+}
+
+function handleFilesPrograma(files) {
+    const imageFiles = files.filter(f => f.type.startsWith('image/'));
+    if (imageFiles.length === 0) return alert('Solo archivos de imagen');
+    
+    const availableSlots = 3 - selectedImagesPrograma.length;
+    if (availableSlots === 0) return alert('Ya tienes 3 imágenes');
+    
+    const filesToAdd = imageFiles.slice(0, availableSlots);
+    
+    filesToAdd.forEach(file => {
+        if (file.size > 10 * 1024 * 1024) {
+            alert(`"${file.name}" es muy grande (máx. 10MB)`);
+            return;
+        }
+        selectedImagesPrograma.push(file);
+    });
+    
+    actualizarPreviewPrograma();
+    asignarArchivosPrograma();
+}
+
+function actualizarPreviewPrograma() {
+    const container = document.getElementById('imagesPreviewPrograma');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    selectedImagesPrograma.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const div = document.createElement('div');
+            div.style.cssText = 'position: relative; border-radius: 12px; overflow: hidden; border: 2px solid #e2e8f0;';
+            div.innerHTML = `
+                <img src="${e.target.result}" style="width: 100%; height: 150px; object-fit: cover;">
+                <div style="padding: 8px; background: white;">
+                    <div style="font-size: 12px; font-weight: 600;">${file.name}</div>
+                    <div style="font-size: 11px; color: #718096;">${(file.size / 1024).toFixed(0)} KB</div>
+                </div>
+                <button onclick="eliminarImagenPrograma(${index})" 
+                        style="position: absolute; top: 8px; right: 8px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer;">×</button>
+                <div style="position: absolute; top: 8px; left: 8px; background: rgba(16,185,129,0.9); color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px;">Imagen ${index + 1}</div>
+            `;
+            container.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+    });
+    
+    const dropContent = document.querySelector('#dropZonePrograma .drop-zone-content');
+    if (selectedImagesPrograma.length < 3) {
+        dropContent.innerHTML = `
+            <div style="font-size: ${selectedImagesPrograma.length === 0 ? 48 : 36}px; margin-bottom: ${selectedImagesPrograma.length === 0 ? 15 : 10}px;">${selectedImagesPrograma.length === 0 ? '📸' : '✅'}</div>
+            <div style="font-size: ${selectedImagesPrograma.length === 0 ? 18 : 16}px; font-weight: 600; margin-bottom: 8px;">
+                ${selectedImagesPrograma.length === 0 ? 'Arrastra hasta 3 imágenes' : selectedImagesPrograma.length + ' imagen(es) seleccionada(s)'}
+            </div>
+            <div style="font-size: 14px; color: #718096; margin-bottom: 15px;">
+                ${selectedImagesPrograma.length === 0 ? 'o haz clic para seleccionar' : 'Puedes agregar ' + (3 - selectedImagesPrograma.length) + ' más'}
+            </div>
+            <button type="button" class="btn-select-images" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600;">
+                📂 ${selectedImagesPrograma.length === 0 ? 'Seleccionar Imágenes' : 'Agregar Más'}
+            </button>
+        `;
+    } else {
+        dropContent.innerHTML = `
+            <div style="font-size: 36px; margin-bottom: 10px;">🎉</div>
+            <div style="font-size: 16px; font-weight: 600;">3 imágenes completas</div>
+        `;
+    }
+}
+
+function eliminarImagenPrograma(index) {
+    selectedImagesPrograma.splice(index, 1);
+    actualizarPreviewPrograma();
+    asignarArchivosPrograma();
+}
+
+function asignarArchivosPrograma() {
+    const inputs = [
+        document.getElementById('imagenes-programa'),
+        document.getElementById('imagen2-programa'),
+        document.getElementById('imagen3-programa')
+    ];
+    
+    selectedImagesPrograma.forEach((file, i) => {
+        if (inputs[i]) {
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            inputs[i].files = dt.files;
+        }
+    });
+    
+    for (let i = selectedImagesPrograma.length; i < 3; i++) {
+        if (inputs[i]) inputs[i].value = '';
+    }
+}
+
+// Inicializar contadores
+function inicializarContadoresPrograma() {
+    const titulo = document.getElementById('titulo-crear-programa');
+    const tituloCounter = document.getElementById('titulo-counter-programa');
+    if (titulo && tituloCounter) {
+        titulo.addEventListener('input', function() {
+            const count = this.value.length;
+            tituloCounter.textContent = `${count}/300`;
+            tituloCounter.style.color = count > 270 ? '#ef4444' : '#6b7280';
+        });
+    }
+    
+    const descripcion = document.getElementById('descripcion-crear-programa');
+    const descripcionCounter = document.getElementById('descripcion-counter-programa');
+    if (descripcion && descripcionCounter) {
+        descripcion.addEventListener('input', function() {
+            const count = this.value.length;
+            descripcionCounter.textContent = `${count}/3000`;
+            descripcionCounter.style.color = count > 2700 ? '#ef4444' : '#6b7280';
+        });
+    }
+}
+
+// Limpiar formulario
+function limpiarFormularioPrograma() {
+    const form = document.getElementById('formCrearDiaEnPrograma');
+    if (form) form.reset();
+    
+    if (widgetUbicacionPrincipalPrograma) {
+        widgetUbicacionPrincipalPrograma.destroy();
+        widgetUbicacionPrincipalPrograma = null;
+    }
+    
+    widgetsSecundariasPrograma.forEach(w => {
+        if (w.widget) w.widget.destroy();
+    });
+    widgetsSecundariasPrograma = [];
+    contadorSecundariasPrograma = 0;
+    
+    const containerSec = document.getElementById('ubicaciones-secundarias-container-programa');
+    if (containerSec) containerSec.innerHTML = '';
+    
+    selectedImagesPrograma = [];
+    const imgContainer = document.getElementById('imageUploadContainerPrograma');
+    if (imgContainer) imgContainer.innerHTML = '';
+}
+
+async function guardarDiaEnPrograma() {
+    const btn = event.target;  // ← MOVER AQUÍ ARRIBA (fuera del try)
+    const originalHTML = btn.innerHTML;
+    
+    try {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        
+        const titulo = document.getElementById('titulo-crear-programa').value.trim();
+        const ubicacion = document.getElementById('ubicacion-principal-crear-programa').value.trim();
+        
+        if (!titulo) {
+            alert('Por favor ingresa un título');
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            return;
+        }
+        
+        if (!ubicacion) {
+            alert('Por favor selecciona una ubicación');
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('action', 'create');
+        formData.append('type', 'dias');
+        formData.append('idioma', document.getElementById('idioma-crear-programa').value);
+        formData.append('titulo', titulo);
+        formData.append('descripcion', document.getElementById('descripcion-crear-programa').value);
+        formData.append('ubicacion', ubicacion);
+        formData.append('latitud', document.getElementById('latitud-principal-programa').value);
+        formData.append('longitud', document.getElementById('longitud-principal-programa').value);
+        
+        // Ubicaciones secundarias
+        const ubicacionesSecundarias = [];
+        const inputsSec = document.querySelectorAll('[id^="ubicacion-sec-"][id$="-programa"]');
+        inputsSec.forEach((input, idx) => {
+            if (input.value.trim()) {
+                const dataIndex = input.closest('[data-index]').getAttribute('data-index');
+                const latInput = document.getElementById(`lat-sec-${dataIndex}-programa`);
+                const lngInput = document.getElementById(`lng-sec-${dataIndex}-programa`);
+                
+                ubicacionesSecundarias.push({
+                    ubicacion: input.value,
+                    latitud: latInput ? latInput.value : null,
+                    longitud: lngInput ? lngInput.value : null,
+                    orden: idx + 1
+                });
+            }
+        });
+        
+        if (ubicacionesSecundarias.length > 0) {
+            formData.append('ubicaciones_secundarias', JSON.stringify(ubicacionesSecundarias));
+        }
+        
+        // Imágenes
+        for (let i = 1; i <= 3; i++) {
+            const fileInput = document.getElementById(`imagen${i === 1 ? 'es' : i}-programa`);
+            if (fileInput && fileInput.files[0]) {
+                formData.append(`imagen${i}`, fileInput.files[0]);
+            }
+        }
+        
+        console.log('📤 Creando día en biblioteca...');
+        
+        const baseURL = getBaseURL();
+        
+        // 1. Crear en biblioteca
+        const response = await fetch(`${baseURL}/biblioteca/api`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (!result.success) {
+            throw new Error(result.error || 'Error al crear día');
+        }
+        
+        const nuevoDiaId = result.id;
+        console.log('✅ Día creado con ID:', nuevoDiaId);
+        
+        // 2. Agregar al programa
+        console.log('📤 Agregando al programa con solicitud_id:', programaId);
+        
+        const responsePrograma = await fetch(`${baseURL}/modules/programa/dias_api.php`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                action: 'add_from_biblioteca',
+                programa_id: parseInt(programaId),           // ← CAMBIO: programa_id
+                biblioteca_dia_id: parseInt(nuevoDiaId)
+            })
+        });
+        
+        const resultPrograma = await responsePrograma.json();
+        console.log('📥 Respuesta programa:', resultPrograma);
+        
+        if (!resultPrograma.success) {
+            throw new Error(resultPrograma.message || resultPrograma.error || 'Error al agregar al programa');
+        }
+        
+        showAlert('✅ Día creado y agregado exitosamente', 'success');
+        cerrarModalCrearDiaPrograma();
+        if (typeof cerrarModalBiblioteca === 'function') cerrarModalBiblioteca();
+        if (typeof cargarDiasPrograma === 'function') await cargarDiasPrograma();
+        
+    } catch (error) {
+        console.error('❌ Error completo:', error);
+        alert('Error: ' + error.message);
+        btn.disabled = false;  // ← AHORA SÍ EXISTE btn
+        btn.innerHTML = originalHTML;
+    }
+}
+
+console.log('✅ Script de crear día en programa V4 inicializado');
+</script>
     
     <script>
         // ====================================================================
