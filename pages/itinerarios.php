@@ -1300,6 +1300,7 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
         const APP_URL = '<?= APP_URL ?>';
         const DEFAULT_LANGUAGE = '<?= $defaultLanguage ?>';
         const CURRENT_USER_ID = <?= $user['id'] ?>;
+        const esAdmin = <?= json_encode($user['role'] === 'admin') ?>;
 
         let sidebarOpen = false;
         let allProgramas = [];
@@ -1489,7 +1490,6 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
                                 imagenPortada.startsWith('/'));
             
             console.log(`🖼️ Programa ${programa.id}: imagen = ${imagenPortada}, válida = ${tieneImagen}`);
-            const esAdmin = <?= json_encode($user['role'] === 'admin') ?>;
             
             card.innerHTML = `
                 <div class="program-image">
@@ -1528,6 +1528,7 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
                     
                     <div class="program-actions">
                         ${esReadonly ? `
+                            <!-- PROGRAMAS DE OTROS USUARIOS (solo ver y copiar) -->
                             <button onclick="event.stopPropagation(); verDetalles(${programa.id})" class="btn-sm btn-outline-sm">
                                 <i class="fas fa-eye"></i>
                                 Ver
@@ -1537,12 +1538,14 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
                                 Copiar
                             </button>
                             ${esAdmin ? `
+                                <!-- Solo admins pueden eliminar programas de otros -->
                                 <button onclick="event.stopPropagation(); confirmarEliminacion(${programa.id}, '${(programa.titulo_programa || `Viaje a ${programa.destino}`).replace(/'/g, "\\\'")}')" class="btn-sm btn-danger-sm" title="Eliminar programa">
                                     <i class="fas fa-trash"></i>
                                     Eliminar
                                 </button>
                             ` : ''}
                         ` : `
+                            <!-- MIS PROGRAMAS (editar, ver y ELIMINAR) ✅ -->
                             <a href="<?= APP_URL ?>/programa?id=${programa.id}" class="btn-sm btn-primary-sm">
                                 <i class="fas fa-edit"></i>
                                 Editar
@@ -1551,12 +1554,10 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
                                 <i class="fas fa-eye"></i>
                                 Ver
                             </button>
-                            ${esAdmin ? `
-                                <button onclick="event.stopPropagation(); confirmarEliminacion(${programa.id}, '${(programa.titulo_programa || `Viaje a ${programa.destino}`).replace(/'/g, "\\\'")}')" class="btn-sm btn-danger-sm" title="Eliminar programa">
-                                    <i class="fas fa-trash"></i>
-                                    Eliminar
-                                </button>
-                            ` : ''}
+                            <button onclick="event.stopPropagation(); confirmarEliminacion(${programa.id}, '${(programa.titulo_programa || `Viaje a ${programa.destino}`).replace(/'/g, "\\\'")}')" class="btn-sm btn-danger-sm" title="Eliminar mi programa">
+                                <i class="fas fa-trash"></i>
+                                Eliminar
+                            </button>
                         `}
                     </div>
                 </div>
@@ -1584,7 +1585,7 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
         async function eliminarPrograma(programaId) {
             try {
                 const formData = new FormData();
-                formData.append('action', 'delete_programa_admin');
+                formData.append('action', esAdmin ? 'delete_programa_admin' : 'delete_programa'); // ✅ CAMBIO
                 formData.append('programa_id', programaId);
                 
                 const response = await fetch('<?= APP_URL ?>/programa/api', {

@@ -59,7 +59,10 @@ class ProgramaAPI {
                 case 'delete_programa_admin':
                     $result = $this->deleteProgramaAdmin();
                     break;
-               
+               case 'delete_programa':
+                    // Para agentes - eliminar solo sus programas
+                    $result = $this->deletePrograma($_POST['programa_id'] ?? null);
+                    break;
                 default:
                     throw new Exception('Acción no válida: ' . $action);
             }
