@@ -5384,12 +5384,7 @@ function showMessage(message, type = 'info') {
             }, 2000);
         }
 
-        // Cerrar modal al hacer clic fuera
-        document.getElementById('resourceModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeModal();
-            }
-        });
+        
     </script>
 
     <!-- Script del sistema de autocompletado -->
@@ -7081,12 +7076,7 @@ function showResourceDetailsModal(resource, type) {
     
     modalOverlay.appendChild(modalContent);
     
-    // Cerrar modal al hacer click en el overlay
-    modalOverlay.addEventListener('click', function(e) {
-        if (e.target === modalOverlay) {
-            closeResourceDetailsModal(modalOverlay);
-        }
-    });
+   
     
     // Cerrar con ESC
     document.addEventListener('keydown', function escapeHandler(e) {

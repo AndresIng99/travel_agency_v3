@@ -6589,19 +6589,7 @@ function toggleSection(header) {
     }
 }
 
-// Cerrar modales al hacer clic fuera
-window.addEventListener('click', function(e) {
-    const bibliotecaModal = document.getElementById('bibliotecaModal');
-    const serviciosModal = document.getElementById('serviciosModal');
-    
-    if (e.target === bibliotecaModal) {
-        cerrarModalBiblioteca();
-    }
-    
-    if (e.target === serviciosModal) {
-        cerrarModalServicios();
-    }
-});
+
 
 // Cerrar modales con tecla Escape
 document.addEventListener('keydown', function(e) {
