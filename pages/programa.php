@@ -6063,114 +6063,140 @@ async function agregarDiasSeleccionados() {
         console.log('📊 Días seleccionados:', diasSeleccionados);
         console.log('🎯 Programa ID:', programaId);
         
-        // ✅ CRÍTICO: Obtener el último número de día UNA SOLA VEZ AL INICIO
+        // ✅ OBTENER ÚLTIMO NÚMERO UNA SOLA VEZ
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando días existentes...';
-        const ultimoDiaNumero = await obtenerUltimoDiaNumero();
+        let ultimoDiaNumero = await obtenerUltimoDiaNumero();
         
-        console.log('📍 Último día existente en el programa:', ultimoDiaNumero);
-        console.log(`✅ Los nuevos días se numerarán desde: ${ultimoDiaNumero + 1}`);
+        console.log('📍 Último día existente:', ultimoDiaNumero);
+        console.log(`✅ Nuevos días empezarán desde: ${ultimoDiaNumero + 1}`);
         
         const baseURL = getBaseURL();
-        let diasAgregadosExitosos = 0;
+        let diasAgregados = 0;
         let errores = [];
         
-        // Agregar cada día seleccionado en orden
+        // ⚡ AGREGAR CADA DÍA EN ORDEN
         for (let i = 0; i < diasSeleccionados.length; i++) {
             const diaId = diasSeleccionados[i];
+            const nuevoDiaNumero = ultimoDiaNumero + i + 1;
             
-            // ✅ CRÍTICO: Calcular el número basándose en:
-            // - El último día que había al inicio (ultimoDiaNumero)
-            // - Más el índice actual (i)
-            // - Más 1 (porque los días empiezan en 1, no en 0)
-            const nuevoNumero = ultimoDiaNumero + i + 1;
+            const progreso = i + 1;
+            const total = diasSeleccionados.length;
             
-            // Actualizar progreso en el botón
-            const progreso = Math.round(((i + 1) / diasSeleccionados.length) * 100);
-            btn.innerHTML = `
-                <i class="fas fa-spinner fa-spin"></i> 
-                Agregando día ${i + 1} de ${diasSeleccionados.length} (${progreso}%)
-            `;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Agregando día ${progreso}/${total}...`;
             
-            console.log(`\n🔄 Procesando día ${i + 1}/${diasSeleccionados.length}`);
-            console.log(`   - ID biblioteca: ${diaId}`);
-            console.log(`   - Número que se asignará: ${nuevoNumero}`);
-            console.log(`   - Cálculo: ${ultimoDiaNumero} (último) + ${i} (índice) + 1 = ${nuevoNumero}`);
+            console.log(`\n🔄 Procesando día ${progreso}/${total}`);
+            console.log(`   Biblioteca ID: ${diaId}`);
+            console.log(`   Número asignado: ${nuevoDiaNumero}`);
             
             try {
                 const response = await fetch(`${baseURL}/modules/programa/dias_api.php`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                     body: JSON.stringify({
                         action: 'add_from_biblioteca',
-                        programa_id: parseInt(programaId),
-                        biblioteca_dia_id: parseInt(diaId),
-                        dia_numero: nuevoNumero  // ← Enviamos el número calculado
+                        programa_id: programaId,
+                        biblioteca_dia_id: diaId,
+                        dia_numero: nuevoDiaNumero  // ⚡ NÚMERO ESPECÍFICO
                     })
                 });
                 
+                console.log(`📡 Status: ${response.status}`);
+                
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(`HTTP ${response.status}`);
                 }
                 
                 const result = await response.json();
-                console.log(`   - Respuesta:`, result);
+                console.log(`📥 Resultado:`, result);
                 
                 if (result.success) {
-                    diasAgregadosExitosos++;
-                    console.log(`   ✅ Día agregado exitosamente como día #${nuevoNumero}`);
+                    diasAgregados++;
+                    console.log(`✅ Día ${progreso} agregado como #${result.dia_numero}`);
                 } else {
-                    const errorMsg = result.message || result.error || 'Error desconocido';
-                    errores.push(`Día ${i + 1} (→#${nuevoNumero}): ${errorMsg}`);
-                    console.error(`   ❌ Error:`, errorMsg);
+                    const errorMsg = result.error || result.message || 'Error desconocido';
+                    console.error(`❌ Error: ${errorMsg}`);
+                    
+                    // ⚠️ SI HAY ERROR DE DUPLICADO, REFRESCAR Y REINTENTAR
+                    if (errorMsg.includes('Ya existe') || errorMsg.includes('Duplicate')) {
+                        console.warn(`⚠️ Duplicado detectado, refrescando último número...`);
+                        
+                        ultimoDiaNumero = await obtenerUltimoDiaNumero();
+                        const nuevoIntento = ultimoDiaNumero + 1;
+                        
+                        console.log(`🔁 Reintentando con número: ${nuevoIntento}`);
+                        
+                        const retryResponse = await fetch(`${baseURL}/modules/programa/dias_api.php`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                action: 'add_from_biblioteca',
+                                programa_id: programaId,
+                                biblioteca_dia_id: diaId,
+                                dia_numero: nuevoIntento
+                            })
+                        });
+                        
+                        const retryResult = await retryResponse.json();
+                        
+                        if (retryResult.success) {
+                            diasAgregados++;
+                            ultimoDiaNumero = nuevoIntento; // Actualizar base
+                            console.log(`✅ Reintento exitoso: #${retryResult.dia_numero}`);
+                        } else {
+                            errores.push(`Día ${progreso}: ${retryResult.error || 'Error en reintento'}`);
+                            console.error(`❌ Reintento falló`);
+                        }
+                    } else {
+                        errores.push(`Día ${progreso}: ${errorMsg}`);
+                    }
                 }
                 
-                // Pequeña pausa entre requests
-                await new Promise(resolve => setTimeout(resolve, 150));
-                
             } catch (error) {
-                errores.push(`Día ${i + 1} (→#${nuevoNumero}): ${error.message}`);
-                console.error(`   ❌ Excepción:`, error);
+                console.error(`❌ Excepción en día ${progreso}:`, error);
+                errores.push(`Día ${progreso}: ${error.message}`);
+            }
+            
+            // Pausa pequeña entre llamadas
+            if (i < diasSeleccionados.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 100));
             }
         }
         
-        // Mostrar resultado
         console.log('\n📊 RESUMEN FINAL:');
-        console.log(`   ✅ Exitosos: ${diasAgregadosExitosos}`);
+        console.log(`   ✅ Exitosos: ${diasAgregados}`);
         console.log(`   ❌ Errores: ${errores.length}`);
         
-        if (errores.length > 0) {
-            console.error('   Detalles de errores:', errores);
-        }
+        // Recargar días
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Actualizando...';
+        await cargarDiasPrograma();
         
-        if (diasAgregadosExitosos > 0) {
-            let mensaje = '';
-            
-            if (errores.length > 0) {
-                // Algunos exitosos, algunos con error
-                mensaje = `✅ ${diasAgregadosExitosos} día(s) agregado(s).\n❌ ${errores.length} error(es):\n${errores.join('\n')}`;
-                showAlert(mensaje, 'warning');
-            } else {
-                // Todos exitosos
-                mensaje = `✅ ${diasAgregadosExitosos} día(s) agregado(s) exitosamente`;
-                showAlert(mensaje, 'success');
-            }
-            
-            // Recargar días del programa
-            await cargarDiasPrograma();
-            
-            // Cerrar modal
-            cerrarModalBiblioteca();
+        // Cerrar modal
+        cerrarModalBiblioteca();
+        
+        // Mostrar resultado
+        if (diasAgregados === diasSeleccionados.length) {
+            showAlert(
+                `✅ ${diasAgregados} día${diasAgregados > 1 ? 's' : ''} agregado${diasAgregados > 1 ? 's' : ''} exitosamente`,
+                'success'
+            );
+        } else if (diasAgregados > 0) {
+            showAlert(
+                `⚠️ ${diasAgregados} de ${diasSeleccionados.length} días agregados.\n\nErrores:\n${errores.join('\n')}`,
+                'warning'
+            );
         } else {
-            // Ninguno exitoso
-            const mensajeError = errores.length > 0 
-                ? `No se pudo agregar ningún día:\n${errores.join('\n')}`
-                : 'No se pudo agregar ningún día';
-            throw new Error(mensajeError);
+            throw new Error(
+                errores.length > 0 
+                    ? `No se agregaron días:\n${errores.join('\n')}`
+                    : 'No se pudo agregar ningún día'
+            );
         }
         
     } catch (error) {
         console.error('❌ Error general:', error);
-        showAlert('Error al agregar días: ' + error.message, 'error');
+        showAlert('Error: ' + error.message, 'error');
         
     } finally {
         // Restaurar botón
@@ -6183,7 +6209,7 @@ async function agregarDiasSeleccionados() {
 // Función auxiliar para obtener el último número de día del programa
 
 async function obtenerUltimoDiaNumero() {
-    console.log('🔍 Obteniendo último número de día del programa...');
+    console.log('🔍 Obteniendo último número de día...');
     
     try {
         const baseURL = getBaseURL();
@@ -6194,43 +6220,38 @@ async function obtenerUltimoDiaNumero() {
         const response = await fetch(url);
         
         if (!response.ok) {
-            console.warn(`⚠️ HTTP error ${response.status}, asumiendo programa sin días (0)`);
+            console.warn(`⚠️ HTTP error ${response.status}, asumiendo 0`);
             return 0;
         }
         
         const result = await response.json();
-        console.log('📥 Respuesta recibida:', result);
+        console.log('📥 Respuesta:', result);
         
-        if (!result.success) {
-            console.warn('⚠️ Respuesta no exitosa, asumiendo 0');
+        if (!result.success || !result.data || !Array.isArray(result.data) || result.data.length === 0) {
+            console.log('✅ Programa sin días, último número es 0');
             return 0;
         }
         
-        if (!result.data || !Array.isArray(result.data) || result.data.length === 0) {
-            console.log('✅ Programa sin días todavía, último número es 0');
-            return 0;
-        }
-        
-        // Obtener todos los números de día y encontrar el máximo
+        // Obtener máximo número
         const numeros = result.data
             .map(d => parseInt(d.dia_numero))
             .filter(n => !isNaN(n));
         
         if (numeros.length === 0) {
-            console.log('✅ No hay números válidos, último es 0');
+            console.log('✅ Sin números válidos, retornando 0');
             return 0;
         }
         
         const maxNumero = Math.max(...numeros);
         
         console.log('📊 Números existentes:', numeros);
-        console.log('🎯 Número máximo encontrado:', maxNumero);
+        console.log('🎯 Máximo encontrado:', maxNumero);
         
         return maxNumero;
         
     } catch (error) {
-        console.error('❌ Error obteniendo último día:', error);
-        console.warn('⚠️ Por seguridad, asumiendo 0');
+        console.error('❌ Error:', error);
+        console.warn('⚠️ Por seguridad, retornando 0');
         return 0;
     }
 }
@@ -6251,7 +6272,14 @@ function cerrarModalBiblioteca() {
         searchInput.value = '';
     }
     
-    console.log('✅ Modal biblioteca cerrado y limpiado');
+    // Limpiar checkboxes
+    document.querySelectorAll('.biblioteca-item').forEach(item => {
+        item.classList.remove('selected');
+        const checkbox = item.querySelector('.dia-checkbox');
+        if (checkbox) checkbox.checked = false;
+    });
+    
+    console.log('✅ Modal cerrado y limpiado');
 }
 
 async function eliminarDia(diaId) {

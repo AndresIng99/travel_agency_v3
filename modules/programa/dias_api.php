@@ -292,80 +292,100 @@ private function addDiaFromBiblioteca($programaId, $bibliotecaDiaId, $diaNumeroE
             throw new Exception('Día de biblioteca no encontrado');
         }
         
-        // ✨ DETERMNAR EL NÚMERO DE DÍA
-        if ($diaNumeroEspecifico !== null) {
-            // Si se proporciona un número específico, usarlo
-            $nuevoDiaNumero = (int)$diaNumeroEspecifico;
-            error_log("✅ Usando número de día específico: $nuevoDiaNumero");
-        } else {
-            // Si no, calcular el siguiente número disponible
-            $ultimoDia = $this->db->fetch(
+        // ⚡ USAR TRANSACCIÓN PARA EVITAR RACE CONDITIONS
+        $pdo = $this->db->getConnection();
+        $pdo->beginTransaction();
+        
+        try {
+            // 🔒 OBTENER ÚLTIMO NÚMERO CON LOCK
+            $stmt = $pdo->prepare(
                 "SELECT MAX(dia_numero) as max_dia 
                  FROM programa_dias 
-                 WHERE solicitud_id = ?", 
-                [$programaId]
+                 WHERE solicitud_id = ? 
+                 FOR UPDATE"
             );
+            $stmt->execute([$programaId]);
+            $ultimoDia = $stmt->fetch(PDO::FETCH_ASSOC);
             
-           if ($diaNumeroEspecifico !== null && $diaNumeroEspecifico !== '') {
+            // ✨ DETERMINAR EL NÚMERO DE DÍA
+            if ($diaNumeroEspecifico !== null && $diaNumeroEspecifico !== '') {
                 $nuevoDiaNumero = (int)$diaNumeroEspecifico;
+                error_log("✅ Usando número específico: $nuevoDiaNumero");
             } else {
-                $ultimoDia = $this->db->fetch(
-                    "SELECT MAX(dia_numero) as max_dia FROM programa_dias WHERE solicitud_id = ?", 
-                    [$programaId]
-                );
                 $nuevoDiaNumero = ($ultimoDia['max_dia'] ?? 0) + 1;
+                error_log("✅ Calculado automáticamente: $nuevoDiaNumero");
             }
+            
+            // ⚠️ VERIFICAR SI YA EXISTE (DOBLE VERIFICACIÓN)
+            $stmt = $pdo->prepare(
+                "SELECT id FROM programa_dias 
+                 WHERE solicitud_id = ? AND dia_numero = ?"
+            );
+            $stmt->execute([$programaId, $nuevoDiaNumero]);
+            $existente = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($existente) {
+                error_log("⚠️ Número $nuevoDiaNumero duplicado, recalculando...");
+                
+                // Recalcular automáticamente el siguiente disponible
+                $stmt = $pdo->prepare(
+                    "SELECT MAX(dia_numero) as max_dia 
+                     FROM programa_dias 
+                     WHERE solicitud_id = ?"
+                );
+                $stmt->execute([$programaId]);
+                $ultimoDia = $stmt->fetch(PDO::FETCH_ASSOC);
+                $nuevoDiaNumero = ($ultimoDia['max_dia'] ?? 0) + 1;
+                
+                error_log("✅ Nuevo número recalculado: $nuevoDiaNumero");
+            }
+            
+            // Crear datos del nuevo día
+            $nuevoDiaData = [
+                'solicitud_id' => $programaId,
+                'dia_numero' => $nuevoDiaNumero,
+                'titulo' => $diaBiblioteca['titulo'],
+                'descripcion' => $diaBiblioteca['descripcion'],
+                'ubicacion' => $diaBiblioteca['ubicacion'],
+                'latitud' => $diaBiblioteca['latitud'],
+                'longitud' => $diaBiblioteca['longitud'],
+                'duracion_estancia' => $diaBiblioteca['duracion_estancia'] ?? 1,
+                'biblioteca_dia_id' => $bibliotecaDiaId,
+                'imagen1' => $diaBiblioteca['imagen1'],
+                'imagen2' => $diaBiblioteca['imagen2'],
+                'imagen3' => $diaBiblioteca['imagen3']
+            ];
+            
+            error_log("📝 Insertando día con número: $nuevoDiaNumero");
+            
+            $nuevoDiaId = $this->db->insert('programa_dias', $nuevoDiaData);
+            
+            if (!$nuevoDiaId) {
+                throw new Exception('Error al insertar día');
+            }
+            
+            error_log("✅ Día insertado con ID: $nuevoDiaId");
+            
+            // Copiar ubicaciones secundarias
+            $this->copiarUbicacionesSecundarias($bibliotecaDiaId, $nuevoDiaId, $agencia_id);
+            
+            // Actualizar fecha de salida
+            $this->actualizarFechaSalida($programaId);
+            
+            $pdo->commit();  // ✅ CONFIRMAR TRANSACCIÓN
+            
+            return [
+                'success' => true,
+                'dia_id' => $nuevoDiaId,
+                'dia_numero' => $nuevoDiaNumero,
+                'message' => "Día agregado exitosamente como día #$nuevoDiaNumero"
+            ];
+            
+        } catch (Exception $e) {
+            $pdo->rollback();  // ❌ REVERTIR SI HAY ERROR
+            error_log("❌ Error en transacción: " . $e->getMessage());
+            throw $e;
         }
-        
-        // Verificar si ya existe ese número de día (para evitar duplicados)
-        $existente = $this->db->fetch(
-            "SELECT id FROM programa_dias 
-             WHERE solicitud_id = ? AND dia_numero = ?",
-            [$programaId, $nuevoDiaNumero]
-        );
-        
-        if ($existente) {
-            throw new Exception("Ya existe un día con el número $nuevoDiaNumero en este programa");
-        }
-        
-        // Crear datos del nuevo día
-        $nuevoDiaData = [
-            'solicitud_id' => $programaId,
-            'dia_numero' => $nuevoDiaNumero,
-            'titulo' => $diaBiblioteca['titulo'],
-            'descripcion' => $diaBiblioteca['descripcion'],
-            'ubicacion' => $diaBiblioteca['ubicacion'],
-            'latitud' => $diaBiblioteca['latitud'],              
-            'longitud' => $diaBiblioteca['longitud'],            
-            'duracion_estancia' => $diaBiblioteca['duracion_estancia'] ?? 1,
-            'biblioteca_dia_id' => $bibliotecaDiaId,             
-            'imagen1' => $diaBiblioteca['imagen1'],
-            'imagen2' => $diaBiblioteca['imagen2'],
-            'imagen3' => $diaBiblioteca['imagen3']
-        ];
-        
-        error_log("📝 Insertando día con número: $nuevoDiaNumero");
-        
-        $nuevoDiaId = $this->db->insert('programa_dias', $nuevoDiaData);
-        
-        if (!$nuevoDiaId) {
-            throw new Exception('Error al insertar día');
-        }
-        
-        error_log("✅ Día insertado con ID: $nuevoDiaId");
-        
-        // Copiar ubicaciones secundarias
-        $this->copiarUbicacionesSecundarias($bibliotecaDiaId, $nuevoDiaId, $agencia_id);
-        
-        // Actualizar fecha de salida
-        $this->actualizarFechaSalida($programaId);
-        
-        return [
-            'success' => true,
-            'dia_id' => $nuevoDiaId,
-            'dia_numero' => $nuevoDiaNumero,
-            'message' => "Día agregado exitosamente como día #$nuevoDiaNumero"
-        ];
         
     } catch(Exception $e) {
         error_log("❌ Error en addDiaFromBiblioteca: " . $e->getMessage());

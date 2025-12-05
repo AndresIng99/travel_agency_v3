@@ -254,14 +254,15 @@ function getAgenciaUploadUrl($agencia_id, $tipo, $subtipo, $filename) {
  */
 function uploadAgenciaImageBiblioteca($file, $agencia_id, $tipo, $resourceId, $field) {
     // Validar archivo
-    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!in_array($file['type'], $allowedTypes)) {
+    $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!in_array(strtolower($file['type']), $allowedTypes)) {
         throw new Exception('Tipo de archivo no permitido: ' . $file['type']);
     }
     
-    // Límite de 2MB
-    if ($file['size'] > 10 * 1024 * 1024) {
-        throw new Exception('Archivo demasiado grande (máx 10MB)');
+    // ⚠️ AUMENTAR LÍMITE SI QUIERES IMÁGENES DE ALTA CALIDAD
+    $maxSize = 20 * 1024 * 1024; // 20MB para alta calidad
+    if ($file['size'] > $maxSize) {
+        throw new Exception('Archivo demasiado grande (máx 20MB)');
     }
     
     // Obtener ruta física
@@ -272,7 +273,7 @@ function uploadAgenciaImageBiblioteca($file, $agencia_id, $tipo, $resourceId, $f
     $fileName = $tipo . '_' . $resourceId . '_' . $field . '_' . time() . '.' . $extension;
     $filePath = $uploadPath . '/' . $fileName;
     
-    // Mover archivo
+    // ✅ MOVER ARCHIVO SIN MODIFICAR (Calidad original)
     if (!move_uploaded_file($file['tmp_name'], $filePath)) {
         throw new Exception('Error moviendo archivo a: ' . $filePath);
     }
@@ -282,8 +283,53 @@ function uploadAgenciaImageBiblioteca($file, $agencia_id, $tipo, $resourceId, $f
         throw new Exception('El archivo no se creó correctamente');
     }
     
+    // ✅ OPCIONAL: Optimizar sin perder calidad visible
+    optimizeImageWithoutQualityLoss($filePath, $extension);
+    
     // Retornar URL
     return getAgenciaUploadUrl($agencia_id, 'biblioteca', $tipo, $fileName);
+}
+
+/**
+ * ✅ NUEVA FUNCIÓN: Optimizar imagen sin perder calidad visible
+ * Reduce tamaño de archivo pero mantiene alta calidad
+ */
+function optimizeImageWithoutQualityLoss($filePath, $extension) {
+    try {
+        // Leer imagen según tipo
+        switch(strtolower($extension)) {
+            case 'jpg':
+            case 'jpeg':
+                $image = imagecreatefromjpeg($filePath);
+                if ($image) {
+                    // ✅ Guardar con calidad 95 (casi sin pérdida)
+                    imagejpeg($image, $filePath, 95);
+                    imagedestroy($image);
+                }
+                break;
+                
+            case 'png':
+                $image = imagecreatefrompng($filePath);
+                if ($image) {
+                    // ✅ PNG sin pérdida (0 = sin compresión, 9 = máxima compresión)
+                    imagepng($image, $filePath, 6); // Compresión media sin pérdida
+                    imagedestroy($image);
+                }
+                break;
+                
+            case 'webp':
+                $image = imagecreatefromwebp($filePath);
+                if ($image) {
+                    // ✅ WebP con calidad 95
+                    imagewebp($image, $filePath, 95);
+                    imagedestroy($image);
+                }
+                break;
+        }
+    } catch (Exception $e) {
+        // Si falla la optimización, mantener original
+        error_log("No se pudo optimizar imagen: " . $e->getMessage());
+    }
 }
 
 /**
