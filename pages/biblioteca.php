@@ -1938,7 +1938,7 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
                 <button class="tab-btn" data-tab="alojamientos">Alojamientos</button>
                 <button class="tab-btn" data-tab="actividades">Actividades</button>
                 <button class="tab-btn" data-tab="transportes">Transportes</button>
-                <button class="tab-btn" data-tab="plantilla-precios">💰 Plantilla Precios</button>
+                <button class="tab-btn" data-tab="plantilla-precios">Condiciones Generales</button>
             </div>
 
             <!-- Filters Section -->
@@ -2080,10 +2080,10 @@ function renderPlantillaPrecios(data, exists) {
                     </div>
                     <div style="flex: 1;">
                         <h2 style="margin: 0 0 6px 0; font-size: 24px; font-weight: 700; color: #1a202c;">
-                            Plantilla de Información de Precios
+                            Condiciones Generales
                         </h2>
                         <p style="margin: 0; font-size: 14px; color: #718096; line-height: 1.5;">
-                            Define una vez la información que se precargará automáticamente en todos tus programas nuevos
+                            Define las condiciones que se aplicarán automáticamente a todos tus programas nuevos
                         </p>
                     </div>
                 </div>
@@ -3155,25 +3155,37 @@ function limpiarUbicacionesSecundarias() {
 
 
         // Configuración de tabs
-        function initializeTabs() {
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    // Actualizar tabs activos
-                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    // Cambiar contenido
-                    currentTab = this.dataset.tab;
-                    
-                    // ⭐ NUEVO: Verificar si es plantilla de precios
-                    if (currentTab === 'plantilla-precios') {
-                        loadPlantillaPrecios();
-                    } else {
-                        loadResources();
-                    }
-                });
-            });
-        }
+function initializeTabs() {
+    const tabs = document.querySelectorAll('.tab-btn');
+    const filtersSection = document.querySelector('.filters-section');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Remover active de todos
+            tabs.forEach(t => t.classList.remove('active'));
+            // Agregar active al clickeado
+            this.classList.add('active');
+            
+            // Actualizar tab actual
+            currentTab = this.dataset.tab;
+            
+            // **AGREGAR ESTO:**
+            // Ocultar filtros si es plantilla-precios
+            if (currentTab === 'plantilla-precios') {
+                filtersSection.style.display = 'none';
+            } else {
+                filtersSection.style.display = 'flex';
+            }
+            
+            // Cargar contenido según el tab
+            if (currentTab === 'plantilla-precios') {
+                loadPlantillaPrecios();
+            } else {
+                loadResources();
+            }
+        });
+    });
+}
 
         // MODIFICAR la función loadResources existente
         async function loadResources() {

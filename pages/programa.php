@@ -3666,15 +3666,22 @@ textarea.form-control {
                                     placeholder="Ejemplo: Tailandia - Bangkok y Phuket" required>
                             </div>
                             
-                            <div class="form-row">
+                          
+                                
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label class="form-label" for="arrival-date">Fecha de llegada *</label>
                                         <input type="date" class="form-control" id="arrival-date" name="arrival_date" 
                                             value="<?= htmlspecialchars($form_data['arrival_date']) ?>" required>
                                     </div>
+                                    
                                     <div class="form-group">
                                         <label class="form-label">Fecha de salida</label>
+                                        
+                                        <!-- Textos traducibles ocultos -->
+                                        <span id="text-day-singular" style="display:none;">día total</span>
+                                        <span id="text-days-plural" style="display:none;">días total</span>
+                                        
                                         <input type="text" class="form-control" id="calculated-departure" name="calculated_departure" readonly 
                                             placeholder="Se calcula automáticamente según los días del programa"
                                             style="background: #f8fafc; color: #718096; font-style: italic;">
@@ -3682,30 +3689,9 @@ textarea.form-control {
                                             <i class="fas fa-info-circle"></i> La fecha de salida se calcula automáticamente basada en los días agregados en "Día a día"
                                         </small>
                                     </div>
+                                    
                                     <input type="hidden" name="departure_date" id="departure-date-hidden" value="">
                                 </div>
-                            </div>
-                            
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label" for="passengers">Número de pasajeros</label>
-                                    <input type="number" class="form-control" id="passengers" name="passengers" 
-                                        value="<?= htmlspecialchars($form_data['passengers']) ?>" min="1" readonly
-                                        placeholder="Se calcula automáticamente al guardar los precios"
-                                        style="background: #f8fafc; color: #718096; font-style: italic;">
-                                    <small class="form-text text-muted">
-                                        <i class="fas fa-info-circle"></i> Se actualiza automáticamente desde la sección de Precios
-                                    </small>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label" for="accompaniment">Acompañamiento</label>
-                                    <select class="form-control" id="accompaniment" name="accompaniment">
-                                        <option value="sin-acompanamiento" <?= $form_data['accompaniment'] === 'sin-acompanamiento' ? 'selected' : '' ?>>Sin acompañamiento</option>
-                                        <option value="guide" <?= $form_data['accompaniment'] === 'guide' ? 'selected' : '' ?>>Con guía</option>
-                                        <option value="representative" <?= $form_data['accompaniment'] === 'representative' ? 'selected' : '' ?>>Con representante</option>
-                                    </select>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -8406,7 +8392,9 @@ function actualizarFechaSalida() {
     const hiddenDeparture = document.getElementById('departure-date-hidden');
     
     if (!fechaLlegada || !diasPrograma || diasPrograma.length === 0) {
-        calculatedDeparture.value = 'Agrega días al programa primero';
+        // Usar el placeholder original del HTML en lugar de cambiarlo dinámicamente
+        calculatedDeparture.value = '';
+        calculatedDeparture.setAttribute('placeholder', calculatedDeparture.getAttribute('data-original-placeholder'));
         hiddenDeparture.value = ''; // Limpiar campo hidden
         return;
     }
@@ -8422,20 +8410,25 @@ function actualizarFechaSalida() {
         duracionTotal = diasPrograma.length;
     }
     
-    // Calcular fecha de salida
-    const fechaInicio = new Date(fechaLlegada);
-    const fechaSalida = new Date(fechaInicio);
-    fechaSalida.setDate(fechaInicio.getDate() + duracionTotal - 1);
-    
-    // Formatear fecha para mostrar
-    const opciones = { year: 'numeric', month: 'long', day: 'numeric' };
-    const fechaFormateada = fechaSalida.toLocaleDateString('es-ES', opciones);
-    
-    // Formatear fecha para el backend (YYYY-MM-DD)
-    const fechaBackend = fechaSalida.toISOString().split('T')[0];
-    
-    calculatedDeparture.value = `${fechaFormateada} (${duracionTotal} días total)`;
-    hiddenDeparture.value = fechaBackend; // Enviar al backend
+// Calcular fecha de salida: fecha_llegada + duracionTotal (igual que preview.php)
+const fechaInicio = new Date(fechaLlegada);
+const fechaSalida = new Date(fechaInicio);
+fechaSalida.setDate(fechaInicio.getDate() + duracionTotal + 1);
+
+// Formatear fecha para mostrar
+const opciones = { year: 'numeric', month: 'long', day: 'numeric' };
+const fechaFormateada = fechaSalida.toLocaleDateString('es-ES', opciones);
+
+// Formatear fecha para el backend (YYYY-MM-DD)
+const fechaBackend = fechaSalida.toISOString().split('T')[0];
+
+// Leer textos traducibles desde elementos ocultos
+const textSingular = document.getElementById('text-day-singular')?.textContent || 'día total';
+const textPlural = document.getElementById('text-days-plural')?.textContent || 'días total';
+const duracionTexto = duracionTotal === 1 ? textSingular : textPlural;
+
+calculatedDeparture.value = `${fechaFormateada} (${duracionTotal} ${duracionTexto})`;
+hiddenDeparture.value = fechaBackend; // Enviar al backend
 }
 
 // Ejecutar cuando cambie la fecha de llegada o se carguen días

@@ -99,9 +99,10 @@ if ($programa['fecha_llegada']) {
     $fecha_inicio = new DateTime($programa['fecha_llegada']);
     $fecha_inicio_formatted = $fecha_inicio->format('d M Y');
     
-    // Calcular fecha de salida: fecha_llegada + duración_días - 1
+    
+    // Calcular fecha de salida: fecha_llegada + duración_días (incluye día adicional de regreso)
     $fecha_fin = clone $fecha_inicio;
-    $fecha_fin->add(new DateInterval('P' . ($duracion_dias - 1) . 'D'));
+    $fecha_fin->add(new DateInterval('P' . $duracion_dias . 'D'));
     $fecha_fin_formatted = $fecha_fin->format('d M Y');
 }
 

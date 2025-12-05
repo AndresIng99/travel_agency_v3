@@ -90,52 +90,28 @@ class UbicacionesAPI {
     /**
      * BÚSQUEDA HÍBRIDA: Local + Externa
      */
-    private function searchUbicaciones($query) {
-        if (empty($query) || strlen($query) < 3) {
-            return ['success' => true, 'data' => [], 'source' => 'none'];
-        }
-        
-        try {
-            // FASE 1: Búsqueda local en base de datos
-            $localResults = $this->searchLocal($query);
-            
-            error_log("Búsqueda local encontró: " . count($localResults) . " resultados");
-            
-            // Si hay suficientes resultados locales, retornarlos
-            if (count($localResults) >= 5) {
-                return [
-                    'success' => true,
-                    'data' => $localResults,
-                    'source' => 'local',
-                    'count' => count($localResults)
-                ];
-            }
-            
-            // FASE 2: Búsqueda externa en Nominatim
-            $externalResults = $this->searchNominatim($query);
-            
-            error_log("Búsqueda externa encontró: " . count($externalResults) . " resultados");
-            
-            // Combinar resultados (locales primero)
-            $combinedResults = array_merge($localResults, $externalResults);
-            
-            // Limitar a 10 resultados
-            $combinedResults = array_slice($combinedResults, 0, 10);
-            
-            return [
-                'success' => true,
-                'data' => $combinedResults,
-                'source' => 'hybrid',
-                'local_count' => count($localResults),
-                'external_count' => count($externalResults),
-                'total_count' => count($combinedResults)
-            ];
-            
-        } catch(Exception $e) {
-            throw new Exception('Error en búsqueda: ' . $e->getMessage());
-        }
+private function searchUbicaciones($query) {
+    if (empty($query) || strlen($query) < 3) {
+        return ['success' => true, 'data' => [], 'source' => 'none'];
     }
     
+    try {
+        // Búsqueda DIRECTA en Nominatim (sin usar tabla local)
+        $results = $this->searchNominatim($query);
+        
+        error_log("Búsqueda Nominatim encontró: " . count($results) . " resultados");
+        
+        return [
+            'success' => true,
+            'data' => $results,
+            'source' => 'nominatim',
+            'count' => count($results)
+        ];
+        
+    } catch(Exception $e) {
+        throw new Exception('Error en búsqueda: ' . $e->getMessage());
+    }
+}
     /**
      * Búsqueda en base de datos local
      */

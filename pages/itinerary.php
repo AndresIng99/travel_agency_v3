@@ -283,9 +283,9 @@ if ($programa['fecha_llegada']) {
     $fecha_inicio = new DateTime($programa['fecha_llegada']);
     $fecha_inicio_formatted = $fecha_inicio->format('d M Y');
     
-    // Calcular fecha de salida: fecha_llegada + duración_días - 1
+    // Calcular fecha de salida: fecha_llegada + duración_días (incluye día adicional de regreso)
     $fecha_fin = clone $fecha_inicio;
-    $fecha_fin->add(new DateInterval('P' . ($duracion_dias - 1) . 'D'));
+    $fecha_fin->add(new DateInterval('P' . $duracion_dias . 'D'));
     $fecha_fin_formatted = $fecha_fin->format('d M Y');
 }
 
@@ -792,12 +792,58 @@ body {
             box-shadow: 0 5px 20px rgba(0,0,0,0.08);
             height: 500px;
             border: 1px solid #e9ecef;
+            
         }
         
         #map {
-            height: 100%;
+            height: 500px;
             width: 100%;
         }
+        /* Tooltip de instrucciones del mapa */
+.map-tooltip {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.95);
+    color: #2c3e50;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    z-index: 1000;
+    pointer-events: none;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.2);
+    border: 1px solid rgba(52, 152, 219, 0.3);
+}
+
+.map-tooltip i {
+    font-size: 16px;
+    color: #3498db;
+}
+
+.map-tooltip strong {
+    color: #3498db;
+}
+
+.map-container:hover .map-tooltip {
+    display: flex;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { 
+        opacity: 0; 
+        transform: translateX(-50%) translateY(10px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateX(-50%) translateY(0); 
+    }
+}
         
         /* ========================================
            ITINERARY SECTION - DISEÑO LIMPIO
@@ -3279,6 +3325,10 @@ body {
             
             <div class="map-container">
                 <div id="map"></div>
+                <div class="map-tooltip">
+                    <i class="fas fa-mouse-pointer"></i>
+                    <span>Usa <strong>Ctrl + Scroll</strong> para hacer zoom</span>
+                </div>
             </div>
         </section>
         <?php endif; ?>
@@ -3726,13 +3776,7 @@ body {
                             </div>
                         </div>
                         
-                        <!-- Noches Incluidas -->
-                        <?php if ($precios['noches_incluidas'] > 0): ?>
-                        <div class="nights-included">
-                            <i class="fas fa-bed"></i>
-                            <?= $precios['noches_incluidas'] ?> <?= $precios['noches_incluidas'] == 1 ? 'noche incluida' : 'noches incluidas' ?>
-                        </div>
-                        <?php endif; ?>
+                        
                     </div>
                 </div>
                 
@@ -3923,7 +3967,18 @@ body {
                 let centerLat = puntosMapa.reduce((sum, loc) => sum + loc.lat, 0) / puntosMapa.length;
                 let centerLng = puntosMapa.reduce((sum, loc) => sum + loc.lng, 0) / puntosMapa.length;
                 
-                const map = L.map('map').setView([centerLat, centerLng], 8);
+                const map = L.map('map', {
+                    scrollWheelZoom: false
+                }).setView([centerLat, centerLng], 8);
+
+                // Detectar Ctrl + scroll para zoom
+                map.getContainer().addEventListener('wheel', function(e) {
+                    if (e.ctrlKey) {
+                        e.preventDefault();
+                        map.scrollWheelZoom.enable();
+                        setTimeout(() => map.scrollWheelZoom.disable(), 100);
+                    }
+                });
                 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap contributors'
