@@ -1977,6 +1977,82 @@ $page_title = $is_editing ? 'Editar Programa' : 'Nuevo Programa';
             box-shadow: 0 8px 25px rgba(45, 90, 74, 0.3);
         }
         
+.biblioteca-item-checkbox {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    z-index: 10;
+    opacity: 0;
+}
+
+.biblioteca-item-checkbox-visual {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    border: 3px solid #cbd5e0;
+    border-radius: 8px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 9;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.biblioteca-item.selected .biblioteca-item-checkbox-visual {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    transform: scale(1.1);
+}
+
+.biblioteca-item.selected .biblioteca-item-checkbox-visual::after {
+    content: '✓';
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.biblioteca-item {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.biblioteca-item.selected {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    border: 2px solid #667eea;
+}
+
+.biblioteca-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+/* Badge de orden de selección */
+.orden-seleccion-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+    z-index: 10;
+}
         
         
         .biblioteca-item-image img {
@@ -4122,39 +4198,134 @@ textarea.form-control {
     </div>
 
     <!-- Modal para agregar/editar días desde biblioteca -->
-    <div id="bibliotecaModal" class="modal" style="display: none;">
-        <div class="modal-content" style="max-width: 1200px; max-height: 90vh; overflow-y: auto;">
-            <div class="modal-header">
-                <h3><i class="fas fa-book"></i> Seleccionar día de la biblioteca</h3>
-                <button class="close-modal" onclick="cerrarModalBiblioteca()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="biblioteca-filters" style="display: flex; gap: 15px; align-items: center; margin-bottom: 20px;">
-                    <div class="search-box" style="flex: 1;">
-                        <i class="fas fa-search"></i>
-                        <input type="text" placeholder="Buscar días..." id="search-dias" class="form-control">
-                    </div>
-                    <!-- BOTÓN PARA CREAR DÍA -->
-                    <button type="button" class="btn btn-success" onclick="abrirModalCrearDiaPrograma()" 
-                            style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 10px; color: white; font-weight: 600; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
-                        <i class="fas fa-plus-circle"></i>
-                        Crear Nuevo Día
-                    </button>
+<div id="bibliotecaModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 1200px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header">
+            <h3>
+                <i class="fas fa-book"></i> 
+                Seleccionar días de la biblioteca
+                <span id="contador-seleccionados" style="
+                    display: inline-block;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 4px 12px;
+                    border-radius: 20px;
+                    font-size: 14px;
+                    margin-left: 10px;
+                    font-weight: 600;
+                ">0 seleccionados</span>
+            </h3>
+            <button class="close-modal" onclick="cerrarModalBiblioteca()">&times;</button>
+        </div>
+        
+        <div class="modal-body">
+            <!-- Información de ayuda -->
+            <div style="
+                background: linear-gradient(135deg, #e0e7ff 0%, #e6f3ff 100%);
+                border-left: 4px solid #667eea;
+                padding: 12px 16px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            ">
+                <i class="fas fa-info-circle" style="color: #667eea; font-size: 20px;"></i>
+                <div style="color: #4c51bf; font-size: 14px;">
+                    <strong>Selección múltiple activada:</strong> 
+                    Puedes seleccionar uno o varios días a la vez. Los días se agregarán al programa en el orden en que los selecciones.
                 </div>
-                <div id="biblioteca-dias-grid" class="biblioteca-grid">
-                    <!-- Los días de la biblioteca se cargarán aquí -->
-                </div>
             </div>
-            <div class="modal-footer">
+            
+            <div class="biblioteca-filters" style="display: flex; gap: 15px; align-items: center; margin-bottom: 20px;">
+                <div class="search-box" style="flex: 1;">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Buscar días..." id="search-dias" class="form-control">
+                </div>
+                
+                <!-- Botón para seleccionar/deseleccionar todos -->
+                <button type="button" 
+                        class="btn btn-outline" 
+                        onclick="toggleSeleccionarTodos()"
+                        id="btn-toggle-todos"
+                        style="
+                            padding: 10px 20px;
+                            border: 2px solid #667eea;
+                            background: white;
+                            color: #667eea;
+                            border-radius: 8px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            transition: all 0.3s;
+                        "
+                        onmouseover="this.style.background='#667eea'; this.style.color='white';"
+                        onmouseout="this.style.background='white'; this.style.color='#667eea';">
+                    <i class="fas fa-check-double"></i> Seleccionar todos
+                </button>
+                
+                <!-- BOTÓN PARA CREAR DÍA -->
+                <button type="button" 
+                        class="btn btn-success" 
+                        onclick="abrirModalCrearDiaPrograma()" 
+                        style="
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 8px;
+                            padding: 12px 24px;
+                            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                            border: none;
+                            border-radius: 10px;
+                            color: white;
+                            font-weight: 600;
+                            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+                        ">
+                    <i class="fas fa-plus-circle"></i>
+                    Crear Nuevo Día
+                </button>
+            </div>
+            
+            <div id="biblioteca-dias-grid" class="biblioteca-grid">
+                <!-- Los días de la biblioteca se cargarán aquí con checkboxes -->
+            </div>
+        </div>
+        
+        <div class="modal-footer" style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            border-top: 2px solid #e2e8f0;
+        ">
+            <!-- Info de selección -->
+            <div id="info-seleccion" style="
+                color: #4a5568;
+                font-size: 14px;
+                font-weight: 500;
+            ">
+                <i class="fas fa-info-circle" style="color: #667eea;"></i>
+                Selecciona uno o más días para agregar
+            </div>
+            
+            <!-- Botones de acción -->
+            <div style="display: flex; gap: 12px;">
                 <button class="btn btn-secondary" onclick="cerrarModalBiblioteca()">
                     <i class="fas fa-times"></i> Cancelar
                 </button>
-                <button class="btn btn-primary" onclick="agregarDiaSeleccionado()" id="btn-agregar-dia" disabled>
-                    <i class="fas fa-plus"></i> Agregar día seleccionado
+                <button class="btn btn-primary" 
+                        onclick="agregarDiasSeleccionados()" 
+                        id="btn-agregar-dias" 
+                        disabled
+                        style="
+                            position: relative;
+                            overflow: hidden;
+                        ">
+                    <i class="fas fa-plus"></i> 
+                    <span id="texto-btn-agregar">Agregar días seleccionados</span>
                 </button>
             </div>
         </div>
     </div>
+</div>
 
 <div id="crearDiaModalPrograma" class="modal" style="display: none;">
     <div class="modal-content" style="max-width: 1000px; max-height: 95vh; overflow-y: auto;">
@@ -4300,6 +4471,8 @@ let widgetUbicacionPrincipalPrograma = null;
 let widgetsSecundariasPrograma = [];
 let contadorSecundariasPrograma = 0;
 let selectedImagesPrograma = [];
+let diasSeleccionados = []; // Array para almacenar IDs de días seleccionados
+let ordenSeleccion = 1; // Contador para el orden de selección
 
 // Función helper para obtener la URL base
 function getBaseURL() {
@@ -5440,33 +5613,307 @@ function agregarDia() {
     abrirModalBiblioteca();
 }
 
-async function abrirModalBiblioteca() {
+function abrirModalBiblioteca() {
+    console.log('📖 Abriendo modal de biblioteca...');
+    
+    // Limpiar selección anterior
+    diasSeleccionados = [];
+    ordenSeleccion = 1;
+    
     const modal = document.getElementById('bibliotecaModal');
-    modal.style.display = 'flex';
-    modal.style.alignItems = 'center';
-    modal.style.justifyContent = 'center';
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
+    }
     
-    // Forzar el layout
-    setTimeout(() => {
-        modal.classList.add('show');
-    }, 10);
+    // Cargar días
+    cargarDiasBiblioteca();
     
-    await cargarDiasBiblioteca();
+    // Actualizar UI
+    actualizarContadorSeleccion();
+    actualizarBotonAgregar();
 }
 
 async function cargarDiasBiblioteca() {
-    try {
-        const response = await fetch('<?= APP_URL ?>/modules/biblioteca/api.php?action=list&type=dias');
-        const result = await response.json();
-
-        if (result.success) {
-            renderizarDiasBiblioteca(result.data);
-        } else {
-            console.error('Error cargando biblioteca:', result.message);
-        }
-    } catch (error) {
-        console.error('Error:', error);
+    console.log('📚 Cargando días de la biblioteca para selección múltiple...');
+    
+    const grid = document.getElementById('biblioteca-dias-grid');
+    
+    if (!grid) {
+        console.error('❌ Grid no encontrado');
+        return;
     }
+    
+    try {
+        grid.innerHTML = '<div class="loading" style="text-align: center; padding: 40px;"><i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #667eea;"></i><p>Cargando días...</p></div>';
+        
+        const baseURL = getBaseURL();
+        const response = await fetch(`${baseURL}/biblioteca/api?type=dias&action=list`);
+        
+        if (!response.ok) {
+            throw new Error('Error al cargar días');
+        }
+        
+        const result = await response.json();
+        console.log('✅ Días cargados:', result);
+        
+        if (!result.success || !result.data || result.data.length === 0) {
+            grid.innerHTML = `
+                <div class="empty-state" style="grid-column: 1/-1; text-align: center; padding: 60px 20px;">
+                    <div style="font-size: 64px; margin-bottom: 20px;">📂</div>
+                    <h3 style="color: #4a5568; margin-bottom: 12px;">No hay días en la biblioteca</h3>
+                    <p style="color: #718096; margin-bottom: 24px;">Crea tu primer día haciendo clic en "Crear Nuevo Día"</p>
+                    <button class="btn btn-success" onclick="abrirModalCrearDiaPrograma()">
+                        <i class="fas fa-plus"></i> Crear Nuevo Día
+                    </button>
+                </div>
+            `;
+            return;
+        }
+        
+        // Renderizar días con checkboxes
+        grid.innerHTML = result.data.map(dia => {
+            const isSelected = diasSeleccionados.includes(dia.id);
+            const ordenIndex = diasSeleccionados.indexOf(dia.id);
+            const ordenNumero = ordenIndex >= 0 ? ordenIndex + 1 : 0;
+            
+            return `
+                <div class="biblioteca-item ${isSelected ? 'selected' : ''}" 
+                     data-id="${dia.id}"
+                     onclick="toggleSeleccionDia(${dia.id})">
+                    
+                    <!-- Checkbox (oculto visualmente) -->
+                    <input type="checkbox" 
+                           class="biblioteca-item-checkbox" 
+                           id="checkbox-dia-${dia.id}"
+                           ${isSelected ? 'checked' : ''}
+                           onclick="event.stopPropagation(); toggleSeleccionDia(${dia.id});">
+                    
+                    <!-- Checkbox visual -->
+                    <div class="biblioteca-item-checkbox-visual"></div>
+                    
+                    <!-- Badge de orden de selección -->
+                    ${isSelected ? `<div class="orden-seleccion-badge">${ordenNumero}</div>` : ''}
+                    
+                    ${dia.imagen1 ? `
+                        <img src="${dia.imagen1}" 
+                             alt="${dia.titulo}" 
+                             style="width: 100%; height: 180px; object-fit: cover; border-radius: 12px 12px 0 0;">
+                    ` : `
+                        <div style="width: 100%; height: 180px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; border-radius: 12px 12px 0 0;">
+                            <i class="fas fa-calendar-day" style="font-size: 48px; color: white; opacity: 0.5;"></i>
+                        </div>
+                    `}
+                    
+                    <div class="biblioteca-item-content" style="padding: 16px;">
+                        <h4 style="margin: 0 0 8px 0; color: #2d3748; font-size: 16px; font-weight: 600;">
+                            ${dia.titulo || 'Sin título'}
+                        </h4>
+                        
+                        ${dia.descripcion ? `
+                            <p style="color: #718096; font-size: 14px; margin: 0 0 12px 0; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                ${dia.descripcion}
+                            </p>
+                        ` : ''}
+                        
+                        ${dia.ubicacion ? `
+                            <div style="display: flex; align-items: center; gap: 6px; color: #667eea; font-size: 13px; margin-top: 8px;">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>${dia.ubicacion}</span>
+                            </div>
+                        ` : ''}
+                        
+                        ${dia.ubicaciones_secundarias && dia.ubicaciones_secundarias.length > 0 ? `
+                            <div style="font-size: 11px; color: #10b981; margin-top: 6px; font-weight: 600;">
+                                <i class="fas fa-plus"></i> ${dia.ubicaciones_secundarias.length} ubicación(es) adicional(es)
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        console.log('✅ Días renderizados con checkboxes');
+        actualizarContadorSeleccion();
+        
+    } catch (error) {
+        console.error('❌ Error cargando días:', error);
+        grid.innerHTML = `
+            <div class="error-state" style="grid-column: 1/-1; text-align: center; padding: 40px; color: #e53e3e;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 16px;"></i>
+                <h3>Error al cargar días</h3>
+                <p>${error.message}</p>
+                <button class="btn btn-primary" onclick="cargarDiasBiblioteca()">
+                    <i class="fas fa-redo"></i> Reintentar
+                </button>
+            </div>
+        `;
+    }
+}
+
+// ===== NUEVA FUNCIÓN: toggleSeleccionDia() =====
+// Agregar esta nueva función:
+
+function toggleSeleccionDia(diaId) {
+    console.log('🔄 Toggle selección día:', diaId);
+    
+    const index = diasSeleccionados.indexOf(diaId);
+    
+    if (index > -1) {
+        // Deseleccionar
+        diasSeleccionados.splice(index, 1);
+        console.log('➖ Día deseleccionado');
+    } else {
+        // Seleccionar
+        diasSeleccionados.push(diaId);
+        console.log('➕ Día seleccionado');
+    }
+    
+    console.log('📋 Días seleccionados:', diasSeleccionados);
+    
+    // Actualizar UI
+    const item = document.querySelector(`.biblioteca-item[data-id="${diaId}"]`);
+    const checkbox = document.getElementById(`checkbox-dia-${diaId}`);
+    
+    if (item && checkbox) {
+        if (diasSeleccionados.includes(diaId)) {
+            item.classList.add('selected');
+            checkbox.checked = true;
+            
+            // Agregar badge de orden
+            const ordenNumero = diasSeleccionados.indexOf(diaId) + 1;
+            let badge = item.querySelector('.orden-seleccion-badge');
+            if (!badge) {
+                badge = document.createElement('div');
+                badge.className = 'orden-seleccion-badge';
+                item.insertBefore(badge, item.firstChild);
+            }
+            badge.textContent = ordenNumero;
+        } else {
+            item.classList.remove('selected');
+            checkbox.checked = false;
+            
+            // Remover badge de orden
+            const badge = item.querySelector('.orden-seleccion-badge');
+            if (badge) badge.remove();
+        }
+    }
+    
+    // Actualizar contadores y botón
+    actualizarContadorSeleccion();
+    actualizarBotonAgregar();
+}
+
+// ===== NUEVA FUNCIÓN: actualizarContadorSeleccion() =====
+
+function actualizarContadorSeleccion() {
+    const contador = document.getElementById('contador-seleccionados');
+    const info = document.getElementById('info-seleccion');
+    const cantidad = diasSeleccionados.length;
+    
+    if (contador) {
+        contador.textContent = `${cantidad} seleccionado${cantidad !== 1 ? 's' : ''}`;
+        
+        // Animar contador
+        contador.style.transform = 'scale(1.2)';
+        setTimeout(() => {
+            contador.style.transform = 'scale(1)';
+        }, 200);
+    }
+    
+    if (info) {
+        if (cantidad === 0) {
+            info.innerHTML = '<i class="fas fa-info-circle" style="color: #667eea;"></i> Selecciona uno o más días para agregar';
+        } else if (cantidad === 1) {
+            info.innerHTML = `<i class="fas fa-check-circle" style="color: #10b981;"></i> <strong>1 día</strong> seleccionado`;
+        } else {
+            info.innerHTML = `<i class="fas fa-check-circle" style="color: #10b981;"></i> <strong>${cantidad} días</strong> seleccionados (se agregarán en orden)`;
+        }
+    }
+}
+
+// ===== NUEVA FUNCIÓN: actualizarBotonAgregar() =====
+
+function actualizarBotonAgregar() {
+    const btn = document.getElementById('btn-agregar-dias');
+    const texto = document.getElementById('texto-btn-agregar');
+    const cantidad = diasSeleccionados.length;
+    
+    if (btn) {
+        btn.disabled = cantidad === 0;
+        
+        if (texto) {
+            if (cantidad === 0) {
+                texto.textContent = 'Agregar días seleccionados';
+            } else if (cantidad === 1) {
+                texto.textContent = 'Agregar 1 día';
+            } else {
+                texto.textContent = `Agregar ${cantidad} días`;
+            }
+        }
+    }
+}
+
+// ===== NUEVA FUNCIÓN: toggleSeleccionarTodos() =====
+
+function toggleSeleccionarTodos() {
+    const btn = document.getElementById('btn-toggle-todos');
+    const items = document.querySelectorAll('.biblioteca-item');
+    
+    if (!items.length) return;
+    
+    const todosSeleccionados = diasSeleccionados.length === items.length;
+    
+    if (todosSeleccionados) {
+        // Deseleccionar todos
+        diasSeleccionados = [];
+        items.forEach(item => {
+            item.classList.remove('selected');
+            const checkbox = item.querySelector('.biblioteca-item-checkbox');
+            if (checkbox) checkbox.checked = false;
+            const badge = item.querySelector('.orden-seleccion-badge');
+            if (badge) badge.remove();
+        });
+        
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-check-double"></i> Seleccionar todos';
+        }
+        
+        console.log('➖ Todos deseleccionados');
+    } else {
+        // Seleccionar todos
+        diasSeleccionados = [];
+        items.forEach(item => {
+            const diaId = parseInt(item.getAttribute('data-id'));
+            if (!isNaN(diaId)) {
+                diasSeleccionados.push(diaId);
+                item.classList.add('selected');
+                
+                const checkbox = item.querySelector('.biblioteca-item-checkbox');
+                if (checkbox) checkbox.checked = true;
+                
+                // Agregar badge
+                const ordenNumero = diasSeleccionados.indexOf(diaId) + 1;
+                let badge = item.querySelector('.orden-seleccion-badge');
+                if (!badge) {
+                    badge = document.createElement('div');
+                    badge.className = 'orden-seleccion-badge';
+                    item.insertBefore(badge, item.firstChild);
+                }
+                badge.textContent = ordenNumero;
+            }
+        });
+        
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-times-circle"></i> Deseleccionar todos';
+        }
+        
+        console.log('➕ Todos seleccionados:', diasSeleccionados);
+    }
+    
+    actualizarContadorSeleccion();
+    actualizarBotonAgregar();
 }
 
 function renderizarDiasBiblioteca(dias) {
@@ -5594,53 +6041,217 @@ function seleccionarDia(diaId) {
     }
 }
 
-async function agregarDiaSeleccionado() {
-    if (!selectedDiaId || !programaId) return;
-
+async function agregarDiasSeleccionados() {
+    if (diasSeleccionados.length === 0) {
+        showAlert('⚠️ Por favor selecciona al menos un día', 'warning');
+        return;
+    }
+    
+    const btn = document.getElementById('btn-agregar-dias');
+    const texto = document.getElementById('texto-btn-agregar');
+    
+    if (!btn || !texto) return;
+    
+    const originalHTML = btn.innerHTML;
+    
     try {
-        const response = await fetch('<?= APP_URL ?>/modules/programa/dias_api.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'add_from_biblioteca',
-                programa_id: programaId,
-                biblioteca_dia_id: selectedDiaId
-            })
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            showAlert('Día agregado exitosamente', 'success');
-            cerrarModalBiblioteca();
-            cargarDiasPrograma(); // Recargar días
-        } else {
-            showAlert(result.message || 'Error al agregar día', 'error');
+        // Deshabilitar botón
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparando...';
+        
+        console.log('📤 Iniciando agregado masivo de días');
+        console.log('📊 Días seleccionados:', diasSeleccionados);
+        console.log('🎯 Programa ID:', programaId);
+        
+        // ✅ CRÍTICO: Obtener el último número de día UNA SOLA VEZ AL INICIO
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando días existentes...';
+        const ultimoDiaNumero = await obtenerUltimoDiaNumero();
+        
+        console.log('📍 Último día existente en el programa:', ultimoDiaNumero);
+        console.log(`✅ Los nuevos días se numerarán desde: ${ultimoDiaNumero + 1}`);
+        
+        const baseURL = getBaseURL();
+        let diasAgregadosExitosos = 0;
+        let errores = [];
+        
+        // Agregar cada día seleccionado en orden
+        for (let i = 0; i < diasSeleccionados.length; i++) {
+            const diaId = diasSeleccionados[i];
+            
+            // ✅ CRÍTICO: Calcular el número basándose en:
+            // - El último día que había al inicio (ultimoDiaNumero)
+            // - Más el índice actual (i)
+            // - Más 1 (porque los días empiezan en 1, no en 0)
+            const nuevoNumero = ultimoDiaNumero + i + 1;
+            
+            // Actualizar progreso en el botón
+            const progreso = Math.round(((i + 1) / diasSeleccionados.length) * 100);
+            btn.innerHTML = `
+                <i class="fas fa-spinner fa-spin"></i> 
+                Agregando día ${i + 1} de ${diasSeleccionados.length} (${progreso}%)
+            `;
+            
+            console.log(`\n🔄 Procesando día ${i + 1}/${diasSeleccionados.length}`);
+            console.log(`   - ID biblioteca: ${diaId}`);
+            console.log(`   - Número que se asignará: ${nuevoNumero}`);
+            console.log(`   - Cálculo: ${ultimoDiaNumero} (último) + ${i} (índice) + 1 = ${nuevoNumero}`);
+            
+            try {
+                const response = await fetch(`${baseURL}/modules/programa/dias_api.php`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        action: 'add_from_biblioteca',
+                        programa_id: parseInt(programaId),
+                        biblioteca_dia_id: parseInt(diaId),
+                        dia_numero: nuevoNumero  // ← Enviamos el número calculado
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log(`   - Respuesta:`, result);
+                
+                if (result.success) {
+                    diasAgregadosExitosos++;
+                    console.log(`   ✅ Día agregado exitosamente como día #${nuevoNumero}`);
+                } else {
+                    const errorMsg = result.message || result.error || 'Error desconocido';
+                    errores.push(`Día ${i + 1} (→#${nuevoNumero}): ${errorMsg}`);
+                    console.error(`   ❌ Error:`, errorMsg);
+                }
+                
+                // Pequeña pausa entre requests
+                await new Promise(resolve => setTimeout(resolve, 150));
+                
+            } catch (error) {
+                errores.push(`Día ${i + 1} (→#${nuevoNumero}): ${error.message}`);
+                console.error(`   ❌ Excepción:`, error);
+            }
         }
+        
+        // Mostrar resultado
+        console.log('\n📊 RESUMEN FINAL:');
+        console.log(`   ✅ Exitosos: ${diasAgregadosExitosos}`);
+        console.log(`   ❌ Errores: ${errores.length}`);
+        
+        if (errores.length > 0) {
+            console.error('   Detalles de errores:', errores);
+        }
+        
+        if (diasAgregadosExitosos > 0) {
+            let mensaje = '';
+            
+            if (errores.length > 0) {
+                // Algunos exitosos, algunos con error
+                mensaje = `✅ ${diasAgregadosExitosos} día(s) agregado(s).\n❌ ${errores.length} error(es):\n${errores.join('\n')}`;
+                showAlert(mensaje, 'warning');
+            } else {
+                // Todos exitosos
+                mensaje = `✅ ${diasAgregadosExitosos} día(s) agregado(s) exitosamente`;
+                showAlert(mensaje, 'success');
+            }
+            
+            // Recargar días del programa
+            await cargarDiasPrograma();
+            
+            // Cerrar modal
+            cerrarModalBiblioteca();
+        } else {
+            // Ninguno exitoso
+            const mensajeError = errores.length > 0 
+                ? `No se pudo agregar ningún día:\n${errores.join('\n')}`
+                : 'No se pudo agregar ningún día';
+            throw new Error(mensajeError);
+        }
+        
     } catch (error) {
-        console.error('Error:', error);
-        showAlert('Error de conexión', 'error');
+        console.error('❌ Error general:', error);
+        showAlert('Error al agregar días: ' + error.message, 'error');
+        
+    } finally {
+        // Restaurar botón
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+    }
+}
+
+// ===== NUEVA FUNCIÓN: obtenerUltimoDiaNumero() =====
+// Función auxiliar para obtener el último número de día del programa
+
+async function obtenerUltimoDiaNumero() {
+    console.log('🔍 Obteniendo último número de día del programa...');
+    
+    try {
+        const baseURL = getBaseURL();
+        const url = `${baseURL}/modules/programa/dias_api.php?action=get_dias&programa_id=${programaId}`;
+        
+        console.log('📡 URL:', url);
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            console.warn(`⚠️ HTTP error ${response.status}, asumiendo programa sin días (0)`);
+            return 0;
+        }
+        
+        const result = await response.json();
+        console.log('📥 Respuesta recibida:', result);
+        
+        if (!result.success) {
+            console.warn('⚠️ Respuesta no exitosa, asumiendo 0');
+            return 0;
+        }
+        
+        if (!result.data || !Array.isArray(result.data) || result.data.length === 0) {
+            console.log('✅ Programa sin días todavía, último número es 0');
+            return 0;
+        }
+        
+        // Obtener todos los números de día y encontrar el máximo
+        const numeros = result.data
+            .map(d => parseInt(d.dia_numero))
+            .filter(n => !isNaN(n));
+        
+        if (numeros.length === 0) {
+            console.log('✅ No hay números válidos, último es 0');
+            return 0;
+        }
+        
+        const maxNumero = Math.max(...numeros);
+        
+        console.log('📊 Números existentes:', numeros);
+        console.log('🎯 Número máximo encontrado:', maxNumero);
+        
+        return maxNumero;
+        
+    } catch (error) {
+        console.error('❌ Error obteniendo último día:', error);
+        console.warn('⚠️ Por seguridad, asumiendo 0');
+        return 0;
     }
 }
 
 function cerrarModalBiblioteca() {
     const modal = document.getElementById('bibliotecaModal');
-    modal.classList.remove('show');
-    
-    setTimeout(() => {
+    if (modal) {
         modal.style.display = 'none';
-    }, 300);
+    }
     
-    selectedDiaId = null;
-    document.getElementById('btn-agregar-dia').disabled = true;
+    // Limpiar selección
+    diasSeleccionados = [];
+    ordenSeleccion = 1;
     
     // Limpiar búsqueda
     const searchInput = document.getElementById('search-dias');
     if (searchInput) {
         searchInput.value = '';
     }
+    
+    console.log('✅ Modal biblioteca cerrado y limpiado');
 }
 
 async function eliminarDia(diaId) {

@@ -3602,130 +3602,219 @@ document.getElementById('resourceForm').addEventListener('submit', async functio
     }
 });
 
-// Función mejorada para manejar la vista previa de imágenes
 function setupImagePreviews() {
-    // Configurar vista previa para todos los inputs de imagen
-    const imageInputs = document.querySelectorAll('input[type="file"][accept*="image"]');
+    console.log('🔧 Configurando previews de imágenes...');
     
-    imageInputs.forEach(input => {
-        input.addEventListener('change', function() {
-            handleImagePreview(this);
-        });
-    });
-    // ✅ CONFIGURAR DRAG & DROP PARA ALOJAMIENTOS
-const alojamientoUpload = document.getElementById('alojamiento-image-upload');
-const alojamientoInput = document.getElementById('imagen');
+    // ✅ SOLUCIÓN: Solo configurar para alojamientos si existe
+    const alojamientoUpload = document.getElementById('alojamiento-image-upload');
+    const alojamientoInput = document.getElementById('imagen');
 
-if (alojamientoUpload && alojamientoInput) {
-    // Click en el área
-    alojamientoUpload.addEventListener('click', function(e) {
-        if (e.target.classList.contains('btn-remove-preview')) return;
-        alojamientoInput.click();
-    });
-    
-    // Drag & Drop
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        alojamientoUpload.addEventListener(eventName, function(e) {
-            e.preventDefault();
-            e.stopPropagation();
+    if (alojamientoUpload && alojamientoInput) {
+        console.log('✅ Configurando preview para alojamiento');
+        
+        // ⚠️ CRÍTICO: Limpiar listeners anteriores clonando el elemento
+        const newAlojamientoInput = alojamientoInput.cloneNode(true);
+        alojamientoInput.parentNode.replaceChild(newAlojamientoInput, alojamientoInput);
+        
+        // Ahora configurar en el elemento limpio
+        const cleanInput = document.getElementById('imagen');
+        const cleanUpload = document.getElementById('alojamiento-image-upload');
+        
+        // Click en el área (solo si no es botón de remover)
+        cleanUpload.addEventListener('click', function(e) {
+            if (e.target.classList.contains('btn-remove-preview')) {
+                console.log('🚫 Click en botón remover - ignorando');
+                return;
+            }
+            if (e.target.closest('.image-preview')) {
+                console.log('🚫 Click en preview - ignorando');
+                return;
+            }
+            console.log('👆 Click en área de upload');
+            cleanInput.click();
+        }, { once: false }); // No usar once aquí
+        
+        // Drag & Drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            cleanUpload.addEventListener(eventName, function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            });
         });
-    });
-    
-    ['dragenter', 'dragover'].forEach(eventName => {
-        alojamientoUpload.addEventListener(eventName, function() {
-            this.style.borderColor = '#667eea';
-            this.style.background = 'linear-gradient(135deg, #f0f4ff 0%, #e6f3ff 100%)';
-            this.style.transform = 'scale(1.02)';
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            cleanUpload.addEventListener(eventName, function() {
+                this.style.borderColor = '#667eea';
+                this.style.background = 'linear-gradient(135deg, #f0f4ff 0%, #e6f3ff 100%)';
+                this.style.transform = 'scale(1.02)';
+            });
         });
-    });
-    
-    ['dragleave', 'drop'].forEach(eventName => {
-        alojamientoUpload.addEventListener(eventName, function() {
-            this.style.borderColor = '';
-            this.style.background = '';
-            this.style.transform = '';
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            cleanUpload.addEventListener(eventName, function() {
+                this.style.borderColor = '';
+                this.style.background = '';
+                this.style.transform = '';
+            });
         });
-    });
-    
-    alojamientoUpload.addEventListener('drop', function(e) {
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            alojamientoInput.files = files;
-            handleImagePreview(alojamientoInput);
-        }
-    });
-    
-    // Change event
-    alojamientoInput.addEventListener('change', function() {
-        handleImagePreview(this);
-    });
-}
-    setTimeout(() => {
-    if (document.getElementById('dropZoneMultiple')) {
-        initializeMultipleImageUpload();
+        
+        cleanUpload.addEventListener('drop', function(e) {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                console.log('📁 Archivo dropeado');
+                cleanInput.files = files;
+                // ⚠️ CRÍTICO: Solo llamar handleImagePreview UNA VEZ
+                handleImagePreview(cleanInput);
+            }
+        });
+        
+        // ⚠️ CRÍTICO: Change event - SOLO UNA VEZ
+        cleanInput.addEventListener('change', function() {
+            console.log('📷 Archivo seleccionado desde input');
+            handleImagePreview(this);
+        }, { once: false });
+        
+        console.log('✅ Preview de alojamiento configurado correctamente');
     }
-}, 100);
+    
+    // Para otros tipos (días con múltiples imágenes)
+    setTimeout(() => {
+        if (document.getElementById('dropZoneMultiple')) {
+            console.log('🖼️ Inicializando sistema de múltiples imágenes');
+            initializeMultipleImageUpload();
+        }
+    }, 100);
 }
 
 // Función mejorada para manejar la vista previa de imágenes
 function handleImagePreview(input) {
+    console.log('🖼️ handleImagePreview llamada');
+    
     const file = input.files[0];
+    if (!file) {
+        console.log('⚠️ No hay archivo seleccionado');
+        return;
+    }
+    
     const container = input.closest('.image-upload') || input.parentElement;
     
-    // Remover vista previa anterior
-    const existingPreview = container.querySelector('.image-preview');
-    const existingIndicator = container.querySelector('.existing-image-indicator');
-    if (existingPreview) existingPreview.remove();
-    if (existingIndicator) existingIndicator.remove();
+    // ⚠️ CRÍTICO: Remover TODOS los previews anteriores
+    const existingPreviews = container.querySelectorAll('.image-preview');
+    const existingIndicators = container.querySelectorAll('.existing-image-indicator, .new-image-indicator');
     
-    if (file) {
-        // Validar archivo
-        if (!file.type.startsWith('image/')) {
-            alert('Por favor selecciona un archivo de imagen válido');
-            input.value = '';
-            return;
+    console.log(`🧹 Limpiando ${existingPreviews.length} previews anteriores`);
+    existingPreviews.forEach(p => p.remove());
+    existingIndicators.forEach(i => i.remove());
+    
+    // Validar archivo
+    if (!file.type.startsWith('image/')) {
+        alert('Por favor selecciona un archivo de imagen válido');
+        input.value = '';
+        return;
+    }
+    
+    if (file.size > 10 * 1024 * 1024) {
+        alert('El archivo es demasiado grande. Máximo 10MB permitido');
+        input.value = '';
+        return;
+    }
+    
+    console.log('✅ Archivo válido:', file.name);
+    
+    // Crear vista previa
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        console.log('📸 Creando preview visual');
+        
+        // Ocultar el contenido de upload original
+        const uploadContent = container.querySelector('.upload-content');
+        if (uploadContent) {
+            uploadContent.style.display = 'none';
         }
         
-        if (file.size > 10 * 1024 * 1024) {
-            alert('El archivo es demasiado grande. Máximo 10MB');
-            input.value = '';
-            return;
-        }
+        // Crear preview
+        const preview = document.createElement('div');
+        preview.className = 'image-preview new';
+        preview.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            width: 100%;
+        `;
         
-        // Crear vista previa
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const preview = document.createElement('img');
-            preview.src = e.target.result;
-            preview.className = 'image-preview new';
-            preview.style.cssText = `
-                max-width: 100%;
-                max-height: 150px;
-                border-radius: 8px;
-                margin-top: 10px;
-                object-fit: cover;
-                border: 2px solid #3b82f6;
-            `;
-            
-            // Agregar indicador de nueva imagen
-            const indicator = document.createElement('div');
-            indicator.className = 'new-image-indicator';
-            indicator.style.cssText = `
+        preview.innerHTML = `
+            <img src="${e.target.result}" 
+                 alt="${file.name}"
+                 style="
+                    max-width: 100%;
+                    max-height: 150px;
+                    border-radius: 8px;
+                    object-fit: cover;
+                    border: 2px solid #3b82f6;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                 ">
+            <div class="new-image-indicator" style="
                 background: #3b82f6;
                 color: white;
-                padding: 2px 8px;
-                border-radius: 4px;
-                font-size: 10px;
-                margin-top: 5px;
-                text-align: center;
-            `;
-            indicator.textContent = '🆕 Nueva imagen';
-            
-            container.appendChild(preview);
-            container.appendChild(indicator);
-        };
-        reader.readAsDataURL(file);
+                padding: 4px 12px;
+                border-radius: 6px;
+                font-size: 12px;
+                font-weight: 500;
+            ">
+                🆕 Nueva imagen seleccionada
+            </div>
+            <button type="button" 
+                    class="btn-remove-preview" 
+                    onclick="removeImagePreview(this)"
+                    style="
+                        background: #ef4444;
+                        color: white;
+                        border: none;
+                        padding: 6px 16px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-size: 12px;
+                        transition: all 0.2s;
+                    "
+                    onmouseover="this.style.background='#dc2626'"
+                    onmouseout="this.style.background='#ef4444'">
+                🗑️ Eliminar imagen
+            </button>
+        `;
+        
+        container.appendChild(preview);
+        console.log('✅ Preview creado exitosamente');
+    };
+    
+    reader.readAsDataURL(file);
+}
+
+function removeImagePreview(button) {
+    console.log('🗑️ Removiendo preview');
+    
+    const container = button.closest('.image-upload');
+    const input = container.querySelector('input[type="file"]');
+    const preview = button.closest('.image-preview');
+    const uploadContent = container.querySelector('.upload-content');
+    
+    // Limpiar input
+    if (input) {
+        input.value = '';
     }
+    
+    // Remover preview
+    if (preview) {
+        preview.remove();
+    }
+    
+    // Mostrar contenido de upload original
+    if (uploadContent) {
+        uploadContent.style.display = 'flex';
+    }
+    
+    console.log('✅ Preview removido');
 }
 
 // Función mejorada para cargar campos específicos

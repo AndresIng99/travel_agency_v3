@@ -49,7 +49,30 @@ class ProgramaDiasAPI {
                     break;
 
                 case 'add_from_biblioteca':
-                    $result = $this->addDiaFromBiblioteca($_POST['programa_id'] ?? null, $_POST['biblioteca_dia_id'] ?? null);
+                    // Decodificar el JSON del body
+                    $input = json_decode(file_get_contents('php://input'), true);
+                    
+                    $programaId = $input['programa_id'] ?? null;
+                    $bibliotecaDiaId = $input['biblioteca_dia_id'] ?? null;
+                    $diaNumeroEspecifico = $input['dia_numero'] ?? null; // ← NUEVO PARÁMETRO
+                    
+                    error_log("📥 add_from_biblioteca recibido:");
+                    error_log("   - programa_id: $programaId");
+                    error_log("   - biblioteca_dia_id: $bibliotecaDiaId");
+                    error_log("   - dia_numero: " . ($diaNumeroEspecifico ?? 'auto'));
+                    
+                    if (!$programaId || !$bibliotecaDiaId) {
+                        throw new Exception('Faltan parámetros requeridos');
+                    }
+                    
+                    // ✨ PASAR EL NÚMERO ESPECÍFICO A LA FUNCIÓN
+                    $result = $this->addDiaFromBiblioteca(
+                        $programaId, 
+                        $bibliotecaDiaId, 
+                        $diaNumeroEspecifico  // ← NUEVO PARÁMETRO
+                    );
+                    
+                    error_log("✅ Resultado: " . json_encode($result));
                     break;
                     
                 case 'delete':
@@ -233,81 +256,122 @@ class ProgramaDiasAPI {
         }
     }
     
-    private function addDiaFromBiblioteca($programaId, $bibliotecaDiaId) {
-        if (!$programaId || !$bibliotecaDiaId) {
-            throw new Exception('ID de programa y día de biblioteca requeridos');
+    
+private function addDiaFromBiblioteca($programaId, $bibliotecaDiaId, $diaNumeroEspecifico = null) {
+    if (!$programaId || !$bibliotecaDiaId) {
+        throw new Exception('ID de programa y día de biblioteca requeridos');
+    }
+    
+    try {
+        $user_id = $_SESSION['user_id'];
+        $agencia_id = $_SESSION['agencia_id'] ?? null;
+
+        if (!$agencia_id) {
+            throw new Exception('Usuario sin agencia asignada');
         }
         
-        try {
-            $user_id = $_SESSION['user_id'];
-            $agencia_id = $_SESSION['agencia_id'] ?? null;
-
-            if (!$agencia_id) {
-                throw new Exception('Usuario sin agencia asignada');
-            }
-            
-            $programa = $this->db->fetch(
-                "SELECT id FROM programa_solicitudes WHERE id = ? AND user_id = ? AND agencia_id = ?", 
-                [$programaId, $user_id, $agencia_id]
-            );
-            
-            if (!$programa) {
-                throw new Exception('Programa no encontrado o sin permisos');
-            }
-            
-            $diaBiblioteca = $this->db->fetch(
-                "SELECT * FROM biblioteca_dias WHERE id = ? AND agencia_id = ? AND activo = 1", 
-                [$bibliotecaDiaId, $agencia_id]
-            );
-            
-            if (!$diaBiblioteca) {
-                throw new Exception('Día de biblioteca no encontrado');
-            }
-            
+        // Verificar programa
+        $programa = $this->db->fetch(
+            "SELECT id FROM programa_solicitudes 
+             WHERE id = ? AND user_id = ? AND agencia_id = ?", 
+            [$programaId, $user_id, $agencia_id]
+        );
+        
+        if (!$programa) {
+            throw new Exception('Programa no encontrado o sin permisos');
+        }
+        
+        // Verificar día de biblioteca
+        $diaBiblioteca = $this->db->fetch(
+            "SELECT * FROM biblioteca_dias 
+             WHERE id = ? AND agencia_id = ? AND activo = 1", 
+            [$bibliotecaDiaId, $agencia_id]
+        );
+        
+        if (!$diaBiblioteca) {
+            throw new Exception('Día de biblioteca no encontrado');
+        }
+        
+        // ✨ DETERMNAR EL NÚMERO DE DÍA
+        if ($diaNumeroEspecifico !== null) {
+            // Si se proporciona un número específico, usarlo
+            $nuevoDiaNumero = (int)$diaNumeroEspecifico;
+            error_log("✅ Usando número de día específico: $nuevoDiaNumero");
+        } else {
+            // Si no, calcular el siguiente número disponible
             $ultimoDia = $this->db->fetch(
-                "SELECT MAX(dia_numero) as max_dia FROM programa_dias WHERE solicitud_id = ?", 
+                "SELECT MAX(dia_numero) as max_dia 
+                 FROM programa_dias 
+                 WHERE solicitud_id = ?", 
                 [$programaId]
             );
             
-            $nuevoDiaNumero = ($ultimoDia['max_dia'] ?? 0) + 1;
-            
-            $nuevoDiaData = [
-                'solicitud_id' => $programaId,
-                'dia_numero' => $nuevoDiaNumero,
-                'titulo' => $diaBiblioteca['titulo'],
-                'descripcion' => $diaBiblioteca['descripcion'],
-                'ubicacion' => $diaBiblioteca['ubicacion'],
-                'latitud' => $diaBiblioteca['latitud'],              
-                'longitud' => $diaBiblioteca['longitud'],            
-                'duracion_estancia' => $diaBiblioteca['duracion_estancia'] ?? 1,
-                'biblioteca_dia_id' => $bibliotecaDiaId,             
-                'imagen1' => $diaBiblioteca['imagen1'],
-                'imagen2' => $diaBiblioteca['imagen2'],
-                'imagen3' => $diaBiblioteca['imagen3']
-            ];
-            
-            $nuevoDiaId = $this->db->insert('programa_dias', $nuevoDiaData);
-            
-            if (!$nuevoDiaId) {
-                throw new Exception('Error al insertar día');
+           if ($diaNumeroEspecifico !== null && $diaNumeroEspecifico !== '') {
+                $nuevoDiaNumero = (int)$diaNumeroEspecifico;
+            } else {
+                $ultimoDia = $this->db->fetch(
+                    "SELECT MAX(dia_numero) as max_dia FROM programa_dias WHERE solicitud_id = ?", 
+                    [$programaId]
+                );
+                $nuevoDiaNumero = ($ultimoDia['max_dia'] ?? 0) + 1;
             }
-            $this->copiarUbicacionesSecundarias($bibliotecaDiaId, $nuevoDiaId, $agencia_id);
-            
-            // Actualizar fecha de salida
-            $this->actualizarFechaSalida($programaId);
-            
-            return [
-                'success' => true,
-                'dia_id' => $nuevoDiaId,
-                'message' => 'Día agregado exitosamente'
-            ];
-            
-        } catch(Exception $e) {
-            error_log("Error en addDiaFromBiblioteca: " . $e->getMessage());
-            throw $e;
         }
+        
+        // Verificar si ya existe ese número de día (para evitar duplicados)
+        $existente = $this->db->fetch(
+            "SELECT id FROM programa_dias 
+             WHERE solicitud_id = ? AND dia_numero = ?",
+            [$programaId, $nuevoDiaNumero]
+        );
+        
+        if ($existente) {
+            throw new Exception("Ya existe un día con el número $nuevoDiaNumero en este programa");
+        }
+        
+        // Crear datos del nuevo día
+        $nuevoDiaData = [
+            'solicitud_id' => $programaId,
+            'dia_numero' => $nuevoDiaNumero,
+            'titulo' => $diaBiblioteca['titulo'],
+            'descripcion' => $diaBiblioteca['descripcion'],
+            'ubicacion' => $diaBiblioteca['ubicacion'],
+            'latitud' => $diaBiblioteca['latitud'],              
+            'longitud' => $diaBiblioteca['longitud'],            
+            'duracion_estancia' => $diaBiblioteca['duracion_estancia'] ?? 1,
+            'biblioteca_dia_id' => $bibliotecaDiaId,             
+            'imagen1' => $diaBiblioteca['imagen1'],
+            'imagen2' => $diaBiblioteca['imagen2'],
+            'imagen3' => $diaBiblioteca['imagen3']
+        ];
+        
+        error_log("📝 Insertando día con número: $nuevoDiaNumero");
+        
+        $nuevoDiaId = $this->db->insert('programa_dias', $nuevoDiaData);
+        
+        if (!$nuevoDiaId) {
+            throw new Exception('Error al insertar día');
+        }
+        
+        error_log("✅ Día insertado con ID: $nuevoDiaId");
+        
+        // Copiar ubicaciones secundarias
+        $this->copiarUbicacionesSecundarias($bibliotecaDiaId, $nuevoDiaId, $agencia_id);
+        
+        // Actualizar fecha de salida
+        $this->actualizarFechaSalida($programaId);
+        
+        return [
+            'success' => true,
+            'dia_id' => $nuevoDiaId,
+            'dia_numero' => $nuevoDiaNumero,
+            'message' => "Día agregado exitosamente como día #$nuevoDiaNumero"
+        ];
+        
+    } catch(Exception $e) {
+        error_log("❌ Error en addDiaFromBiblioteca: " . $e->getMessage());
+        throw $e;
     }
-
+}
     
     private function copiarUbicacionesSecundarias($bibliotecaDiaId, $programaDiaId, $agencia_id) {
         try {
