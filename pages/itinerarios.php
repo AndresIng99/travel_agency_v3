@@ -1250,7 +1250,7 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
             </div>
 
             <div class="modal-options">
-                <div class="modal-option" onclick="seleccionarOpcion('desde-cero')" id="opcion-desde-cero">
+                <div class="modal-option" onclick="seleccionarOpcion('desde-cero')" ondblclick="crearDesdeCeroRapido()" id="opcion-desde-cero">
                     <div class="option-icon">
                         <i class="fas fa-plus"></i>
                     </div>
@@ -1307,6 +1307,8 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
         let misProgramasFiltrados = [];
         let otrosProgramasFiltrados = [];
         let opcionSeleccionada = null;
+
+        window.crearDesdeCeroRapido = crearDesdeCeroRapido;
         
         // Inicializar al cargar la página
         document.addEventListener('DOMContentLoaded', function() {
@@ -1346,7 +1348,11 @@ $defaultLanguage = ConfigManager::getDefaultLanguage();
                 toggleSidebar();
             }
         }
-
+function crearDesdeCeroRapido() {
+    if (event) event.stopPropagation();
+    opcionSeleccionada = 'desde-cero';
+    window.location.href = '<?= APP_URL ?>/programa';
+}
         function toggleUserMenu() {
             if (confirm('¿Desea cerrar sesión?')) {
                 window.location.href = '<?= APP_URL ?>/auth/logout';
