@@ -5684,69 +5684,15 @@ async function cargarDiasBiblioteca() {
             return;
         }
         
-        // Renderizar días con checkboxes
-        grid.innerHTML = result.data.map(dia => {
-            const isSelected = diasSeleccionados.includes(dia.id);
-            const ordenIndex = diasSeleccionados.indexOf(dia.id);
-            const ordenNumero = ordenIndex >= 0 ? ordenIndex + 1 : 0;
-            
-            return `
-                <div class="biblioteca-item ${isSelected ? 'selected' : ''}" 
-                     data-id="${dia.id}"
-                     onclick="toggleSeleccionDia(${dia.id})">
-                    
-                    <!-- Checkbox (oculto visualmente) -->
-                    <input type="checkbox" 
-                           class="biblioteca-item-checkbox" 
-                           id="checkbox-dia-${dia.id}"
-                           ${isSelected ? 'checked' : ''}
-                           onclick="event.stopPropagation(); toggleSeleccionDia(${dia.id});">
-                    
-                    <!-- Checkbox visual -->
-                    <div class="biblioteca-item-checkbox-visual"></div>
-                    
-                    <!-- Badge de orden de selección -->
-                    ${isSelected ? `<div class="orden-seleccion-badge">${ordenNumero}</div>` : ''}
-                    
-                    ${dia.imagen1 ? `
-                        <img src="${dia.imagen1}" 
-                             alt="${dia.titulo}" 
-                             style="width: 100%; height: 180px; object-fit: cover; border-radius: 12px 12px 0 0;">
-                    ` : `
-                        <div style="width: 100%; height: 180px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; border-radius: 12px 12px 0 0;">
-                            <i class="fas fa-calendar-day" style="font-size: 48px; color: white; opacity: 0.5;"></i>
-                        </div>
-                    `}
-                    
-                    <div class="biblioteca-item-content" style="padding: 16px;">
-                        <h4 style="margin: 0 0 8px 0; color: #2d3748; font-size: 16px; font-weight: 600;">
-                            ${dia.titulo || 'Sin título'}
-                        </h4>
-                        
-                        ${dia.descripcion ? `
-                            <p style="color: #718096; font-size: 14px; margin: 0 0 12px 0; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                ${dia.descripcion}
-                            </p>
-                        ` : ''}
-                        
-                        ${dia.ubicacion ? `
-                            <div style="display: flex; align-items: center; gap: 6px; color: #667eea; font-size: 13px; margin-top: 8px;">
-                                <i class="fas fa-map-marker-alt"></i>
-                                <span>${dia.ubicacion}</span>
-                            </div>
-                        ` : ''}
-                        
-                        ${dia.ubicaciones_secundarias && dia.ubicaciones_secundarias.length > 0 ? `
-                            <div style="font-size: 11px; color: #10b981; margin-top: 6px; font-weight: 600;">
-                                <i class="fas fa-plus"></i> ${dia.ubicaciones_secundarias.length} ubicación(es) adicional(es)
-                            </div>
-                        ` : ''}
-                    </div>
-                </div>
-            `;
-        }).join('');
+        // ✅ GUARDAR DATOS GLOBALMENTE para filtrado
+        window.diasBibliotecaData = result.data;
         
-        console.log('✅ Días renderizados con checkboxes');
+        // ✅ RENDERIZAR DÍAS
+        renderizarDiasBibliotecaGrid(result.data);
+        
+        // ✅ CONFIGURAR BÚSQUEDA
+        configurarBusquedaDias();
+        
         actualizarContadorSeleccion();
         
     } catch (error) {
@@ -5764,6 +5710,173 @@ async function cargarDiasBiblioteca() {
     }
 }
 
+// ============================================================
+// FUNCIÓN PARA RENDERIZAR GRID DE DÍAS
+// ============================================================
+function renderizarDiasBibliotecaGrid(dias) {
+    const grid = document.getElementById('biblioteca-dias-grid');
+    if (!grid) return;
+    
+    if (dias.length === 0) {
+        grid.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #666;">
+                <i class="fas fa-search" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
+                <h3>No se encontraron días</h3>
+                <p>Intenta con otros términos de búsqueda</p>
+            </div>
+        `;
+        return;
+    }
+    
+    grid.innerHTML = dias.map(dia => {
+        const isSelected = diasSeleccionados.includes(dia.id);
+        const ordenIndex = diasSeleccionados.indexOf(dia.id);
+        const ordenNumero = ordenIndex >= 0 ? ordenIndex + 1 : 0;
+        
+        return `
+            <div class="biblioteca-item ${isSelected ? 'selected' : ''}" 
+                 data-id="${dia.id}"
+                 onclick="toggleSeleccionDia(${dia.id})">
+                
+                <!-- Checkbox (oculto visualmente) -->
+                <input type="checkbox" 
+                       class="biblioteca-item-checkbox" 
+                       id="checkbox-dia-${dia.id}"
+                       ${isSelected ? 'checked' : ''}
+                       onclick="event.stopPropagation(); toggleSeleccionDia(${dia.id});">
+                
+                <!-- Checkbox visual -->
+                <div class="biblioteca-item-checkbox-visual"></div>
+                
+                <!-- Badge de orden de selección -->
+                ${isSelected ? `<div class="orden-seleccion-badge">${ordenNumero}</div>` : ''}
+                
+                ${dia.imagen1 ? `
+                    <img src="${dia.imagen1}" 
+                         alt="${dia.titulo}" 
+                         style="width: 100%; height: 180px; object-fit: cover; border-radius: 12px 12px 0 0;">
+                ` : `
+                    <div style="width: 100%; height: 180px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; border-radius: 12px 12px 0 0;">
+                        <i class="fas fa-calendar-day" style="font-size: 48px; color: white; opacity: 0.5;"></i>
+                    </div>
+                `}
+                
+                <div class="biblioteca-item-content" style="padding: 16px;">
+                    <h4 style="margin: 0 0 8px 0; color: #2d3748; font-size: 16px; font-weight: 600;">
+                        ${dia.titulo || 'Sin título'}
+                    </h4>
+                    
+                    ${dia.descripcion ? `
+                        <p style="color: #718096; font-size: 14px; margin: 0 0 12px 0; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                            ${dia.descripcion}
+                        </p>
+                    ` : ''}
+                    
+                    ${dia.ubicacion ? `
+                        <div style="display: flex; align-items: center; gap: 6px; color: #667eea; font-size: 13px; margin-top: 8px;">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>${dia.ubicacion}</span>
+                        </div>
+                    ` : ''}
+                    
+                    ${dia.ubicaciones_secundarias && dia.ubicaciones_secundarias.length > 0 ? `
+                        <div style="font-size: 11px; color: #10b981; margin-top: 6px; font-weight: 600;">
+                            <i class="fas fa-plus"></i> ${dia.ubicaciones_secundarias.length} ubicación(es) adicional(es)
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    console.log(`✅ ${dias.length} días renderizados en el grid`);
+}
+
+// ============================================================
+// FUNCIÓN PARA CONFIGURAR BÚSQUEDA DE DÍAS
+// ============================================================
+// ============================================================
+// FUNCIÓN PARA CONFIGURAR BÚSQUEDA DE DÍAS - CON IDIOMA
+// ============================================================
+function configurarBusquedaDias() {
+    const searchInput = document.getElementById('search-dias');
+    
+    if (!searchInput) {
+        console.warn('⚠️ Input de búsqueda no encontrado');
+        return;
+    }
+    
+    // Limpiar listeners anteriores
+    const newSearchInput = searchInput.cloneNode(true);
+    searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+    
+    console.log('🔍 Configurando búsqueda de días con soporte multiidioma...');
+    
+    newSearchInput.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase().trim();
+        
+        console.log('🔎 Buscando:', searchTerm);
+        
+        const grid = document.getElementById('biblioteca-dias-grid');
+        if (!grid) return;
+        
+        const items = grid.querySelectorAll('.biblioteca-item');
+        let visibleCount = 0;
+        
+        if (searchTerm === '') {
+            // Mostrar todos
+            items.forEach(item => {
+                item.style.display = 'block';
+            });
+            console.log(`✅ Mostrando todos los días (${items.length})`);
+            return;
+        }
+        
+        // Filtrar por el texto VISIBLE en cada tarjeta
+        items.forEach(item => {
+            // Obtener TODO el texto visible de la tarjeta (traducido o no)
+            const itemText = item.innerText.toLowerCase();
+            
+            // Verificar si el término de búsqueda está en el texto visible
+            if (itemText.includes(searchTerm)) {
+                item.style.display = 'block';
+                visibleCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        console.log(`✅ Mostrando ${visibleCount} de ${items.length} días`);
+        
+        // Mostrar mensaje si no hay resultados
+        let noResultsMsg = grid.querySelector('.no-results-message');
+        
+        if (visibleCount === 0) {
+            if (!noResultsMsg) {
+                noResultsMsg = document.createElement('div');
+                noResultsMsg.className = 'no-results-message';
+                noResultsMsg.style.cssText = `
+                    grid-column: 1/-1; 
+                    text-align: center; 
+                    padding: 60px 20px; 
+                    color: #666;
+                `;
+                noResultsMsg.innerHTML = `
+                    <i class="fas fa-search" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
+                    <h3 style="color: #4a5568; margin-bottom: 8px;">No se encontraron días</h3>
+                    <p style="color: #718096;">Intenta con otros términos de búsqueda</p>
+                `;
+                grid.appendChild(noResultsMsg);
+            }
+        } else {
+            if (noResultsMsg) {
+                noResultsMsg.remove();
+            }
+        }
+    });
+    
+    console.log('✅ Búsqueda configurada con soporte multiidioma');
+}
 // ===== NUEVA FUNCIÓN: toggleSeleccionDia() =====
 // Agregar esta nueva función:
 

@@ -3667,10 +3667,20 @@ body {
                                                     </div>
                                                 </div>
                                                 
-                                                <?php if ($alternativa['imagen']): ?>
+                                                <?php 
+                                                // Determinar qué campo de imagen usar según el tipo de servicio
+                                                $imagen_url = null;
+                                                if (!empty($alternativa['imagen'])) {
+                                                    $imagen_url = $alternativa['imagen'];  // Actividades
+                                                } elseif (!empty($alternativa['alojamiento_imagen_principal'])) {
+                                                    $imagen_url = $alternativa['alojamiento_imagen_principal'];  // Alojamientos
+                                                }
+                                                ?>
+
+                                                <?php if ($imagen_url): ?>
                                                 <div class="service-image" 
-                                                    style="width: 120px; height: 120px; background-image: url('<?= htmlspecialchars($alternativa['imagen']) ?>');"
-                                                    onclick="showImage('<?= htmlspecialchars($alternativa['imagen']) ?>')"></div>
+                                                    style="width: 120px; height: 120px; background-image: url('<?= htmlspecialchars($imagen_url) ?>');"
+                                                    onclick="showImage('<?= htmlspecialchars($imagen_url) ?>')"></div>
                                                 <?php endif; ?>
                                             </div>
                                             <?php endforeach; ?>
