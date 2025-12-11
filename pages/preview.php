@@ -888,7 +888,7 @@ body {
                             <i class="fas fa-calendar-alt"></i>
                         </div>
                         <div class="detail-value"><?= $duracion_dias ?></div>
-                        <div class="detail-label"><?= $duracion_dias == 1 ? 'Día' : 'Días' ?></div>
+                        <div class="detail-label"><?= $duracion_dias == 1 ? 'Noche' : 'Noches' ?></div>
                     </div>
                     <div class="detail-item">
                         <div class="detail-icon">
