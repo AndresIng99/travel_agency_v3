@@ -365,7 +365,7 @@ private function eliminarProgramaPrincipal($programa_id) {
     }
 }
 
-// Función para duplicar días (CORREGIDA con estructura exacta de BD)
+// Función para duplicar días (CORREGIDA - incluye ubicaciones secundarias)
 private function duplicarDias($programa_original_id, $nuevo_programa_id) {
     try {
         error_log("=== DUPLICANDO DÍAS ===");
@@ -386,18 +386,22 @@ private function duplicarDias($programa_original_id, $nuevo_programa_id) {
         foreach ($dias_originales as $dia_original) {
             error_log("Duplicando día {$dia_original['dia_numero']}: {$dia_original['titulo']}");
             
-            // Crear nuevo día con TODOS los campos de la BD
+            // Crear nuevo día con TODOS los campos de la BD incluyendo comidas
             $nuevo_dia_data = [
                 'solicitud_id' => $nuevo_programa_id,
                 'dia_numero' => $dia_original['dia_numero'],
                 'titulo' => $dia_original['titulo'],
                 'descripcion' => $dia_original['descripcion'],
                 'ubicacion' => $dia_original['ubicacion'],
-                'duracion_estancia' => $dia_original['duracion_estancia'] ?? 1, // ← AGREGAR
+                'duracion_estancia' => $dia_original['duracion_estancia'] ?? 1,
                 'fecha_dia' => $dia_original['fecha_dia'],
                 'imagen1' => $dia_original['imagen1'],
                 'imagen2' => $dia_original['imagen2'],
-                'imagen3' => $dia_original['imagen3']
+                'imagen3' => $dia_original['imagen3'],
+                'comidas_incluidas' => $dia_original['comidas_incluidas'] ?? 0,
+                'desayuno' => $dia_original['desayuno'] ?? 0,
+                'almuerzo' => $dia_original['almuerzo'] ?? 0,
+                'cena' => $dia_original['cena'] ?? 0
             ];
             
             $nuevo_dia_id = $this->db->insert('programa_dias', $nuevo_dia_data);
@@ -405,7 +409,10 @@ private function duplicarDias($programa_original_id, $nuevo_programa_id) {
             if ($nuevo_dia_id) {
                 error_log("✅ Nuevo día creado con ID: $nuevo_dia_id");
                 
-                // Duplicar servicios de este día
+                // ✅ COPIAR UBICACIONES SECUNDARIAS
+                $this->duplicarUbicacionesSecundarias($dia_original['id'], $nuevo_dia_id);
+                
+                // ✅ COPIAR SERVICIOS CON DATOS COMPLETOS
                 $this->duplicarServiciosDia($dia_original['id'], $nuevo_dia_id);
             } else {
                 error_log("❌ Error creando día");
@@ -420,14 +427,56 @@ private function duplicarDias($programa_original_id, $nuevo_programa_id) {
     }
 }
 
-// Función para duplicar servicios de un día (CORREGIDA)
+// ✅ NUEVA FUNCIÓN: Duplicar ubicaciones secundarias
+private function duplicarUbicacionesSecundarias($dia_original_id, $nuevo_dia_id) {
+    try {
+        error_log("=== DUPLICANDO UBICACIONES SECUNDARIAS ===");
+        
+        // Obtener ubicaciones secundarias del día original
+        $ubicaciones = $this->db->fetchAll(
+            "SELECT * FROM programa_dias_ubicaciones_secundarias WHERE programa_dia_id = ? ORDER BY orden",
+            [$dia_original_id]
+        );
+        
+        error_log("Ubicaciones secundarias encontradas: " . count($ubicaciones));
+        
+        if (empty($ubicaciones)) {
+            error_log("No hay ubicaciones secundarias para duplicar");
+            return;
+        }
+        
+        foreach ($ubicaciones as $ubicacion) {
+            $nueva_ubicacion_data = [
+                'programa_dia_id' => $nuevo_dia_id,
+                'ubicacion' => $ubicacion['ubicacion'],
+                'latitud' => $ubicacion['latitud'],
+                'longitud' => $ubicacion['longitud'],
+                'orden' => $ubicacion['orden']
+            ];
+            
+            $nueva_ubicacion_id = $this->db->insert('programa_dias_ubicaciones_secundarias', $nueva_ubicacion_data);
+            
+            if ($nueva_ubicacion_id) {
+                error_log("✅ Ubicación secundaria copiada: {$ubicacion['ubicacion']}");
+            }
+        }
+        
+        error_log("=== UBICACIONES SECUNDARIAS DUPLICADAS ===");
+        
+    } catch(Exception $e) {
+        error_log("❌ Error duplicando ubicaciones secundarias: " . $e->getMessage());
+    }
+}
+
+
+// ✅ FUNCIÓN CORREGIDA: Duplicar servicios con TODOS los datos
 private function duplicarServiciosDia($dia_original_id, $nuevo_dia_id) {
     try {
         error_log("=== DUPLICANDO SERVICIOS DEL DÍA ===");
         
         // Obtener servicios del día original
         $servicios_originales = $this->db->fetchAll(
-            "SELECT * FROM programa_dias_servicios WHERE programa_dia_id = ?",
+            "SELECT * FROM programa_dias_servicios WHERE programa_dia_id = ? ORDER BY orden, es_alternativa, orden_alternativa",
             [$dia_original_id]
         );
         
@@ -438,25 +487,77 @@ private function duplicarServiciosDia($dia_original_id, $nuevo_dia_id) {
             return;
         }
         
+        // Mapeo de IDs antiguos a nuevos para las alternativas
+        $mapeo_servicios = [];
+        
         foreach ($servicios_originales as $servicio_original) {
-            error_log("Duplicando servicio: {$servicio_original['tipo_servicio']} - ID biblioteca: {$servicio_original['biblioteca_item_id']}");
+            error_log("Duplicando servicio: {$servicio_original['tipo_servicio']} - {$servicio_original['nombre_servicio']}");
             
-            // Crear nuevo servicio con TODOS los campos de la BD
+            // ✅ CREAR SERVICIO CON TODOS LOS CAMPOS
             $nuevo_servicio_data = [
+                // Campos básicos
                 'programa_dia_id' => $nuevo_dia_id,
                 'tipo_servicio' => $servicio_original['tipo_servicio'],
                 'biblioteca_item_id' => $servicio_original['biblioteca_item_id'],
                 'orden' => $servicio_original['orden'],
-                'servicio_principal_id' => null, // Se reinicia como servicio principal
-                'es_alternativa' => 0, // Se reinicia como principal
-                'orden_alternativa' => 0,
-                'notas_alternativa' => $servicio_original['notas_alternativa']
+                'es_alternativa' => $servicio_original['es_alternativa'],
+                'orden_alternativa' => $servicio_original['orden_alternativa'],
+                'notas_alternativa' => $servicio_original['notas_alternativa'],
+                
+                // ✅ DATOS COPIADOS DEL SERVICIO
+                'nombre_servicio' => $servicio_original['nombre_servicio'],
+                'descripcion_servicio' => $servicio_original['descripcion_servicio'],
+                'ubicacion_servicio' => $servicio_original['ubicacion_servicio'],
+                'latitud' => $servicio_original['latitud'],
+                'longitud' => $servicio_original['longitud'],
+                
+                // ✅ DATOS ESPECÍFICOS DE ACTIVIDAD
+                'actividad_imagen1' => $servicio_original['actividad_imagen1'],
+                'actividad_imagen2' => $servicio_original['actividad_imagen2'],
+                'actividad_imagen3' => $servicio_original['actividad_imagen3'],
+                
+                // ✅ DATOS ESPECÍFICOS DE TRANSPORTE
+                'transporte_medio' => $servicio_original['transporte_medio'],
+                'transporte_titulo' => $servicio_original['transporte_titulo'],
+                'transporte_lugar_salida' => $servicio_original['transporte_lugar_salida'],
+                'transporte_lugar_llegada' => $servicio_original['transporte_lugar_llegada'],
+                'transporte_lat_salida' => $servicio_original['transporte_lat_salida'],
+                'transporte_lng_salida' => $servicio_original['transporte_lng_salida'],
+                'transporte_lat_llegada' => $servicio_original['transporte_lat_llegada'],
+                'transporte_lng_llegada' => $servicio_original['transporte_lng_llegada'],
+                'transporte_duracion' => $servicio_original['transporte_duracion'],
+                'transporte_distancia_km' => $servicio_original['transporte_distancia_km'],
+                'transporte_idioma' => $servicio_original['transporte_idioma'],
+                
+                // ✅ DATOS ESPECÍFICOS DE ALOJAMIENTO
+                'alojamiento_tipo' => $servicio_original['alojamiento_tipo'],
+                'alojamiento_categoria' => $servicio_original['alojamiento_categoria'],
+                'alojamiento_imagen' => $servicio_original['alojamiento_imagen'],
+                'alojamiento_sitio_web' => $servicio_original['alojamiento_sitio_web'],
+                'alojamiento_idioma' => $servicio_original['alojamiento_idioma']
             ];
+            
+            // Si es alternativa, mapear el servicio_principal_id
+            if ($servicio_original['es_alternativa'] == 1 && $servicio_original['servicio_principal_id']) {
+                $id_principal_antiguo = $servicio_original['servicio_principal_id'];
+                if (isset($mapeo_servicios[$id_principal_antiguo])) {
+                    $nuevo_servicio_data['servicio_principal_id'] = $mapeo_servicios[$id_principal_antiguo];
+                } else {
+                    // Si no encontramos el principal, lo dejamos como principal
+                    $nuevo_servicio_data['es_alternativa'] = 0;
+                    $nuevo_servicio_data['servicio_principal_id'] = null;
+                    error_log("⚠️ No se encontró el servicio principal mapeado para alternativa");
+                }
+            } else {
+                $nuevo_servicio_data['servicio_principal_id'] = null;
+            }
             
             $nuevo_servicio_id = $this->db->insert('programa_dias_servicios', $nuevo_servicio_data);
             
             if ($nuevo_servicio_id) {
-                error_log("✅ Nuevo servicio creado con ID: $nuevo_servicio_id");
+                // Guardar mapeo para alternativas
+                $mapeo_servicios[$servicio_original['id']] = $nuevo_servicio_id;
+                error_log("✅ Servicio creado con ID: $nuevo_servicio_id");
             } else {
                 error_log("❌ Error creando servicio");
             }
@@ -470,7 +571,7 @@ private function duplicarServiciosDia($dia_original_id, $nuevo_dia_id) {
     }
 }
 
-// Función para duplicar precios (CORREGIDA con estructura exacta de BD)
+// Función para duplicar precios (ya está correcta)
 private function duplicarPrecios($programa_original_id, $nuevo_programa_id) {
     try {
         error_log("=== DUPLICANDO PRECIOS ===");
@@ -485,7 +586,7 @@ private function duplicarPrecios($programa_original_id, $nuevo_programa_id) {
             return;
         }
         
-        // Crear nuevos precios con NUEVOS CAMPOS
+        // Crear nuevos precios con TODOS los campos
         $nuevo_precio_data = [
             'solicitud_id' => $nuevo_programa_id,
             'moneda' => $precios_original['moneda'],
@@ -513,6 +614,7 @@ private function duplicarPrecios($programa_original_id, $nuevo_programa_id) {
         error_log("❌ Error duplicando precios: " . $e->getMessage());
     }
 }
+
     
     private function savePrograma() {
         try {

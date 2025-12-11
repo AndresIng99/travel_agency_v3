@@ -3153,7 +3153,7 @@ body {
         <div class="hero-stats">
             <div class="hero-stat">
                 <span class="hero-stat-number"><?= $duracion_dias ?></span>
-                <span class="hero-stat-label"><?= $duracion_dias == 1 ? 'Día' : 'Días' ?></span>
+                <span class="hero-stat-label"><?= $duracion_dias == 1 ? 'Noche' : 'Noches' ?></span>
             </div>
             <div class="hero-stat">
                 <span class="hero-stat-number"><?= $num_pasajeros ?></span>
@@ -3226,7 +3226,7 @@ body {
                             </div>
                             <div class="detail-info">
                                 <h4>Duración</h4>
-                                <p><?= $duracion_dias ?> <?= $duracion_dias == 1 ? 'día increíble' : 'días increíbles' ?></p>
+                                <p><?= $duracion_dias ?> <?= $duracion_dias == 1 ? 'noche increíble' : 'noches' ?></p>
                             </div>
                         </div>
                     </div>
@@ -3269,7 +3269,7 @@ body {
                             </div>
                             <div class="detail-info">
                                 <h4>Duración</h4>
-                                <p><?= $duracion_dias ?> <?= $duracion_dias == 1 ? 'día' : 'días' ?> de aventura</p>
+                                <p><?= $duracion_dias ?> <?= $duracion_dias == 1 ? 'noche' : 'noches' ?> de aventura</p>
                             </div>
                         </div>
                         

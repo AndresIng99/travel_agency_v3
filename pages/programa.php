@@ -3758,12 +3758,17 @@ textarea.form-control {
                                         <span id="text-day-singular" style="display:none;">día total</span>
                                         <span id="text-days-plural" style="display:none;">días total</span>
                                         
-                                        <input type="text" class="form-control" id="calculated-departure" name="calculated_departure" readonly 
-                                            placeholder="Se calcula automáticamente según los días del programa"
-                                            style="background: #f8fafc; color: #718096; font-style: italic;">
+                                        <!-- ✅ CAMBIO: Usar div en lugar de input para mejor traducción -->
+                                        <div id="calculated-departure" class="form-control" style="background: #f8fafc; color: #718096; font-style: italic; min-height: 38px; display: flex; align-items: center;">
+                                            La fecha de salida se calcula automáticamente según los días del programa
+                                        </div>
+                                        
                                         <small class="form-text text-muted">
                                             <i class="fas fa-info-circle"></i> La fecha de salida se calcula automáticamente basada en los días agregados en "Día a día"
                                         </small>
+                                        
+                                        <!-- Hidden input para enviar al backend -->
+                                        <input type="hidden" name="departure_date" id="departure-date-hidden" value="">
                                     </div>
                                     
                                     <input type="hidden" name="departure_date" id="departure-date-hidden" value="">
@@ -4119,11 +4124,13 @@ textarea.form-control {
                                         </small>
                                     </div>
                                     
+                                    <!-- 
                                     <div class="form-group">
                                         <label class="form-label">Noches incluidas</label>
                                         <input type="number" class="form-control" name="noches_incluidas" 
                                             placeholder="0" min="0">
                                     </div>
+                                    -->
                                 </div>
                                 
                                 <div class="price-card">
@@ -5014,18 +5021,24 @@ let isAddingAlternative = false;
 let alternativeParentId = null;
 let diasPrograma = [];
 
-// Inicialización
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     console.log('🚀 Iniciando programa.php...');
     setupTabNavigation();
     setupFormHandling();
-    setupPreviewUpdates();
+    setupCharacterCounters();
+    setupFileValidation();
+    // setupPreviewUpdates(); // ← ELIMINADO porque updatePreview no existe
     setupMealHandlers();
     
     if (isEditing && programaId) {
         console.log(`📋 Cargando datos para programa ID: ${programaId}`);
-        cargarDiasPrograma();
-        cargarPreciosPrograma();
+        
+        // ✅ IMPORTANTE: ESPERAR a que termine de cargar
+        await cargarDiasPrograma();
+        await cargarPreciosPrograma();
+        
+        // ✅ AHORA SÍ calcular la fecha de salida
+        actualizarFechaSalida();
     } else {
         console.log('💡 Programa nuevo - no hay días que cargar');
     }
@@ -5096,13 +5109,7 @@ function setupFormHandling() {
     }
 }
 
-// Actualización de vista previa en tiempo real
-function setupPreviewUpdates() {
-    const inputs = document.querySelectorAll('#programa-form input, #programa-form select, #programa-form textarea');
-    inputs.forEach(input => {
-        input.addEventListener('input', updatePreview);
-    });
-}
+
 
 // Configurar manejadores de comidas - VERSIÓN MEJORADA
 function setupMealHandlers() {
@@ -5319,6 +5326,7 @@ async function guardarPrograma() {
                 const newUrl = `<?= APP_URL ?>/programa?id=${programaId}`;
                 window.history.replaceState({}, '', newUrl);
                 
+                
                 // Actualizar campo hidden
                 updateHiddenField(programaId);
             }
@@ -5422,10 +5430,14 @@ async function cargarDiasPrograma() {
             renderizarDias();
             
             // Cargar servicios para cada día
-            for (const dia of diasOrdenados) {
+            for (const dia of diasPrograma) {
                 await cargarServiciosDia(dia.id);
                 await cargarServiciosParaContador(dia.id);
             }
+            
+            // ❌ QUITAR ESTA LÍNEA - se llamará desde DOMContentLoaded
+            // actualizarFechaSalida();
+            
         } else {
             console.error('❌ Error en respuesta de días:', result.message);
             mostrarErrorDias(result.message || 'Error desconocido');
@@ -7020,7 +7032,7 @@ async function cargarPreciosPrograma() {
                 form.querySelector('[name="cantidad_ninos"]').value = data.cantidad_ninos || 0;
                 
                 form.querySelector('[name="precio_total"]').value = data.precio_total || '';
-                form.querySelector('[name="noches_incluidas"]').value = data.noches_incluidas || '';
+                //form.querySelector('[name="noches_incluidas"]').value = data.noches_incluidas || '';
 
                 // CARGAR TEXTAREAS CON PLANTILLA O DATOS GUARDADOS
                 form.querySelector('[name="precio_incluye"]').value = data.precio_incluye || '';
@@ -8583,7 +8595,6 @@ document.addEventListener('DOMContentLoaded', function() {
     setupFormHandling();
     setupCharacterCounters();
     setupFileValidation();
-    setupPreviewUpdates();
     setupMealHandlers(); // ← ESTA LÍNEA DEBE ESTAR
     
     if (isEditing && programaId) {
@@ -9024,17 +9035,27 @@ function abrirMiBiblioteca() {
         window.location.href = '<?= APP_URL ?>/biblioteca';
     }, 100);
 }
-// Función para calcular y mostrar fecha de salida automáticamente
+
+// ============================================================
+// FUNCIÓN CORREGIDA - CALCULAR FECHA DE SALIDA CON IDIOMA DINÁMICO
+// ============================================================
+
+// ============================================================
+// FUNCIÓN CORREGIDA - FECHA DE SALIDA (sin null, con traducción)
+// ============================================================
+
 function actualizarFechaSalida() {
-    const fechaLlegada = document.getElementById('arrival-date').value;
+    const fechaLlegada = document.getElementById('arrival-date')?.value;
     const calculatedDeparture = document.getElementById('calculated-departure');
     const hiddenDeparture = document.getElementById('departure-date-hidden');
     
+    if (!calculatedDeparture) return;
+    
+    // ✅ Si no hay fecha de llegada o días, mostrar mensaje
     if (!fechaLlegada || !diasPrograma || diasPrograma.length === 0) {
-        // Usar el placeholder original del HTML en lugar de cambiarlo dinámicamente
-        calculatedDeparture.value = '';
-        calculatedDeparture.setAttribute('placeholder', calculatedDeparture.getAttribute('data-original-placeholder'));
-        hiddenDeparture.value = ''; // Limpiar campo hidden
+        calculatedDeparture.textContent = 'La fecha de salida se calcula automáticamente según los días del programa';
+        calculatedDeparture.style.fontStyle = 'italic';
+        if (hiddenDeparture) hiddenDeparture.value = '';
         return;
     }
     
@@ -9049,35 +9070,60 @@ function actualizarFechaSalida() {
         duracionTotal = diasPrograma.length;
     }
     
-// Calcular fecha de salida: fecha_llegada + duracionTotal (igual que preview.php)
-const fechaInicio = new Date(fechaLlegada);
-const fechaSalida = new Date(fechaInicio);
-fechaSalida.setDate(fechaInicio.getDate() + duracionTotal + 1);
+    // Calcular fecha de salida
+    const fechaInicio = new Date(fechaLlegada);
+    const fechaSalida = new Date(fechaInicio);
+    fechaSalida.setDate(fechaInicio.getDate() + duracionTotal + 1);
 
-// Formatear fecha para mostrar
-const opciones = { year: 'numeric', month: 'long', day: 'numeric' };
-const fechaFormateada = fechaSalida.toLocaleDateString('es-ES', opciones);
+    // ✅ OBTENER IDIOMA SELECCIONADO (selector correcto)
+    const idiomaSeleccionado = document.getElementById('language')?.value || 'es';
+    
+    // ✅ MAPEAR IDIOMA A LOCALE
+    const localeMap = {
+        'es': 'es-ES',
+        'en': 'en-US',
+        'fr': 'fr-FR',
+        'de': 'de-DE',
+        'pt': 'pt-BR',
+        'it': 'it-IT'
+    };
+    const locale = localeMap[idiomaSeleccionado] || 'es-ES';
 
-// Formatear fecha para el backend (YYYY-MM-DD)
-const fechaBackend = fechaSalida.toISOString().split('T')[0];
+    // Formatear fecha para mostrar
+    const opciones = { year: 'numeric', month: 'long', day: 'numeric' };
+    const fechaFormateada = fechaSalida.toLocaleDateString(locale, opciones);
 
-// Leer textos traducibles desde elementos ocultos
-const textSingular = document.getElementById('text-day-singular')?.textContent || 'día total';
-const textPlural = document.getElementById('text-days-plural')?.textContent || 'días total';
-const duracionTexto = duracionTotal === 1 ? textSingular : textPlural;
+    // Formatear fecha para backend
+    const fechaBackend = fechaSalida.toISOString().split('T')[0];
 
-calculatedDeparture.value = `${fechaFormateada} (${duracionTotal} ${duracionTexto})`;
-hiddenDeparture.value = fechaBackend; // Enviar al backend
+    // Textos traducibles
+    const textSingular = document.getElementById('text-day-singular')?.textContent || 'día total';
+    const textPlural = document.getElementById('text-days-plural')?.textContent || 'días total';
+    const duracionTexto = duracionTotal === 1 ? textSingular : textPlural;
+
+    // ✅ Actualizar div con texto (no input)
+    calculatedDeparture.textContent = `${fechaFormateada} (${duracionTotal} ${duracionTexto})`;
+    calculatedDeparture.style.fontStyle = 'normal';
+    calculatedDeparture.style.fontWeight = '500';
+    
+    if (hiddenDeparture) {
+        hiddenDeparture.value = fechaBackend;
+    }
 }
 
-// Ejecutar cuando cambie la fecha de llegada o se carguen días
+// Event listeners
 document.getElementById('arrival-date')?.addEventListener('change', actualizarFechaSalida);
+
+// ✅ LISTENER CORRECTO para cambio de idioma
+document.getElementById('language')?.addEventListener('change', actualizarFechaSalida);
+
 document.addEventListener('DOMContentLoaded', function() {
-    if (document.getElementById('arrival-date').value) {
+    if (document.getElementById('arrival-date')?.value) {
         actualizarFechaSalida();
     }
 });
-// Función que se ejecuta después de cargar días
+
+// Actualizar después de cargar días
 const originalCargarDiasPrograma = cargarDiasPrograma;
 cargarDiasPrograma = async function() {
     await originalCargarDiasPrograma();
