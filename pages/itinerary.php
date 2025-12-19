@@ -2842,6 +2842,58 @@ body {
         line-height: 1.4;
         color: #000;
     }
+
+.day-images {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 12px !important;
+        margin: 20px 0 !important;
+        page-break-inside: avoid !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+    
+    /* Si solo hay 1 imagen, ocupar todo el ancho */
+    .day-images:has(.day-image:only-child) {
+        grid-template-columns: 1fr !important;
+    }
+    
+    /* Si solo hay 2 imágenes, 2 columnas */
+    .day-images:has(.day-image:nth-child(2):last-child) {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    .day-image {
+        display: block !important;
+        width: 100% !important;
+        height: 220px !important;
+        background-size: cover !important;
+        background-repeat: no-repeat !important;
+        background-position: center !important;
+        border-radius: 8px !important;
+        border: 2px solid #e9ecef !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+        page-break-inside: avoid !important;
+        position: relative !important;
+    }
+    
+    /* La primera imagen NO ocupa 2 filas en print */
+    .day-image:first-child {
+        grid-row: unset !important;
+        height: 220px !important;
+    }
+    
+    /* Quitar efectos hover */
+    .day-image::before,
+    .day-image:hover::before {
+        display: none !important;
+        content: none !important;
+    }
+    
+    .day-image:hover {
+        transform: none !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    }
     
     /* ========== OCULTAR ELEMENTOS INNECESARIOS ========== */
     .navbar,

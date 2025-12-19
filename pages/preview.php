@@ -941,11 +941,7 @@ body {
                 <?php endif; ?>
             </div>
             
-            <!-- Botón principal -->
-            <button class="discover-button pulse-animation" onclick="abrirPrograma()">
-                <i class="fas fa-compass"></i>
-                Descubrir mi programa
-            </button>
+            
             
             <!-- Nuevo botón para ver itinerario completo -->
             <button class="itinerary-button" onclick="verItinerarioCompleto()">

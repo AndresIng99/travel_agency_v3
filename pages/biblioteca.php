@@ -3465,6 +3465,10 @@ function openModal(mode, id = null) {
     
     // Cargar campos específicos del tipo de recurso
     loadSpecificFields();
+
+    setTimeout(() => {
+        setupBibliotecaCharacterCounters();
+    }, 100);
     
     // Mostrar el modal
     modal.classList.add('show');
@@ -3884,8 +3888,8 @@ function loadSpecificFields() {
                 <div class="textarea-with-counter">
                     <textarea id="descripcion" name="descripcion" rows="4" 
                         placeholder="Describe las actividades y experiencias de este día..."
-                        maxlength="3000" data-max-chars="3000"></textarea>
-                    <div class="char-counter" id="descripcion-counter">0/3000</div>
+                        maxlength="1500" data-max-chars="1500"></textarea>
+                    <div class="char-counter" id="descripcion-counter">0/1500</div>
                 </div>
             </div>
 
@@ -5179,8 +5183,16 @@ function setupBibliotecaCharacterCounters() {
     }
     
     function configurarContador(elemento, contador, maximo) {
+        // Clona el elemento PRIMERO
+        const nuevoElemento = elemento.cloneNode(true);
+        elemento.parentNode.replaceChild(nuevoElemento, elemento);
+        
+        // Obtén el elemento limpio del DOM
+        const elementoLimpio = document.getElementById(nuevoElemento.id);
+        
+        // Define la función DESPUÉS, usando elementoLimpio
         function actualizarContador() {
-            const longitud = elemento.value.length;
+            const longitud = elementoLimpio.value.length;  // ✅ USA elemento NUEVO
             contador.textContent = `${longitud}/${maximo}`;
             
             contador.classList.remove('warning', 'danger');
@@ -5193,17 +5205,13 @@ function setupBibliotecaCharacterCounters() {
             }
         }
         
-        // ✅ LIMPIAR LISTENERS ANTERIORES
-        const nuevoElemento = elemento.cloneNode(true);
-        elemento.parentNode.replaceChild(nuevoElemento, elemento);
-        const elementoLimpio = document.getElementById(elemento.id);
-        
-        // Agregar listeners al elemento limpio
+        // Agrega listeners al elemento limpio
         elementoLimpio.addEventListener('input', actualizarContador);
         elementoLimpio.addEventListener('keyup', actualizarContador);
         elementoLimpio.addEventListener('paste', () => setTimeout(actualizarContador, 10));
         
-        actualizarContador.call(elementoLimpio);
+        // Inicializa el contador
+        actualizarContador();
     }
     
     intentarConfigurar();
