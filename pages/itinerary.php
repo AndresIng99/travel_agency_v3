@@ -3719,10 +3719,13 @@ body {
                         <!-- Precios por Categoría -->
                         <div class="price-categories">
                             <?php 
-                            $mostrar_adultos = isset($precios['precio_adulto']) && $precios['precio_adulto'] > 0;
-                            $mostrar_ninos = isset($precios['precio_nino']) && $precios['precio_nino'] > 0;
-                            $cantidad_adultos = $precios['cantidad_adultos'] ?? 1;
-                            $cantidad_ninos = $precios['cantidad_ninos'] ?? 0;
+                            // ✅ PRIMERO: Definir las cantidades
+                                $cantidad_adultos = $precios['cantidad_adultos'] ?? 1;
+                                $cantidad_ninos = $precios['cantidad_ninos'] ?? 0;
+
+                                // ✅ SEGUNDO: Usar las cantidades en las condiciones
+                                $mostrar_adultos = isset($precios['precio_adulto']) && $precios['precio_adulto'] > 0;
+                                $mostrar_ninos = isset($precios['precio_nino']) && $precios['precio_nino'] > 0 && $cantidad_ninos > 0;
                             ?>
                             
                             <?php if ($mostrar_adultos): ?>
@@ -4114,20 +4117,7 @@ function toggleAccordion(element) {
     // Obtener la flecha
     const arrow = header.querySelector('.accordion-icon, i[class*="chevron"]');
     
-    // Cerrar otros accordions abiertos
-    document.querySelectorAll('.accordion-content.active').forEach(function(otherContent) {
-        if (otherContent !== content) {
-            otherContent.classList.remove('active');
-            const otherHeader = otherContent.previousElementSibling;
-            if (otherHeader) {
-                const otherArrow = otherHeader.querySelector('.accordion-icon, i[class*="chevron"]');
-                if (otherArrow) {
-                    otherArrow.classList.remove('rotated');
-                }
-                otherHeader.classList.remove('active');
-            }
-        }
-    });
+    
     
     // Toggle del accordion actual
     const isActive = content.classList.contains('active');
