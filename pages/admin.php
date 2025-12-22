@@ -1591,11 +1591,13 @@ async function toggleUserStatus(id) {
         }
         
         // Cerrar modal al hacer clic fuera
+	    /*
         document.getElementById('userModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeUserModal();
             }
         });
+	    */
 
         // Event listeners responsive
         document.addEventListener('DOMContentLoaded', function() {
