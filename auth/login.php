@@ -2,7 +2,7 @@
 // =====================================
 // ARCHIVO: auth/login.php - Autenticación Unificada (CORREGIDO)
 // =====================================
-// 🔧 FIX: Agregado agencia_id a la sesión para evitar error "Usuario sin agencia asignada"
+// 🔧 FIX: Agregada validación de fecha_fin_suscripcion
 // =====================================
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -93,14 +93,36 @@ try {
                 exit;
             }
             
-            // Verificar que la agencia esté activa
+            // ✅✅✅ VALIDACIÓN CORREGIDA: Verificar agencia activa Y fecha de suscripción
             $agencia = $db->fetch(
-                "SELECT activa, estado_suscripcion FROM agencias WHERE id = ?",
+                "SELECT activa, estado_suscripcion, fecha_fin_suscripcion FROM agencias WHERE id = ?",
                 [$user['agencia_id']]
             );
             
-            if (!$agencia || !$agencia['activa'] || $agencia['estado_suscripcion'] !== 'activa') {
-                $_SESSION['error'] = 'Su agencia no está activa o la suscripción ha expirado. Contacte al soporte.';
+            if (!$agencia) {
+                $_SESSION['error'] = 'Error: Agencia no encontrada.';
+                App::redirect('/login');
+                exit;
+            }
+            
+            // Verificar si está activa
+            if (!$agencia['activa']) {
+                $_SESSION['error'] = 'Su agencia ha sido desactivada. Contacte al administrador.';
+                App::redirect('/login');
+                exit;
+            }
+            
+            // Verificar si el estado es activo
+            if ($agencia['estado_suscripcion'] !== 'activa') {
+                $_SESSION['error'] = 'La suscripción de su agencia no está activa. Contacte al administrador.';
+                App::redirect('/login');
+                exit;
+            }
+            
+            // ✅✅✅ NUEVA VALIDACIÓN: Verificar si la fecha de suscripción ya venció
+            $fechaHoy = date('Y-m-d');
+            if ($agencia['fecha_fin_suscripcion'] < $fechaHoy) {
+                $_SESSION['error'] = 'La suscripción de su agencia ha expirado (' . date('d/m/Y', strtotime($agencia['fecha_fin_suscripcion'])) . '). Contacte al administrador para renovarla.';
                 App::redirect('/login');
                 exit;
             }

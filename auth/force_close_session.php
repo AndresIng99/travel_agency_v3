@@ -67,16 +67,42 @@ try {
     if ($user['role'] !== 'superadmin') {
         $_SESSION['agencia_id'] = $user['agencia_id'];
         
-        // Verificar agencia activa
+        // ✅✅✅ VALIDACIÓN CORREGIDA: Verificar agencia activa Y fecha de suscripción
         $agencia = $db->fetch(
-            "SELECT activa, estado_suscripcion FROM agencias WHERE id = ?",
+            "SELECT activa, estado_suscripcion, fecha_fin_suscripcion FROM agencias WHERE id = ?",
             [$user['agencia_id']]
         );
         
-        if (!$agencia || !$agencia['activa'] || $agencia['estado_suscripcion'] !== 'activa') {
-            $_SESSION['error'] = 'Su agencia no está activa. Contacte al soporte.';
+        if (!$agencia) {
+            $_SESSION['error'] = 'Error: Agencia no encontrada.';
             unset($_SESSION['pending_login']);
             App::redirect('/login');
+            exit;
+        }
+        
+        // Verificar si está activa
+        if (!$agencia['activa']) {
+            $_SESSION['error'] = 'Su agencia ha sido desactivada. Contacte al administrador.';
+            unset($_SESSION['pending_login']);
+            App::redirect('/login');
+            exit;
+        }
+        
+        // Verificar si el estado es activo
+        if ($agencia['estado_suscripcion'] !== 'activa') {
+            $_SESSION['error'] = 'La suscripción de su agencia no está activa. Contacte al administrador.';
+            unset($_SESSION['pending_login']);
+            App::redirect('/login');
+            exit;
+        }
+        
+        // ✅✅✅ NUEVA VALIDACIÓN: Verificar si la fecha de suscripción ya venció
+        $fechaHoy = date('Y-m-d');
+        if ($agencia['fecha_fin_suscripcion'] < $fechaHoy) {
+            $_SESSION['error'] = 'La suscripción de su agencia ha expirado (' . date('d/m/Y', strtotime($agencia['fecha_fin_suscripcion'])) . '). Contacte al administrador para renovarla.';
+            unset($_SESSION['pending_login']);
+            App::redirect('/login');
+            exit;
         }
     }
     

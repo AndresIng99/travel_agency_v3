@@ -5068,13 +5068,18 @@ function setupTabNavigation() {
             
             currentTab = targetTab;
             
-            
-            
             // Acciones específicas por pestaña
             switch(targetTab) {
                 case 'dia-a-dia':
                     if (isEditing && programaId) {
-                        cargarDiasPrograma();
+                        cargarDiasPrograma().then(() => {
+                            // ✅ NUEVA LÍNEA: Seleccionar automáticamente el primer día
+                            setTimeout(() => {
+                                if (diasPrograma.length > 0 && !selectedDayId) {
+                                    seleccionarDiaEnSidebar(diasPrograma[0].id);
+                                }
+                            }, 200);
+                        });
                     }
                     break;
                 case 'precio':
@@ -5082,7 +5087,6 @@ function setupTabNavigation() {
                         cargarPreciosPrograma();
                     }
                     break;
-                
             }
         });
     });
@@ -7370,7 +7374,12 @@ function renderizarDias() {
     console.log(`🎨 Renderizando ${diasPrograma.length} días en sidebar...`);
     
     renderizarSidebarDias();
-    renderizarDetalleVacio();
+    
+    // ✅ SOLO mostrar mensaje vacío si NO hay días
+    // Si hay días, la selección automática se encarga del detalle
+    if (diasPrograma.length === 0) {
+        renderizarDetalleVacio();
+    }
 }
 
 function renderizarSidebarDias() {

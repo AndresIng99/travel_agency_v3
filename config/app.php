@@ -156,6 +156,67 @@ public static function requireLogin() {
             // En caso de error, no cerrar la sesión para no afectar la experiencia
         }
     }
+    // ==================================================
+    // ✅✅✅ VALIDAR SUSCRIPCIÓN DE AGENCIA
+    // ==================================================
+    
+    // Solo validar para usuarios que NO son superadmin
+    if (isset($_SESSION['user_role']) && $_SESSION['user_role'] !== 'superadmin' && isset($_SESSION['agencia_id'])) {
+        try {
+            $db = Database::getInstance();
+            
+            // Obtener datos de la agencia
+            $agencia = $db->fetch(
+                "SELECT activa, estado_suscripcion, fecha_fin_suscripcion FROM agencias WHERE id = ?",
+                [$_SESSION['agencia_id']]
+            );
+            
+            // Si la agencia no existe, cerrar sesión
+            if (!$agencia) {
+                session_unset();
+                session_destroy();
+                session_start();
+                $_SESSION['error'] = 'Agencia no encontrada. Contacte al administrador.';
+                self::redirect('/login');
+                exit;
+            }
+            
+            // Si la agencia está desactivada, cerrar sesión
+            if (!$agencia['activa']) {
+                session_unset();
+                session_destroy();
+                session_start();
+                $_SESSION['error'] = 'Su agencia ha sido desactivada. Contacte al administrador.';
+                self::redirect('/login');
+                exit;
+            }
+            
+            // Si el estado no es activo, cerrar sesión
+            if ($agencia['estado_suscripcion'] !== 'activa') {
+                session_unset();
+                session_destroy();
+                session_start();
+                $_SESSION['error'] = 'La suscripción de su agencia no está activa. Contacte al administrador.';
+                self::redirect('/login');
+                exit;
+            }
+            
+            // ✅✅✅ VALIDACIÓN CRÍTICA: Si la fecha ya venció, cerrar sesión
+            $fechaHoy = date('Y-m-d');
+            if ($agencia['fecha_fin_suscripcion'] < $fechaHoy) {
+                session_unset();
+                session_destroy();
+                session_start();
+                $_SESSION['error'] = 'La suscripción de su agencia ha expirado (' . date('d/m/Y', strtotime($agencia['fecha_fin_suscripcion'])) . '). Contacte al administrador para renovarla.';
+                self::redirect('/login');
+                exit;
+            }
+            
+        } catch (Exception $e) {
+            error_log("Error verificando suscripción: " . $e->getMessage());
+            // En caso de error de conexión, no cerrar sesión
+        }
+    }
 }
 
 public static function requireRole($role) {
@@ -356,4 +417,5 @@ public static function getUser() {
             return $key ? null : [];
         }
     }
+    
 }
